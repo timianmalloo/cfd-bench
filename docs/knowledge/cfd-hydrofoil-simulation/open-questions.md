@@ -1,0 +1,106 @@
+---
+id: kb-cfd-open-questions
+title: "Open Questions and Domain Failure Modes"
+type: knowledge
+status: draft
+owner: "@timianmalloo"
+tags: [open-questions, risks, failure-modes, disconfirming]
+links:
+  - { to: kb-cfd-hydrofoil-simulation, rel: refines }
+review-by: 2026-12-04
+summary: >-
+  What the research could not settle, the ways this domain silently produces wrong answers, and the
+  disconfirming views deliberately sought against the headline findings — including the strongest
+  argument for not building this at all.
+---
+
+# Open questions & domain failure modes
+
+## Unresolved by research — each needs a spike, not an opinion
+
+1. **Does ILGPU work on Blackwell (sm_120)?** *(Flagged, load-bearing)*
+   Latest release is **v1.5.3, July 2024**, predating Blackwell hardware. Release notes mention
+   "improved CUDA compatibility with future devices" but never name sm_120. NuGet confirms 1.5.3 as
+   current. **What would settle it:** run a trivial ILGPU kernel on this machine. Thirty minutes.
+   **What breaks if wrong:** the entire pure-.NET GPU path, forcing a native C++/CUDA boundary.
+
+2. **Is LBM accurate enough for foil lift/drag at Re 5.5e5-1.6e6?** *(Flagged, load-bearing)*
+   Published LBM airfoil validation clusters at Re 2e5-5e5 with good agreement. Our envelope sits
+   **above** that. Bounce-back walls are known to mispredict shear drag on coarse grids at high Re.
+   **What would settle it:** simulate a NACA section at a Reynolds number with published
+   experimental polars and compare CL and CD directly. **What breaks if wrong:** drag predictions
+   are unusable, though lift may remain acceptable — lift is pressure-dominated, drag is
+   shear-sensitive. A tool that gets lift right and drag wrong is still useful, but only if it says so.
+
+3. **What is this machine's actual LBM throughput?** *(Flagged)*
+   All performance figures here are bandwidth-scaled from a **desktop** RTX 5090 benchmark. Laptop
+   thermal and power limits (175 W observed cap) are not in that model. **What would settle it:**
+   run the FluidX3D benchmark on this machine. Under an hour.
+
+4. **What numerical method does Typhoon actually use?** *(Flagged)*
+   Its site documents capabilities (Newton-Raphson equilibrium, eigenvalue stability) but never the
+   underlying hydrodynamic method. **Settle by reading the GitHub source.** Matters because Typhoon
+   may already be the answer to the hydrofoil half of the brief.
+
+5. **Is the target use commercial?** *(Unresolved — a licensing question, not a technical one)*
+   FluidX3D is **free for non-commercial use only**. If this tool is ever sold, FluidX3D cannot be
+   a component and its role is reduced to a validation reference.
+
+6. **What validation data will be used?** No hydrofoil experimental dataset has been identified for
+   this project. **A solver with no validation case is not a solver, it is a renderer.**
+
+## Known failure modes of this domain — where errors are silent and expensive
+
+- **Plausible-looking wrong answers.** CFD always produces a colourful field. Nothing about a
+  converged run indicates it is physically right. This domain has no natural error signal, which is
+  precisely why the validation case above is non-negotiable.
+- **Free-surface numerical artefacts.** `interFoam` is documented to produce free-surface wiggles
+  and spurious light-phase acceleration. These look like physics. They are not.
+- **The unit-and-scale error class.** Kinematic vs dynamic viscosity, PSU vs absolute salinity,
+  knots vs m/s, model vs full scale. Each is a silent factor error. Mitigation: carry units in the
+  type system, not in comments.
+- **Reynolds-number extrapolation.** A polar computed at one Re applied at another is a common and
+  invisible error. Foiling spans a 3x Reynolds range across its speed envelope.
+- **Confusing ventilation with cavitation.** Different physics, different triggers, different
+  mitigations — and ventilation has **hysteresis**, so a steady-state solver cannot capture onset
+  and washout with one curve.
+- **Linear methods used past their validity.** VLM and panel methods return a confident number at
+  30 degrees angle of attack. It is meaningless — stall is not in the model. Any tool exposing these
+  methods must **enforce** the validity envelope rather than document it.
+- **Trim/sinkage divergence.** Free-attitude planing simulations are reported to diverge from
+  experiment beyond V/sqrt(L) > 2.79, and practitioners report bow-sinking instabilities in coupled
+  solvers.
+
+## Disconfirming views deliberately sought
+
+**Against headline finding 3 ("hardware is not the constraint"):**
+Sought and partially sustained. The counter-argument is that uniform-grid LBM without AMR means the
+tight 43 M-cell box is the *only* affordable configuration — widen the domain to capture free-surface
+waves or a whole board and cost rises as dx^-3 over the entire volume. **The finding survives for a
+foil in a tight box; it does not survive for a full free-surface craft simulation.** Rewritten
+accordingly in `data-and-constants.md`.
+
+**Against headline finding 1 ("salt vs fresh is just parameters"):**
+Sought, not overturned. Both fluids are Newtonian and incompressible at these speeds; the only
+candidate exception is that salinity changes cavitation-nucleation behaviour, which matters only if
+cavitation modelling enters scope. Finding stands, with that boundary noted.
+
+**Against building anything at all — the strongest counter-argument, stated at full strength:**
+
+> XFLR5 is free, mature, and already couples XFOIL viscous polars to 3D panel methods. Typhoon is
+> free, open source, and already solves whole-craft hydrofoil equilibrium with stability
+> eigenvalues. FluidX3D is free for non-commercial use and is *the fastest LBM implementation in
+> existence* — nothing hand-written on one laptop will beat 19,141 MLUPs/s and 55 bytes/cell. For
+> the surfboard, Savitsky's equations fit on one page and have sixty years of practitioner trust.
+> Every component of the stated problem already has a free, better-validated solution. Building a
+> new one is a learning exercise, not an engineering necessity.
+
+**How it fared: it substantially survives, and it must shape the scope.** The evidence does not
+support building a general CFD package or a faster LBM kernel. It does support a narrower claim —
+that **no existing tool joins foil design, free-surface effects, craft equilibrium and interactive
+visualisation into one Windows application**, and that free-surface effects on shallowly submerged
+foils are a first-order gap in Band C specifically.
+
+The honest conclusion: **the defensible project is an integrated application over largely
+established methods, not a novel solver.** Any proposal claiming otherwise is arguing against this
+evidence base and owes a rebuttal.

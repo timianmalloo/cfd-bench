@@ -1,0 +1,624 @@
+<title>CFD-Bench Solver Strategy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#F6F8F7; --surface:#FFFFFF; --sunk:#EDF1F0;
+    --ink:#0C1B21; --body:#22343A; --muted:#5A6E75; --muted2:#8A9AA0;
+    --rule:#D6DFDE; --rule-strong:#B7C6C4;
+    --accent:#C8500F;
+    --go:#1F6F5C; --warn:#8A6100; --stop:#A32C1E;
+    --go-bg:#E3F0EB; --warn-bg:#F6EED9; --stop-bg:#F6E2DE;
+    --shadow:0 1px 2px rgba(12,27,33,.05), 0 8px 24px -12px rgba(12,27,33,.18);
+    --measure:66ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+      --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+      --rule:#1E333A; --rule-strong:#2C464E;
+      --accent:#F0793C;
+      --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+      --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+    --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+    --rule:#1E333A; --rule-strong:#2C464E;
+    --accent:#F0793C;
+    --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+    --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground); color:var(--body);
+    font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+    font-size:17px; line-height:1.62; margin:0;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px 96px}
+  .col{max-width:var(--measure)}
+
+  h1,h2,h3,h4,.ui{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+  h1{font-size:clamp(2.1rem,4.4vw,3.1rem); line-height:1.06; font-weight:700;
+     letter-spacing:-.022em; color:var(--ink); margin:0 0 .5rem; text-wrap:balance}
+  h2{font-size:1.55rem; font-weight:700; letter-spacing:-.015em; color:var(--ink);
+     margin:0 0 .2rem; text-wrap:balance}
+  h3{font-size:1.08rem; font-weight:600; letter-spacing:-.008em; color:var(--ink);
+     margin:0 0 .35rem; text-wrap:balance}
+  p{margin:0 0 1.05rem}
+  strong{color:var(--ink); font-weight:600}
+  a{color:var(--accent)}
+  code,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:.87em; font-variant-numeric:tabular-nums}
+  code{background:var(--sunk); padding:.1em .38em; border-radius:3px; color:var(--ink)}
+
+  .eyebrow{font-family:Archivo,sans-serif; font-size:.7rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 .55rem}
+
+  header.top{border-bottom:2px solid var(--ink); padding:56px 0 22px}
+  .kicker{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:18px}
+  .kicker .dot{color:var(--rule-strong)}
+  .standfirst{font-size:1.16rem; line-height:1.55; color:var(--body); max-width:60ch; margin:0}
+
+  .rig{display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr));
+    gap:0; border-bottom:1px solid var(--rule); margin:0 0 52px}
+  .rig div{padding:16px 18px 18px; border-right:1px solid var(--rule)}
+  .rig div:last-child{border-right:0}
+  .rig dt{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
+  .rig dd{margin:0; font-family:"IBM Plex Mono",monospace; font-size:.95rem;
+    font-weight:500; color:var(--ink); font-variant-numeric:tabular-nums}
+  .rig dd.bad{color:var(--stop)}
+
+  section{padding:44px 0; border-top:1px solid var(--rule)}
+  .sec-head{display:flex; gap:14px; align-items:baseline; margin-bottom:1.4rem}
+  .sec-num{font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--accent);
+    font-weight:500; padding-top:.28rem; flex:none}
+
+  .callout{background:var(--surface); border:1px solid var(--rule);
+    border-left:3px solid var(--accent); padding:20px 24px; margin:0 0 1.4rem;
+    box-shadow:var(--shadow)}
+  .callout p:last-child{margin-bottom:0}
+  .callout.quiet{border-left-color:var(--rule-strong); box-shadow:none; background:var(--sunk)}
+
+  .split{display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--rule);
+    background:var(--surface); margin-bottom:1.4rem}
+  .split > div{padding:22px 24px}
+  .split > div:first-child{border-right:1px solid var(--rule)}
+  .split h3{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .split p{font-size:.92rem}
+  .tag{font-family:Archivo,sans-serif; font-size:.62rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; padding:3px 7px; border-radius:2px}
+  .tag.a{background:var(--go-bg); color:var(--go)}
+  .tag.b{background:var(--warn-bg); color:var(--warn)}
+
+  .tscroll{overflow-x:auto; margin:0 0 1.3rem; border:1px solid var(--rule);
+    background:var(--surface)}
+  table{border-collapse:collapse; width:100%; font-size:.9rem}
+  th,td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--rule);
+    vertical-align:top}
+  thead th{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+    background:var(--sunk); border-bottom:1px solid var(--rule-strong); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  .conf{font-family:Archivo,sans-serif; font-size:.6rem; font-weight:600;
+    letter-spacing:.08em; text-transform:uppercase; padding:2px 6px; border-radius:2px;
+    white-space:nowrap}
+  .conf.v{background:var(--go-bg); color:var(--go)}
+  .conf.i{background:var(--warn-bg); color:var(--warn)}
+  .conf.f{background:var(--stop-bg); color:var(--stop)}
+
+  figure{margin:0 0 1.4rem; border:1px solid var(--rule); background:var(--surface);
+    padding:22px 24px 18px}
+  figcaption{font-size:.83rem; color:var(--muted); margin-top:12px; line-height:1.5}
+  svg{display:block; width:100%; height:auto}
+
+  .opts{border:1px solid var(--rule); margin-bottom:1.4rem; background:var(--surface)}
+  .opt{padding:24px 26px; border-bottom:1px solid var(--rule)}
+  .opt:last-child{border-bottom:0}
+  .opt.pick{border-left:3px solid var(--accent); padding-left:23px}
+  .opt-h{display:flex; gap:12px; align-items:baseline; margin-bottom:.5rem; flex-wrap:wrap}
+  .opt-k{font-family:"IBM Plex Mono",monospace; font-size:.78rem; font-weight:600;
+    color:var(--accent); flex:none}
+  .opt > p{font-size:.94rem; margin-bottom:0}
+  .pc{display:grid; grid-template-columns:1fr 1fr; gap:0 26px; margin-top:14px;
+    font-size:.88rem; line-height:1.52}
+  .pc h4{font-family:Archivo,sans-serif; font-size:.64rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; margin:0 0 .45rem}
+  .pc .pro h4{color:var(--go)} .pc .con h4{color:var(--stop)}
+  .pc ul{margin:0; padding-left:1.05em}
+  .pc li{margin-bottom:.34rem}
+  .pc li::marker{color:var(--muted2)}
+
+  ul.body-list{margin:0 0 1.1rem; padding-left:1.15em}
+  ul.body-list li{margin-bottom:.5rem}
+  ul.body-list li::marker{color:var(--muted2)}
+
+  .ph{display:grid; grid-template-columns:112px 1fr; gap:20px; padding:18px 0;
+    border-bottom:1px solid var(--rule)}
+  .ph:last-child{border-bottom:0}
+  .ph-k{font-family:Archivo,sans-serif; font-size:.68rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding-top:.22rem}
+  .ph-k b{display:block; font-family:"IBM Plex Mono",monospace; font-size:.95rem;
+    color:var(--ink); letter-spacing:0; text-transform:none; font-weight:600; margin-bottom:2px}
+  .ph p{margin:0 0 .4rem; font-size:.94rem}
+  .ph p:last-child{margin-bottom:0}
+  .ph .aside{color:var(--muted); font-size:.88rem}
+
+  footer{border-top:2px solid var(--ink); padding:26px 0 0; margin-top:44px;
+    font-size:.85rem; color:var(--muted)}
+  footer p{margin:0 0 .5rem; max-width:70ch}
+
+  @media (max-width:720px){
+    .split{grid-template-columns:1fr}
+    .split > div:first-child{border-right:0; border-bottom:1px solid var(--rule)}
+    .pc{grid-template-columns:1fr; gap:14px}
+    .ph{grid-template-columns:1fr; gap:6px}
+    body{font-size:16px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">
+    <span>CFD-Bench</span><span class="dot">/</span>
+    <span>Solution Proposal</span><span class="dot">/</span>
+    <span>5 September 2026</span><span class="dot">/</span>
+    <span>For review</span>
+  </div>
+  <h1>Hydrofoils and surfboards<br>without a CFD package</h1>
+  <p class="standfirst">Four ways to build a small, local simulator for foils and boards in salt and
+  fresh water &mdash; measured against the hardware in front of us, and against the free tools that
+  already do part of the job.</p>
+</header>
+
+<dl class="rig">
+  <div><dt>GPU</dt><dd>RTX 5090 Laptop</dd></div>
+  <div><dt>Compute cap.</dt><dd>sm_120</dd></div>
+  <div><dt>VRAM</dt><dd>24,463 MiB</dd></div>
+  <div><dt>Bandwidth</dt><dd>896 GB/s</dd></div>
+  <div><dt>.NET SDK</dt><dd>10.0.303</dd></div>
+  <div><dt>CUDA toolkit</dt><dd class="bad">not installed</dd></div>
+</dl>
+
+<section style="border-top:0">
+  <div class="sec-head"><span class="sec-num">01</span><div>
+    <p class="eyebrow">The finding that reframes the brief</p>
+    <h2>This is two problems, not one</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The brief asks for one simpler solution covering hydrofoils and surfboards. The literature does
+  not treat these as one problem, and the split is structural rather than a matter of degree.</p>
+  </div>
+
+  <div class="split">
+    <div>
+      <h3>Submerged foil <span class="tag a">solved cheaply</span></h3>
+      <p>Attached flow over a lifting surface at high Reynolds number. Potential-flow methods
+      &mdash; lifting line, vortex lattice, panel &mdash; mesh only the surface and append viscous
+      drag from 2D sectional polars.</p>
+      <p style="margin:0"><strong>Cost:</strong> around <span class="num">1%</span> of an equivalent
+      RANS solution. This is what XFLR5 and Typhoon already do, for free.</p>
+    </div>
+    <div>
+      <h3>Planing board <span class="tag b">genuinely hard</span></h3>
+      <p>Free-surface, partially-wetted, dynamically trimming. Potential flow does not apply at all.
+      Wetted area changes with speed and attitude, so trim and sinkage are <em>solved outputs</em>,
+      not inputs.</p>
+      <p style="margin:0"><strong>Cost:</strong> Savitsky's algebra in microseconds, or RANS+VOF
+      with 6-DOF motion in hours.</p>
+    </div>
+  </div>
+
+  <div class="col">
+  <p>One <em>application</em> spanning both is reasonable. One <em>solver</em> spanning both is the
+  primary design failure mode available here, and every option below is judged partly on whether it
+  avoids it.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><div>
+    <p class="eyebrow">Evidence</p>
+    <h2>What the research settled</h2>
+  </div></div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Finding</th><th>Consequence for the build</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Seawater at 15&nbsp;&deg;C is <strong>+2.69%</strong> denser and <strong>+4.44%</strong>
+        more viscous than fresh water <span class="num">(ITTC 7.5-02-01-03)</span></td>
+        <td>Salt vs fresh is a <strong>two-parameter change, not a physics change</strong>. One code
+        path, two constants. Never a solver branch.</td>
+        <td><span class="conf v">Verified</span></td>
+      </tr>
+      <tr>
+        <td>The foiling envelope is <span class="num">Re 5.5&times;10<sup>5</sup> &ndash;
+        1.6&times;10<sup>6</sup></span></td>
+        <td>Too high to ignore turbulence; at or above where LBM foil validation is established.
+        This is the central technical risk.</td>
+        <td><span class="conf i">Inferred</span></td>
+      </tr>
+      <tr>
+        <td>A 3D foil box at 60 cells/chord is <span class="num">43 M cells</span>; the GPU holds
+        <span class="num">~396 M</span></td>
+        <td><strong>Hardware is not the constraint.</strong> Scope and physical fidelity are.</td>
+        <td><span class="conf i">Inferred</span></td>
+      </tr>
+      <tr>
+        <td>XFLR5, Typhoon and FoilBoard already serve this community, free</td>
+        <td>A new tool must beat them on something specific. It cannot simply repeat them.</td>
+        <td><span class="conf v">Verified</span></td>
+      </tr>
+      <tr>
+        <td>FluidX3D reaches <span class="num">55 B/cell</span> and
+        <span class="num">19,141 MLUPs/s</span> &mdash; but is OpenCL, has <strong>no AMR</strong>,
+        and is non-commercial only</td>
+        <td>The honest performance ceiling to measure against. Not shippable in a commercial
+        product.</td>
+        <td><span class="conf v">Verified</span></td>
+      </tr>
+      <tr>
+        <td>ILGPU's newest release is <strong>v1.5.3, July 2024</strong> &mdash; before Blackwell
+        existed</td>
+        <td>sm_120 support unconfirmed. The pure-.NET GPU path may not start at all.</td>
+        <td><span class="conf f">Flagged</span></td>
+      </tr>
+      <tr>
+        <td>CUDA Toolkit <strong>12.8+</strong> required for native sm_120 codegen</td>
+        <td>Driver here reports 13.1, so the driver is fine. The toolkit is a prerequisite install.</td>
+        <td><span class="conf v">Verified</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><div>
+    <p class="eyebrow">Cost structure</p>
+    <h2>The same question, eleven orders of magnitude apart</h2>
+  </div></div>
+
+  <figure>
+    <svg viewBox="0 0 820 150" role="img" aria-label="Logarithmic scale of evaluation cost per case, from Savitsky at about one microsecond to RANS with VOF at about three hours or more.">
+      <line x1="70" y1="112" x2="770" y2="112" stroke="var(--rule-strong)" stroke-width="1"></line>
+      <g font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="middle">
+        <g stroke="var(--rule-strong)" stroke-width="1">
+          <line x1="70" y1="112" x2="70" y2="118"></line>
+          <line x1="197" y1="112" x2="197" y2="118"></line>
+          <line x1="324" y1="112" x2="324" y2="118"></line>
+          <line x1="451" y1="112" x2="451" y2="118"></line>
+          <line x1="579" y1="112" x2="579" y2="118"></line>
+          <line x1="706" y1="112" x2="706" y2="118"></line>
+        </g>
+        <text x="70" y="133">1 &micro;s</text>
+        <text x="197" y="133">100 &micro;s</text>
+        <text x="324" y="133">10 ms</text>
+        <text x="451" y="133">1 s</text>
+        <text x="579" y="133">100 s</text>
+        <text x="706" y="133">3 hr</text>
+      </g>
+      <g>
+        <circle cx="70" cy="112" r="5" fill="var(--go)"></circle>
+        <line x1="70" y1="107" x2="70" y2="70" stroke="var(--go)" stroke-width="1.5"></line>
+        <text x="62" y="61" font-family="Archivo, sans-serif" font-size="12" font-weight="600" fill="var(--ink)" text-anchor="start">Savitsky</text>
+        <text x="62" y="45" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="start">algebra, planing</text>
+      </g>
+      <g>
+        <circle cx="400" cy="112" r="5" fill="var(--go)"></circle>
+        <line x1="400" y1="107" x2="400" y2="70" stroke="var(--go)" stroke-width="1.5"></line>
+        <text x="400" y="61" font-family="Archivo, sans-serif" font-size="12" font-weight="600" fill="var(--ink)" text-anchor="middle">Panel / VLM</text>
+        <text x="400" y="45" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="middle">interactive, foil only</text>
+      </g>
+      <g>
+        <circle cx="579" cy="112" r="5" fill="var(--accent)"></circle>
+        <line x1="579" y1="107" x2="579" y2="90" stroke="var(--accent)" stroke-width="1.5"></line>
+        <text x="579" y="82" font-family="Archivo, sans-serif" font-size="12" font-weight="600" fill="var(--ink)" text-anchor="middle">GPU LBM</text>
+      </g>
+      <g>
+        <circle cx="770" cy="112" r="5" fill="var(--stop)"></circle>
+        <line x1="770" y1="107" x2="770" y2="70" stroke="var(--stop)" stroke-width="1.5"></line>
+        <text x="778" y="61" font-family="Archivo, sans-serif" font-size="12" font-weight="600" fill="var(--ink)" text-anchor="end">RANS + VOF</text>
+        <text x="778" y="45" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="end">free surface, 6-DOF</text>
+      </g>
+    </svg>
+    <figcaption>Approximate wall-clock cost of one converged case, log scale. The GPU LBM marker
+    assumes the 43&nbsp;M-cell foil box below, run to steady state. The spread &mdash; not any single
+    method's merit &mdash; is the design lever: a tool that picks the right rung per question is
+    worth more than one that is fast at a single rung.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><div>
+    <p class="eyebrow">Computed budget</p>
+    <h2>What this laptop can actually hold</h2>
+  </div></div>
+
+  <figure>
+    <svg viewBox="0 0 820 240" role="img" aria-label="Bar chart of lattice cells against resolution for a hydrofoil box: 20 cells per chord is 1.6 million cells at about 6000 steps per second, 30 is 5.4 million at 1780, 40 is 12.8 million at 750, and 60 is 43.2 million at about 220.">
+      <g font-family="Archivo, sans-serif" font-size="10" font-weight="600" letter-spacing="1" fill="var(--muted)">
+        <text x="2" y="16">CELLS/CHORD</text>
+        <text x="150" y="16">LATTICE CELLS</text>
+        <text x="800" y="16" text-anchor="end">EST. STEPS/S</text>
+      </g>
+      <g>
+        <text x="2" y="54" font-family="IBM Plex Mono, monospace" font-size="13" fill="var(--ink)">20</text>
+        <text x="40" y="54" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted2)">8.0 mm</text>
+        <rect x="150" y="43" width="17" height="15" fill="var(--go)" opacity="0.5"></rect>
+        <text x="177" y="54" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--body)">1.6 M</text>
+        <text x="800" y="54" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink)" text-anchor="end">~6,000</text>
+      </g>
+      <g>
+        <text x="2" y="100" font-family="IBM Plex Mono, monospace" font-size="13" fill="var(--ink)">30</text>
+        <text x="40" y="100" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted2)">5.3 mm</text>
+        <rect x="150" y="89" width="59" height="15" fill="var(--go)" opacity="0.62"></rect>
+        <text x="219" y="100" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--body)">5.4 M</text>
+        <text x="800" y="100" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink)" text-anchor="end">~1,780</text>
+      </g>
+      <g>
+        <text x="2" y="146" font-family="IBM Plex Mono, monospace" font-size="13" fill="var(--ink)">40</text>
+        <text x="40" y="146" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted2)">4.0 mm</text>
+        <rect x="150" y="135" width="139" height="15" fill="var(--go)" opacity="0.78"></rect>
+        <text x="299" y="146" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--body)">12.8 M</text>
+        <text x="800" y="146" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink)" text-anchor="end">~750</text>
+      </g>
+      <g>
+        <text x="2" y="192" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="var(--ink)">60</text>
+        <text x="40" y="192" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted2)">2.7 mm</text>
+        <rect x="150" y="181" width="470" height="15" fill="var(--accent)"></rect>
+        <text x="630" y="192" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600" fill="var(--ink)">43.2 M</text>
+        <text x="800" y="192" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="var(--ink)" text-anchor="end">~220</text>
+      </g>
+      <line x1="150" y1="212" x2="800" y2="212" stroke="var(--rule)" stroke-width="1"></line>
+      <text x="150" y="228" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted2)">domain 8c &times; 5c &times; 5c around a 0.16 m chord &middot; uniform Cartesian &middot; VRAM ceiling ~396 M cells</text>
+    </svg>
+    <figcaption>Cost scales as <span class="num">dx<sup>&minus;3</sup></span>, which is why the bars
+    explode rather than climb. Doubling resolution from 30 to 60 cells per chord costs
+    <strong>eight times</strong> the memory and eight times the time. Even so, the top row still
+    leaves roughly <span class="num">220</span> steps per second &mdash; enough to watch a solution
+    develop. <strong>The GPU is not the limiting factor.</strong></figcaption>
+  </figure>
+
+  <div class="col">
+  <div class="callout quiet">
+    <p style="font-size:.92rem"><strong>Two caveats on those numbers, stated plainly.</strong> The
+    throughput figure is scaled by memory bandwidth from a published <em>desktop</em> RTX 5090
+    benchmark &mdash; this laptop has exactly half the bandwidth, and its 175&nbsp;W power cap is not
+    in the model. Nothing here has been measured on this machine. Second, a uniform grid has no
+    adaptive refinement: widening the domain to capture surface waves or a whole board re-prices the
+    <em>entire</em> box at the finest cell size.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><div>
+    <p class="eyebrow">The decision</p>
+    <h2>Four options</h2>
+  </div></div>
+
+  <div class="opts">
+
+    <div class="opt">
+      <div class="opt-h"><span class="opt-k">OPTION A</span>
+        <h3>Low-order only &mdash; panel/VLM foil tool plus Savitsky planing</h3></div>
+      <p>Pure C# on the CPU. Vortex-lattice or panel solver for the foil with XFOIL-style sectional
+      polars; Savitsky's algebra for the board. WPF front end. No CUDA, no GPU, no toolkit install.</p>
+      <div class="pc">
+        <div class="pro"><h4>For</h4><ul>
+          <li>Ships in weeks, not quarters. Entirely within known .NET territory.</li>
+          <li>Interactive by construction &mdash; every evaluation is sub-second.</li>
+          <li>Zero dependency risk. No Blackwell question, no licence question.</li>
+          <li>Both halves of the brief get <em>an</em> answer.</li>
+        </ul></div>
+        <div class="con"><h4>Against</h4><ul>
+          <li><strong>Largely duplicates XFLR5 and Typhoon</strong>, which are free and mature.</li>
+          <li>No free surface at all &mdash; cannot see submergence effects or ventilation.</li>
+          <li>Linear methods: stall is not represented, so the tool must actively refuse to answer
+          outside its envelope.</li>
+          <li>Leaves the RTX 5090 completely idle.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="opt pick">
+      <div class="opt-h"><span class="opt-k">OPTION B</span>
+        <h3>Two tiers &mdash; low-order core, GPU LBM for what it cannot see</h3>
+        <span class="tag a">Recommended</span></div>
+      <p>Option A as the daily-use tier, plus a CUDA LBM solver for free-surface, separated and
+      planing cases. Kernels in C++/CUDA compiled to <span class="num">sm_120</span>, called from C#
+      across a thin P/Invoke boundary; WPF shell with D3D interop for live field visualisation.</p>
+      <div class="pc">
+        <div class="pro"><h4>For</h4><ul>
+          <li>Targets the <strong>actual gap</strong>: no existing small tool models the water
+          surface, and hydrofoils run shallow where that dominates.</li>
+          <li>The fast tier answers design questions; the slow tier validates it. Each checks the
+          other.</li>
+          <li>Uses the hardware that makes this machine interesting, at a size it comfortably fits.</li>
+          <li>Native CUDA sidesteps every ILGPU uncertainty and gives full sm_120 access.</li>
+        </ul></div>
+        <div class="con"><h4>Against</h4><ul>
+          <li>Largest scope. Two solvers, two validation obligations.</li>
+          <li>Introduces a native interop boundary &mdash; build complexity, marshalling, debugging
+          across the managed/unmanaged line.</li>
+          <li><strong>LBM accuracy above Re&nbsp;10<sup>6</sup> is unproven for this use</strong> and
+          must be demonstrated, not assumed.</li>
+          <li>Requires the CUDA Toolkit and a working MSVC host-compiler chain.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-h"><span class="opt-k">OPTION C</span>
+        <h3>Wrap what exists &mdash; build only the experience</h3></div>
+      <p>Treat FluidX3D or OpenFOAM as the engine. Spend all effort on a WPF application that drives
+      them: geometry, case setup, run management, visualisation, comparison.</p>
+      <div class="pc">
+        <div class="pro"><h4>For</h4><ul>
+          <li>Real, validated physics on day one. No solver to write or defend.</li>
+          <li>FluidX3D is the fastest LBM implementation available &mdash; you will not beat it by
+          hand.</li>
+          <li>The genuine pain in CFD <em>is</em> setup and post-processing, which is exactly what
+          this option attacks.</li>
+        </ul></div>
+        <div class="con"><h4>Against</h4><ul>
+          <li><strong>FluidX3D is non-commercial only</strong> &mdash; a hard ceiling if this is ever
+          sold.</li>
+          <li>You own none of the physics, so you cannot fix what it gets wrong.</li>
+          <li>OpenFOAM's setup burden is relocated, not removed; <code>interFoam</code> free-surface
+          artefacts become your artefacts.</li>
+          <li>No interactivity &mdash; these are batch solvers, not something to scrub a slider
+          against.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-h"><span class="opt-k">OPTION D</span>
+        <h3>Single-language GPU &mdash; ILGPU end to end</h3></div>
+      <p>One C# codebase. ILGPU JIT-compiles kernels to PTX, so there is no native project, no
+      P/Invoke, and no CUDA Toolkit dependency.</p>
+      <div class="pc">
+        <div class="pro"><h4>For</h4><ul>
+          <li>Architecturally the cleanest: one language, one build, one debugger.</li>
+          <li>No toolkit install; driver-level PTX JIT only.</li>
+          <li>Permissive NCSA licence.</li>
+        </ul></div>
+        <div class="con"><h4>Against</h4><ul>
+          <li><strong>ILGPU v1.5.3 shipped in July 2024, before Blackwell.</strong> sm_120 support is
+          undocumented and unverified &mdash; this may simply not run.</li>
+          <li>Release cadence suggests limited maintenance against new architectures.</li>
+          <li>Kernel-language restrictions constrain how the solver can be written.</li>
+          <li>Peak bandwidth utilisation &mdash; the only thing that matters for LBM &mdash; is
+          unproven here.</li>
+        </ul></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>Recommendation: Option B, built in the order of Option A.</strong> The two-tier
+    architecture is the only one that reaches the real gap, but its low-order tier is also a
+    complete, useful product on its own. Build that first and the project has value in weeks
+    regardless of whether the LBM tier ever proves accurate enough. That sequencing turns the
+    largest-scope option into the lowest-risk one.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><div>
+    <p class="eyebrow">Sequencing</p>
+    <h2>What to do, in what order</h2>
+  </div></div>
+
+  <div class="ph">
+    <div class="ph-k"><b>Phase 0</b>2&ndash;3 days</div>
+    <div>
+      <p><strong>Answer the three questions that could invalidate the plan.</strong> Install CUDA
+      Toolkit 12.8+ and compile a trivial <span class="num">sm_120</span> kernel. Run the FluidX3D
+      benchmark to replace the estimated <span class="num">9,570 MLUPs/s</span> with a measurement.
+      Read Typhoon's source to find out what method it uses &mdash; it may already answer the foil
+      half.</p>
+      <p class="aside">Cheap, and each one can change the architecture. None should be assumed.</p>
+    </div>
+  </div>
+  <div class="ph">
+    <div class="ph-k"><b>Phase 1</b>the product</div>
+    <div>
+      <p><strong>The low-order tier, end to end.</strong> Foil geometry in, sectional polars,
+      vortex-lattice 3D solve, craft equilibrium for trim and ride height, Savitsky for the board.
+      WPF interface with live parameter response. Salt and fresh water as an ITTC-sourced fluid
+      record &mdash; two constants, one code path.</p>
+      <p class="aside">Ends with something usable every day. The validity envelope is enforced by the
+      tool, not documented in a footnote.</p>
+    </div>
+  </div>
+  <div class="ph">
+    <div class="ph-k"><b>Phase 2</b>the differentiator</div>
+    <div>
+      <p><strong>The CUDA LBM tier, validated before it is trusted.</strong> The first deliverable is
+      not a solver but a <em>comparison</em>: a NACA section at a Reynolds number with published
+      experimental polars, computed lift and drag set against them. Free surface and submergence
+      effects follow only once that comparison holds.</p>
+      <p class="aside">If drag proves unreliable at this Reynolds range while lift holds up, that is a
+      real finding and the tool says so on screen &mdash; it does not quietly report both as equal.</p>
+    </div>
+  </div>
+  <div class="ph">
+    <div class="ph-k"><b>Later</b>if earned</div>
+    <div>
+      <p>Shape optimisation via adjoints, or a learned surrogate over accumulated solver output. Both
+      are accelerators over a working solver and cannot precede one &mdash; a surrogate needs a
+      training corpus that only Phase 2 can produce.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">07</span><div>
+    <p class="eyebrow">The case against</p>
+    <h2>The strongest argument for not building this</h2>
+  </div></div>
+
+  <div class="col">
+  <div class="callout">
+    <p style="font-style:italic">XFLR5 is free, mature, and already couples XFOIL viscous polars to
+    3D panel methods. Typhoon is free, open source, and already solves whole-craft hydrofoil
+    equilibrium with stability eigenvalues. FluidX3D is the fastest LBM implementation in existence
+    &mdash; nothing hand-written on one laptop will beat 19,141 MLUPs/s at 55 bytes per cell.
+    Savitsky's planing equations fit on one page and have sixty years of practitioner trust. Every
+    component of this brief already has a free, better-validated solution.</p>
+  </div>
+
+  <p><strong>This argument substantially survives, and it should shape the scope rather than be
+  waved away.</strong> The evidence does not support building a general CFD package, and it does not
+  support hand-writing a faster LBM kernel. Both would lose.</p>
+
+  <p>What it does not defeat is a narrower claim, which is the one this proposal rests on:</p>
+
+  <ul class="body-list">
+    <li><strong>No small tool models the free surface.</strong> Hydrofoils operate at shallow
+    submergence where lift falls off with depth and ventilation can collapse it outright. XFLR5 and
+    Typhoon cannot see this at all &mdash; a first-order effect, invisible to the whole category.</li>
+    <li><strong>No small tool handles a planing board.</strong> That is Savitsky or RANS+VOF, and
+    neither is in the foil-design tools.</li>
+    <li><strong>Nothing joins the workflow.</strong> Design the foil, solve the craft equilibrium,
+    watch the flow, compare against the board &mdash; in one Windows application, on local
+    hardware.</li>
+  </ul>
+
+  <p>So the defensible project is <strong>an integrated application over largely established
+  methods</strong>, not a novel solver. If that framing is wrong, the plan above is wrong with it,
+  and Phase 0 is where that surfaces cheaply.</p>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Evidence base:</strong> <code>docs/knowledge/cfd-hydrofoil-simulation/</code> &mdash;
+  eight documents, 24 sources, every claim confidence-labelled. Fluid properties read directly from
+  ITTC 7.5-02-01-03 Rev&nbsp;02; hardware facts measured on this machine on 5 September 2026.</p>
+  <p><strong>Confidence:</strong> 12 Verified &middot; 5 Inferred &middot; 3 Flagged. The Flagged
+  claims are load-bearing and are exactly what Phase 0 resolves &mdash; ILGPU on Blackwell, LBM
+  accuracy above Re&nbsp;10<sup>6</sup>, and this laptop's real throughput.</p>
+</footer>
+
+</div>
