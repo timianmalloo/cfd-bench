@@ -1,0 +1,845 @@
+<title>CFD-Bench Solver Strategy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#F6F8F7; --surface:#FFFFFF; --sunk:#EDF1F0;
+    --ink:#0C1B21; --body:#22343A; --muted:#5A6E75; --muted2:#8A9AA0;
+    --rule:#D6DFDE; --rule-strong:#B7C6C4;
+    --accent:#C8500F;
+    --go:#1F6F5C; --warn:#8A6100; --stop:#A32C1E;
+    --go-bg:#E3F0EB; --warn-bg:#F6EED9; --stop-bg:#F6E2DE;
+    --s1:#1F6F5C; --s2:#2E6F8E; --s3:#7A5AA6; --s4:#C8500F;
+    --shadow:0 1px 2px rgba(12,27,33,.05), 0 8px 24px -12px rgba(12,27,33,.18);
+    --measure:66ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+      --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+      --rule:#1E333A; --rule-strong:#2C464E;
+      --accent:#F0793C;
+      --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+      --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+      --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+    --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+    --rule:#1E333A; --rule-strong:#2C464E;
+    --accent:#F0793C;
+    --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+    --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+    --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground); color:var(--body);
+    font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+    font-size:17px; line-height:1.62; margin:0; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px 96px}
+  .col{max-width:var(--measure)}
+
+  h1,h2,h3,h4,.ui{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+  h1{font-size:clamp(2.1rem,4.4vw,3.1rem); line-height:1.06; font-weight:700;
+     letter-spacing:-.022em; color:var(--ink); margin:0 0 .5rem; text-wrap:balance}
+  h2{font-size:1.55rem; font-weight:700; letter-spacing:-.015em; color:var(--ink);
+     margin:0 0 .2rem; text-wrap:balance}
+  h3{font-size:1.08rem; font-weight:600; letter-spacing:-.008em; color:var(--ink);
+     margin:0 0 .35rem; text-wrap:balance}
+  h4{font-size:.95rem; font-weight:600; color:var(--ink); margin:1.3rem 0 .3rem}
+  p{margin:0 0 1.05rem}
+  strong{color:var(--ink); font-weight:600}
+  a{color:var(--accent)}
+  code,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:.87em; font-variant-numeric:tabular-nums}
+  code{background:var(--sunk); padding:.1em .38em; border-radius:3px; color:var(--ink)}
+  pre{background:var(--sunk); border:1px solid var(--rule); padding:16px 18px;
+    overflow-x:auto; margin:0 0 1.3rem; border-radius:2px}
+  pre code{background:none; padding:0; font-size:.8rem; line-height:1.62; color:var(--body)}
+  .cm{color:var(--muted2)}
+  .kw{color:var(--accent); font-weight:500}
+
+  .eyebrow{font-family:Archivo,sans-serif; font-size:.7rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 .55rem}
+
+  header.top{border-bottom:2px solid var(--ink); padding:56px 0 22px}
+  .kicker{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:18px}
+  .kicker .dot{color:var(--rule-strong)}
+  .kicker .v2{color:var(--accent)}
+  .standfirst{font-size:1.16rem; line-height:1.55; color:var(--body); max-width:60ch; margin:0}
+
+  .rig{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:0; border-bottom:1px solid var(--rule); margin:0 0 52px}
+  .rig div{padding:16px 18px 18px; border-right:1px solid var(--rule)}
+  .rig div:last-child{border-right:0}
+  .rig dt{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
+  .rig dd{margin:0; font-family:"IBM Plex Mono",monospace; font-size:.95rem;
+    font-weight:500; color:var(--ink); font-variant-numeric:tabular-nums}
+  .rig dd.bad{color:var(--stop)}
+
+  section{padding:44px 0; border-top:1px solid var(--rule)}
+  .sec-head{display:flex; gap:14px; align-items:baseline; margin-bottom:1.4rem}
+  .sec-num{font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--accent);
+    font-weight:500; padding-top:.28rem; flex:none}
+
+  .callout{background:var(--surface); border:1px solid var(--rule);
+    border-left:3px solid var(--accent); padding:20px 24px; margin:0 0 1.4rem;
+    box-shadow:var(--shadow)}
+  .callout p:last-child{margin-bottom:0}
+  .callout.quiet{border-left-color:var(--rule-strong); box-shadow:none; background:var(--sunk)}
+  .callout.cut{border-left-color:var(--stop); box-shadow:none; background:var(--stop-bg)}
+
+  .tscroll{overflow-x:auto; margin:0 0 1.3rem; border:1px solid var(--rule);
+    background:var(--surface)}
+  table{border-collapse:collapse; width:100%; font-size:.88rem}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule);
+    vertical-align:top}
+  thead th{font-family:Archivo,sans-serif; font-size:.64rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+    background:var(--sunk); border-bottom:1px solid var(--rule-strong); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+    white-space:nowrap}
+  .conf{font-family:Archivo,sans-serif; font-size:.58rem; font-weight:600;
+    letter-spacing:.08em; text-transform:uppercase; padding:2px 6px; border-radius:2px;
+    white-space:nowrap}
+  .conf.v{background:var(--go-bg); color:var(--go)}
+  .conf.i{background:var(--warn-bg); color:var(--warn)}
+  .conf.f{background:var(--stop-bg); color:var(--stop)}
+
+  figure{margin:0 0 1.4rem; border:1px solid var(--rule); background:var(--surface);
+    padding:22px 24px 18px}
+  figcaption{font-size:.83rem; color:var(--muted); margin-top:12px; line-height:1.5}
+  svg{display:block; width:100%; height:auto}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:10px;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600; color:var(--muted)}
+  .legend span{display:flex; align-items:center; gap:6px}
+  .legend i{width:14px; height:3px; border-radius:2px; display:block}
+
+  .opts{border:1px solid var(--rule); margin-bottom:1.4rem; background:var(--surface)}
+  .opt{padding:22px 24px; border-bottom:1px solid var(--rule)}
+  .opt:last-child{border-bottom:0}
+  .opt.pick{border-left:3px solid var(--accent); padding-left:21px}
+  .opt-h{display:flex; gap:12px; align-items:baseline; margin-bottom:.45rem; flex-wrap:wrap}
+  .opt-k{font-family:"IBM Plex Mono",monospace; font-size:.76rem; font-weight:600;
+    color:var(--accent); flex:none}
+  .opt > p{font-size:.93rem; margin-bottom:0}
+  .tag{font-family:Archivo,sans-serif; font-size:.62rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; padding:3px 7px; border-radius:2px}
+  .tag.a{background:var(--go-bg); color:var(--go)}
+  .tag.b{background:var(--warn-bg); color:var(--warn)}
+  .tag.c{background:var(--stop-bg); color:var(--stop)}
+  .pc{display:grid; grid-template-columns:1fr 1fr; gap:0 26px; margin-top:13px;
+    font-size:.87rem; line-height:1.5}
+  .pc h4{font-family:Archivo,sans-serif; font-size:.63rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; margin:0 0 .4rem}
+  .pc .pro h4{color:var(--go)} .pc .con h4{color:var(--stop)}
+  .pc ul{margin:0; padding-left:1.05em}
+  .pc li{margin-bottom:.32rem}
+  .pc li::marker{color:var(--muted2)}
+
+  ul.body-list{margin:0 0 1.1rem; padding-left:1.15em}
+  ul.body-list li{margin-bottom:.5rem}
+  ul.body-list li::marker{color:var(--muted2)}
+  ol.body-list{margin:0 0 1.1rem; padding-left:1.3em}
+  ol.body-list li{margin-bottom:.55rem}
+
+  .stack{border:1px solid var(--rule); background:var(--surface); margin-bottom:1.4rem}
+  .layer{display:grid; grid-template-columns:118px 1fr 108px; gap:18px; padding:15px 20px;
+    border-bottom:1px solid var(--rule); align-items:start}
+  .layer:last-child{border-bottom:0}
+  .layer-k{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.09em; text-transform:uppercase; color:var(--muted); padding-top:.2rem}
+  .layer p{margin:0; font-size:.89rem; line-height:1.5}
+  .layer .cost{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--accent);
+    text-align:right; padding-top:.15rem; white-space:nowrap}
+
+  .ph{display:grid; grid-template-columns:112px 1fr; gap:20px; padding:18px 0;
+    border-bottom:1px solid var(--rule)}
+  .ph:last-child{border-bottom:0}
+  .ph-k{font-family:Archivo,sans-serif; font-size:.68rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding-top:.22rem}
+  .ph-k b{display:block; font-family:"IBM Plex Mono",monospace; font-size:.95rem;
+    color:var(--ink); letter-spacing:0; text-transform:none; font-weight:600; margin-bottom:2px}
+  .ph p{margin:0 0 .4rem; font-size:.93rem}
+  .ph p:last-child{margin-bottom:0}
+  .ph .aside{color:var(--muted); font-size:.87rem}
+
+  footer{border-top:2px solid var(--ink); padding:26px 0 0; margin-top:44px;
+    font-size:.85rem; color:var(--muted)}
+  footer p{margin:0 0 .5rem; max-width:70ch}
+
+  @media (max-width:760px){
+    .pc{grid-template-columns:1fr; gap:14px}
+    .ph{grid-template-columns:1fr; gap:6px}
+    .layer{grid-template-columns:1fr; gap:5px}
+    .layer .cost{text-align:left}
+    body{font-size:16px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">
+    <span>CFD-Bench</span><span class="dot">/</span>
+    <span class="v2">Proposal v2</span><span class="dot">/</span>
+    <span>Hydrofoil only</span><span class="dot">/</span>
+    <span>5 September 2026</span>
+  </div>
+  <h1>A design tool for water-sports<br>hydrofoils</h1>
+  <p class="standfirst">Most of what a foil designer asks can be answered in microseconds by closed
+  form. This is what that makes possible, what it cannot reach, and where simulation earns its
+  place.</p>
+</header>
+
+<dl class="rig">
+  <div><dt>Scope</dt><dd>Hydrofoil</dd></div>
+  <div><dt>Disciplines</dt><dd>4</dd></div>
+  <div><dt>Re envelope</dt><dd>4.4e5&ndash;1.2e6</dd></div>
+  <div><dt>Estimator cost</dt><dd>~10 &micro;s</dd></div>
+  <div><dt>GPU</dt><dd>RTX 5090 Laptop</dd></div>
+  <div><dt>CUDA toolkit</dt><dd class="bad">not installed</dd></div>
+</dl>
+
+<section style="border-top:0">
+  <div class="sec-head"><span class="sec-num">01</span><div>
+    <p class="eyebrow">What changed</p>
+    <h2>The scope cut, and what it costs</h2>
+  </div></div>
+
+  <div class="col">
+  <div class="callout cut">
+    <p><strong>Surfboards and planing are out.</strong> Retired with them: the Savitsky empirical
+    method, RANS+VOF with 6-DOF trim and sinkage, and the whole free-surface-craft cost rung. The
+    knowledge base keeps those passages marked <span class="num">RETIRED</span> rather than deleting
+    them, because the architecture was reasoned from them.</p>
+    <p><strong>This costs something and it should be said plainly.</strong> Planing was one of three
+    gaps that justified building anything at all. The case against building was re-tested on the
+    narrower scope &mdash; it still holds, but on two gaps rather than three, and it now leans
+    heavily on the free-surface argument alone.</p>
+  </div>
+
+  <p>What v2 adds is more than compensation: a <strong>closed-form estimation chain that was
+  executed, not just described</strong>, a section catalog with a citable practitioner ranking, a
+  geometry catalog per discipline, and a four-concept parametric grammar. The shape of the
+  recommendation changed as a result &mdash; see section 07.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><div>
+    <p class="eyebrow">The reframe</p>
+    <h2>Most of this is not a simulation problem</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The central v2 finding is that a chain of published closed forms answers most of the design
+  question outright. Each step is sourced; the chain was run against real water-sports geometry and
+  the numbers come out physically right.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Step</th><th>Model</th><th>Source</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr><td>Section data<br><span class="num">Cl, Cd, Cm, Cp_min</span></td>
+        <td>XFOIL &mdash; linear-vorticity panel + lagged-dissipation integral BL, e&#8319; transition</td>
+        <td>Drela</td><td><span class="conf v">Verified</span></td></tr>
+      <tr><td>3D lift slope</td>
+        <td><span class="num">CL&#945; = 2&pi;AR / (2 + &radic;(AR&sup2;+4))</span> &mdash; Helmbold; holds at low AR</td>
+        <td>Helmbold 1942</td><td><span class="conf v">Verified</span></td></tr>
+      <tr><td>Induced drag</td>
+        <td><span class="num">CD&#7522; = CL&sup2; / (&pi; e AR)</span>, e &asymp; 0.7&ndash;0.85</td>
+        <td>Lifting line</td><td><span class="conf v">Verified</span></td></tr>
+      <tr><td>Skin friction</td>
+        <td><span class="num">Cf = 0.075 / (log&#8321;&#8320;Re &minus; 2)&sup2;</span></td>
+        <td>ITTC 1957</td><td><span class="conf v">Verified</span></td></tr>
+      <tr><td>Form factor</td>
+        <td><span class="num">(1+k) = 1 + 2(t/c) + 60(t/c)&#8308;</span></td>
+        <td>Hoerner</td><td><span class="conf f">Flagged</span></td></tr>
+      <tr><td>Cavitation margin</td>
+        <td><span class="num">&sigma;&#7522; = &minus;Cp_min</span>; <span class="num">V_crit = 14/&radic;&sigma;&#7522;</span> m/s</td>
+        <td>IHS / Tom Speer</td><td><span class="conf v">Verified</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>One source was found internally inconsistent, and re-derivation caught it.</strong>
+    The IHS gives <span class="num">V_crit = 14/&radic;&sigma;&#7522;</span> and separately advises
+    taking vapour pressure as <span class="num">17,000 Pa</span> for salt water. Deriving the
+    constant from first principles gives <span class="num">13.94</span> using ITTC's actual value of
+    <span class="num">1,670.9 Pa</span>, and <span class="num">12.82</span> using 17,000. The formula
+    is right; the quoted vapour pressure is off by a factor of ten and is not a physical property.</p>
+    <p style="margin-top:.8rem">The general lesson is worth keeping: <strong>when a source gives
+    both a formula and its inputs, re-derive &mdash; the redundancy is a free consistency
+    check.</strong></p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><div>
+    <p class="eyebrow">The chain, executed</p>
+    <h2>Efficiency across the four disciplines</h2>
+  </div></div>
+
+  <figure>
+    <svg viewBox="0 0 820 290" role="img" aria-label="Lift-to-drag ratio against speed for four hydrofoil disciplines. All four peak between 10 and 11.5 knots. Downwind foils reach about 22 and race foils about 23 at their peak, while surf foils peak near 16.">
+      <g stroke="var(--rule)" stroke-width="1">
+        <line x1="70" y1="250" x2="780" y2="250"></line>
+        <line x1="70" y1="30" x2="70" y2="250"></line>
+      </g>
+      <g font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted2)">
+        <g stroke="var(--rule)" stroke-width="1" stroke-dasharray="2 3">
+          <line x1="70" y1="206" x2="780" y2="206"></line>
+          <line x1="70" y1="162" x2="780" y2="162"></line>
+          <line x1="70" y1="118" x2="780" y2="118"></line>
+          <line x1="70" y1="74" x2="780" y2="74"></line>
+        </g>
+        <text x="62" y="254" text-anchor="end">0</text>
+        <text x="62" y="210" text-anchor="end">5</text>
+        <text x="62" y="166" text-anchor="end">10</text>
+        <text x="62" y="122" text-anchor="end">15</text>
+        <text x="62" y="78" text-anchor="end">20</text>
+        <text x="62" y="34" text-anchor="end">25</text>
+        <text x="70" y="270" text-anchor="middle">5</text>
+        <text x="212" y="270" text-anchor="middle">10</text>
+        <text x="354" y="270" text-anchor="middle">15</text>
+        <text x="496" y="270" text-anchor="middle">20</text>
+        <text x="638" y="270" text-anchor="middle">25</text>
+        <text x="780" y="270" text-anchor="middle">30</text>
+        <text x="425" y="286" text-anchor="middle" font-family="Archivo, sans-serif" font-size="10" font-weight="600" letter-spacing="1" fill="var(--muted)">SPEED (KNOTS)</text>
+      </g>
+      <text x="14" y="140" font-family="Archivo, sans-serif" font-size="10" font-weight="600" letter-spacing="1" fill="var(--muted)" text-anchor="middle" transform="rotate(-90 14 140)">L / D  (WING ONLY)</text>
+      <g fill="none" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+        <polyline stroke="var(--s1)" points="70,179 84,167 98,155 113,144 127,134 141,125 155,118 169,112 184,109 198,106 212,106 226,107 240,108 255,111 269,114 283,118 297,122 311,126 326,131 340,135 354,140"></polyline>
+        <polyline stroke="var(--s2)" points="127,120 141,110 155,101 169,94 184,89 198,86 212,85 226,85 240,86 255,88 269,92 283,95 297,100 311,104 326,109 340,114 354,119 368,124 382,129 397,133 411,138 425,142 439,146 453,150 468,154 482,158 496,161 510,165 524,168 539,171 553,174"></polyline>
+        <polyline stroke="var(--s3)" points="127,97 141,85 155,75 169,67 184,61 198,57 212,55 226,55 240,56 255,59 269,63 283,67 297,72 311,78 326,83 340,89 354,95 368,101 382,106 397,112 411,117 425,122 439,127 453,132 468,136 482,141 496,145"></polyline>
+        <polyline stroke="var(--s4)" points="212,52 226,47 240,45 255,44 269,44 283,46 297,49 311,52 326,56 340,61 354,66 368,71 382,76 397,82 411,87 425,93 439,98 453,103 468,108 482,113 496,118 510,122 524,126 539,131 553,135 567,139 581,142 595,146 610,149 624,152 638,155 652,158 666,161 681,164 695,167 709,169 723,171 737,174 752,176 766,178 780,180"></polyline>
+      </g>
+      <g font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--muted)">
+        <circle cx="212" cy="106" r="3" fill="var(--s1)"></circle><text x="220" y="103">16.4</text>
+        <circle cx="219" cy="85" r="3" fill="var(--s2)"></circle><text x="227" y="82">18.8</text>
+        <circle cx="219" cy="55" r="3" fill="var(--s3)"></circle><text x="227" y="52">22.2</text>
+        <circle cx="262" cy="44" r="3" fill="var(--s4)"></circle><text x="270" y="41">23.4</text>
+      </g>
+    </svg>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>Surf &middot; 1800 cm&sup2; &middot; AR 5</span>
+      <span><i style="background:var(--s2)"></i>Wing &middot; 1400 cm&sup2; &middot; AR 7</span>
+      <span><i style="background:var(--s3)"></i>Downwind &middot; 1100 cm&sup2; &middot; AR 10.5</span>
+      <span><i style="background:var(--s4)"></i>Race &middot; 800 cm&sup2; &middot; AR 12</span>
+    </div>
+    <figcaption>Computed by the chain in section 02 for a 95 kg rider in ITTC seawater at 15 &deg;C,
+    <span class="num">t/c = 0.11</span>, <span class="num">e = 0.85</span>, depth 0.45 m. Each curve
+    spans only its discipline's speed range. Markers show peak L/D. <strong>Wing only &mdash; the
+    strut is excluded and is a large fraction of real drag, so these overstate whole-craft
+    efficiency.</strong></figcaption>
+  </figure>
+
+  <div class="col">
+  <p><strong>Every curve peaks between 10 and 11.5 knots</strong>, which is not a coincidence: a
+  fixed rider weight on a fixed area drives the lift coefficient down as speed rises, and peak
+  efficiency sits where induced and friction drag balance. Past that point every foil is
+  over-winged for its own speed.</p>
+
+  <p>Higher aspect ratio lifts the whole curve &mdash; the downwind foil at AR 10.5 reaches
+  <span class="num">22.2</span> against the surf foil's <span class="num">16.4</span>. That is the
+  entire reason the downwind discipline drove the industry toward AR 9&ndash;12.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>What the run establishes</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><strong>The geometry falls out correctly</strong> without tuning</td>
+          <td class="n">spans 95&ndash;107 cm, chords 8&ndash;19 cm &mdash; matching real production foils</td></tr>
+      <tr><td><strong>The induced/friction crossover is the story of the disciplines</strong></td>
+          <td class="n">CD&#7522; is 77% of drag for surf at 7 kn, 3% for race at 28 kn</td></tr>
+      <tr><td><strong>Take-off asks more of the section than the design point</strong></td>
+          <td class="n">surf needs CL 0.78 at 7 kn vs the 0&ndash;0.6 typical band</td></tr>
+      <tr><td><strong>Cavitation does not bind below ~25 kn</strong></td>
+          <td class="n">&sigma; stays above 3 until 22 kn; reaches 1.0 only at 28 kn</td></tr>
+      <tr><td><strong>Span is nearly fixed across the domain</strong></td>
+          <td class="n">95&ndash;107 cm while area varies 2.5&times; and AR 3&times;</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p>That last point has a direct interface consequence: <strong>area and aspect ratio are the real
+  design variables and span is a consequence</strong>, so the tool should let the user drive area
+  and AR and show span as an output &mdash; not the reverse.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><div>
+    <p class="eyebrow">Sections</p>
+    <h2>The catalog, and how to choose from it</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The International Hydrofoil Society compilation states the design problem in a directly usable
+  form. Cavitation begins where pressure is lowest, so you minimise the <em>maximum</em> velocity
+  &mdash; no sharp pressure peaks &mdash; while keeping the <em>average</em> velocity over the upper
+  surface high enough to lift. That drives sections toward:</p>
+
+  <div class="callout">
+    <p style="font-style:italic">Long, flat pressure distributions &mdash; shaped like a building
+    with a flat roof.</p>
+    <p style="margin-top:.7rem; font-size:.9rem; color:var(--muted)">This "rooftop" criterion is the
+    most useful selection rule in the domain, and it is <strong>computable</strong>: it is a
+    property of the XFOIL pressure distribution, not a matter of taste.</p>
+  </div>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Family</th><th>Members</th><th>Standing for hydrofoil use</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Eppler hydrofoil</strong></td>
+        <td class="n">E817 E818 E836 E837<br>E838 E874 E904 E908</td>
+        <td>Designed <em>as</em> hydrofoils by inverse design. Characterised as minimum-cavitation, low-drag. E817 is the most cited</td>
+        <td><span class="conf v">Verified</span> list<br><span class="conf f">Flagged</span> characterisation</td></tr>
+      <tr><td><strong>NACA 6-series</strong></td><td class="n">63- 64- 65- 66-</td>
+        <td><strong>The practitioner recommendation.</strong> Laminar sections producing the rooftop distribution directly. Tom Speer: a 66-XXX is "a better bet than the corresponding 16-XXX"</td>
+        <td><span class="conf v">Verified</span></td></tr>
+      <tr><td><strong>NACA 16-series</strong></td><td class="n">16-012, 16-510</td>
+        <td>The classic marine family. Favourable gradient to 60% chord, <strong>but a highly convex pressure recovery that invites trailing-edge separation</strong></td>
+        <td><span class="conf v">Verified</span></td></tr>
+      <tr><td><strong>NACA 4-digit</strong></td><td class="n">0012, 4412, &hellip;</td>
+        <td>Defined by three numbers and generated analytically &mdash; the right <strong>parametric baseline and regression test</strong>, not a design choice</td>
+        <td><span class="conf v">Verified</span></td></tr>
+      <tr><td><strong>Wider catalog</strong></td>
+        <td class="n">FX, S, AG/DAE/DAI,<br>GOE, AH</td>
+        <td>Wortmann, Selig, Drela, G&ouml;ttingen, Althaus &mdash; ~1,650 sections in the UIUC database, Selig-format coordinates</td>
+        <td><span class="conf v">Verified</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p><strong>Why separation matters more than it looks.</strong> The IHS lists four necessary
+  conditions for ventilation &mdash; sub-atmospheric local pressure, an air path, separated flow, and
+  a stable cavity &mdash; and identifies <strong>separation as the key one</strong>. With fully
+  attached flow, introduced air simply streams off as bubbles without ventilating. So the 6-series
+  recommendation is not an efficiency preference: avoiding trailing-edge separation is how you avoid
+  the failure mode that collapses lift.</p>
+
+  <h4>What a section catalog must store, and what most databases omit</h4>
+  <p>Declaring the grain first: <strong>one row is one <span class="num">(section, source
+  revision)</span> pair</strong> for geometry, and a separate table holds <strong>one row per
+  <span class="num">(section, Re, Ncrit, alpha)</span></strong> for polars. Geometry is a measurement;
+  polars are re-derivable. Keeping them apart is what lets you regenerate polars without touching
+  provenance.</p>
+
+  <ul class="body-list">
+    <li><strong><span class="num">Cp_min</span> must be retained.</strong> It is the sole input to
+    the cavitation check, and it is the value airfoil databases most commonly discard.</li>
+    <li><strong><span class="num">Ncrit</span> must be recorded.</strong> A polar without its
+    transition parameter is not reproducible.</li>
+    <li><strong>Coordinates need provenance and a revision.</strong> Sets in circulation differ in
+    point count and trailing-edge treatment, and those differences change XFOIL results. Treat the
+    coordinate file as data with a source, not as a constant.</li>
+    <li><strong>Thickness and camber are derived from coordinates, never stored beside them.</strong>
+    Two definitions of one quantity is the defect signature here.</li>
+  </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><div>
+    <p class="eyebrow">Geometry</p>
+    <h2>A four-concept parametric grammar</h2>
+  </div></div>
+
+  <div class="col">
+  <p>A complete foil assembly needs exactly four ideas. Everything in the domain falls out of them,
+  with no special cases.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Concept</th><th>Definition</th><th>What it absorbs</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Assembly</strong></td><td>Ordered set of surfaces, plus fluid and operating point</td><td>The whole craft</td></tr>
+      <tr><td><strong>Surface</strong></td><td>Ordered stations, a span axis, a loft rule, optional mirror</td><td>Front wing, stabiliser, <strong>and strut</strong> &mdash; a strut is just a surface with a vertical span axis</td></tr>
+      <tr><td><strong>Station</strong></td><td>Position <span class="num">(x,y,z)</span>, chord, incidence, section</td><td>Taper, washout, anhedral, sweep &mdash; all become station-to-station variation</td></tr>
+      <tr><td><strong>Loft rule</strong></td><td>Linear or spline interpolation between stations</td><td>Surface generation</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p><strong>Decalage falls out rather than being modelled.</strong> It is the incidence difference
+  between front-wing and stabiliser stations. Fuselage length is the <span class="num">x</span>
+  separation between surfaces &mdash; a consequence of station positions, not a stored field. This
+  mirrors how OpenVSP works, where tails, fins and strakes are all created from the same wing
+  object; that is corroboration, not coincidence.</p>
+  </div>
+
+  <pre><code><span class="cm"># explicit layer — the geometry of record</span>
+<span class="kw">assembly</span> "Downwind 1100" {
+  <span class="kw">fluid</span>    seawater @ 15C
+  <span class="kw">operate</span>  speed 12kn  mass 95kg  depth 0.45m
+
+  <span class="kw">surface</span> front {
+    axis y   mirror true   loft spline
+    <span class="kw">station</span> y=0.000  chord=0.130  inc=+1.5  section=E817
+    <span class="kw">station</span> y=0.300  chord=0.108  inc=+1.0  section=E817
+    <span class="kw">station</span> y=0.535  chord=0.045  inc=+0.2  section=E818  z=-0.075
+  }
+  <span class="kw">surface</span> stab {
+    axis y   mirror true   loft linear
+    <span class="kw">station</span> y=0.000  chord=0.075  inc=-1.0  section=naca:0010  x=0.620
+    <span class="kw">station</span> y=0.180  chord=0.040  inc=-1.0  section=naca:0010  x=0.620
+  }
+  <span class="kw">surface</span> strut {
+    axis z   loft linear          <span class="cm"># the only difference from a wing</span>
+    <span class="kw">station</span> z=0.000  chord=0.140  inc=0  section=naca:0012
+    <span class="kw">station</span> z=0.750  chord=0.120  inc=0  section=naca:0012
+  }
+}</code></pre>
+
+  <div class="col">
+  <h4>Two layers, one direction of flow</h4>
+  <p>The syntax above is explicit &mdash; full control, verbose. Nobody wants to move eleven numbers
+  to try a higher aspect ratio, so a <strong>generative layer</strong> sits above it and emits
+  stations:</p>
+  </div>
+
+  <pre><code><span class="kw">surface</span> front <span class="kw">from planform</span> {
+  area 1100cm2   aspect 10.5   taper 0.35
+  sweep 4deg     anhedral 8deg  washout 1.3deg   section E817
+}</code></pre>
+
+  <div class="col">
+  <ul class="body-list">
+    <li><strong>The generative layer is the design vector</strong> &mdash; roughly 6&ndash;8 numbers
+    per surface plus CST coefficients. Small enough for an optimiser to search, expressive enough to
+    matter.</li>
+    <li><strong>The explicit layer is the geometry of record.</strong> Estimator, mesher, solver and
+    export read only stations, and never need to know whether a human or a generator wrote them.</li>
+    <li><strong>Generation is one-way.</strong> A generated surface can be burst to explicit
+    stations for hand editing; stations are never back-fitted to planform parameters. Two-way sync
+    between a parametric description and its output is a known source of silent divergence, and one
+    direction removes the entire class.</li>
+  </ul>
+
+  <h4>Sections: CST, and why the parameterisation debate dissolves</h4>
+  <p>The Class-Shape Transformation writes a section as a class function
+  <span class="num">&psi;^N1(1&minus;&psi;)^N2</span> &mdash; with
+  <span class="num">N1=0.5, N2=1</span> giving the airfoil class, round leading edge and sharp
+  trailing edge &mdash; times a Bernstein-polynomial shape function. Invalid airfoils are
+  unrepresentable by construction, which keeps validation out of the solver.</p>
+
+  <p>And the apparent choice between methods is not real: <strong>NACA 4-series, CST and PARSEC are
+  all exactly equivalent to B&eacute;zier curves.</strong> Pick CST because its class/shape split is
+  the most direct, and treat the others as conversions rather than competing systems needing
+  separate code paths.</p>
+
+  <h4>Derive, never store</h4>
+  <p>Area, aspect ratio, span, mean chord and wetted area are computed from stations. None is
+  stored. This is not fastidiousness &mdash; <strong>manufacturers publish aspect ratios computed by
+  inconsistent conventions</strong>, so the same wing carries different published numbers depending
+  on whether area is projected, developed or planform. Computing from stations under one stated
+  convention is exactly what makes this tool's numbers comparable when the market's are not.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><div>
+    <p class="eyebrow">Architecture</p>
+    <h2>Five layers, and where cost lives</h2>
+  </div></div>
+
+  <div class="stack">
+    <div class="layer">
+      <div class="layer-k">Geometry</div>
+      <p>Two-layer parametric model. Generative planform parameters emit explicit stations; stations
+      are the record. CST or catalog sections. Append-only versioning so every result names the
+      geometry that produced it.</p>
+      <div class="cost">&mdash;</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Section data</div>
+      <p>Catalog with provenance, plus XFOIL for anything not precomputed. Polars keyed by
+      <span class="num">(section, Re, Ncrit, alpha)</span>, retaining <span class="num">Cp_min</span>.
+      Cached, because the same section recurs constantly.</p>
+      <div class="cost">~100 ms<br>cold</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Estimator</div>
+      <p><strong>The product's inner loop.</strong> The closed-form chain: Helmbold, lifting line,
+      ITTC friction, form factor, cavitation margin. Runs live against a dragged slider. Enforces its
+      own validity envelope rather than documenting it.</p>
+      <div class="cost">~10 &micro;s</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Panel / VLM</div>
+      <p>Spanwise loading, non-elliptic planform effects, stabiliser downwash and the true
+      front-wing/stab interaction. What the estimator's single span-efficiency number approximates.</p>
+      <div class="cost">~10&ndash;100 ms</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">GPU LBM</div>
+      <p>Free-surface proximity, submergence lift loss, separation, ventilation onset, 3D stall.
+      Everything the low-order methods structurally cannot see. Validated against published
+      experimental polars <em>before</em> it is trusted.</p>
+      <div class="cost">~1&ndash;5 min</div>
+    </div>
+  </div>
+
+  <div class="col">
+  <p>The layers are strictly ordered by cost and each answers a question the one above cannot.
+  Two design rules follow:</p>
+
+  <ol class="body-list">
+    <li><strong>Every layer reads explicit stations.</strong> No layer knows about the generative
+    parameters. That keeps the geometry model from leaking into four different consumers.</li>
+    <li><strong>Disagreement between layers is a finding, not an error to hide.</strong> When the
+    estimator and the LBM tier diverge, that divergence is information about where the closed forms
+    stop being valid &mdash; and it is exactly what tells a user when to stop trusting the fast
+    answer.</li>
+  </ol>
+
+  <h4>The .NET / CUDA boundary</h4>
+  <p>Layers 1&ndash;4 are ordinary C#. Only layer 5 needs the GPU, and it sits behind a narrow
+  interface &mdash; upload geometry and conditions, step, read back forces and a field slice. That
+  narrowness is what makes the binding decision reversible: a native C++/CUDA library behind
+  P/Invoke is the low-risk default, and if ILGPU turns out to support
+  <span class="num">sm_120</span> it can replace the implementation without touching layers
+  1&ndash;4.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">07</span><div>
+    <p class="eyebrow">The decision</p>
+    <h2>Revised options</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The v1 options were framed around which solver to build. That framing was wrong for this scope.
+  With the estimation chain established, the real question is <strong>how far up the cost ladder to
+  go</strong>.</p>
+  </div>
+
+  <div class="opts">
+    <div class="opt">
+      <div class="opt-h"><span class="opt-k">OPTION 1</span>
+        <h3>Estimator and catalog only</h3><span class="tag b">Viable product</span></div>
+      <p>Layers 1&ndash;3. Parametric geometry, section catalog, closed-form estimation, WPF
+      interface. No panel method, no GPU, no CUDA.</p>
+      <div class="pc">
+        <div class="pro"><h4>For</h4><ul>
+          <li>Ships in weeks. Pure C#, no native boundary, no toolkit.</li>
+          <li>Answers most real design questions, live.</li>
+          <li>Every component is a published closed form, so every component is exactly testable.</li>
+          <li>Already does things XFLR5 does not: cavitation margin, hydrofoil framing, discipline
+          presets.</li>
+        </ul></div>
+        <div class="con"><h4>Against</h4><ul>
+          <li>Cannot see the free surface &mdash; the gap that justifies the project.</li>
+          <li>Span efficiency <span class="num">e</span> is an assumed constant, not a computed
+          result.</li>
+          <li>No stabiliser downwash; the two-surface interaction is approximated away.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="opt pick">
+      <div class="opt-h"><span class="opt-k">OPTION 2</span>
+        <h3>Estimator, catalog and panel/VLM</h3><span class="tag a">Recommended</span></div>
+      <p>Layers 1&ndash;4. Adds a vortex-lattice or panel solver over the same station geometry,
+      computing real spanwise loading and front-wing/stabiliser interaction.</p>
+      <div class="pc">
+        <div class="pro"><h4>For</h4><ul>
+          <li><strong>Removes the estimator's biggest approximation</strong> &mdash; span efficiency
+          becomes computed rather than assumed.</li>
+          <li>Makes the two-surface problem real: downwash, decalage and pitch stability.</li>
+          <li>Still fast enough to feel interactive at ~10&ndash;100 ms.</li>
+          <li>Pure C#, no GPU, no native boundary. Same risk profile as Option 1.</li>
+          <li>The estimator becomes its fast preview and its regression oracle.</li>
+        </ul></div>
+        <div class="con"><h4>Against</h4><ul>
+          <li>Still no free surface. The core justification remains deferred.</li>
+          <li>Linear method &mdash; stall is still not represented.</li>
+          <li>More surface area to validate.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-h"><span class="opt-k">OPTION 3</span>
+        <h3>Add the GPU LBM tier</h3><span class="tag b">The differentiator</span></div>
+      <p>All five layers. CUDA LBM for free-surface proximity, separation and ventilation onset.</p>
+      <div class="pc">
+        <div class="pro"><h4>For</h4><ul>
+          <li><strong>The only option that reaches the actual gap.</strong> No small tool models the
+          free surface, and hydrofoils run shallow where it dominates.</li>
+          <li>Uses hardware that comfortably fits the problem &mdash; a 43 M-cell foil box at an
+          estimated ~220 steps/s.</li>
+          <li>Gives the low-order layers something to be validated against.</li>
+        </ul></div>
+        <div class="con"><h4>Against</h4><ul>
+          <li><strong>LBM accuracy above Re 10&#8310; is unproven for this use</strong> and must be
+          demonstrated, not assumed.</li>
+          <li>Native interop boundary; requires CUDA Toolkit 12.8+.</li>
+          <li>Largest scope by a wide margin, and the last thing to deliver value.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-h"><span class="opt-k">OPTION 4</span>
+        <h3>Wrap FluidX3D or OpenFOAM</h3><span class="tag c">Not recommended</span></div>
+      <p>Skip the low-order layers; drive an existing solver from a WPF front end.</p>
+      <div class="pc">
+        <div class="pro"><h4>For</h4><ul>
+          <li>Real validated physics with no solver to defend.</li>
+        </ul></div>
+        <div class="con"><h4>Against</h4><ul>
+          <li><strong>Weakened considerably by v2.</strong> Most design questions here are closed-form
+          &mdash; wrapping a batch solver answers the rare question and misses the common one.</li>
+          <li>FluidX3D is non-commercial only and has no adaptive mesh refinement.</li>
+          <li>No interactivity, which is the whole point of a design tool.</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>Recommendation: Option 2, sequenced so Option 1 ships first, with Option 3 gated on
+    evidence.</strong></p>
+    <p style="margin-top:.8rem">The estimator is a complete product on its own and it is the layer
+    users touch most. Panel/VLM is a natural, low-risk extension over the same geometry that removes
+    the biggest approximation. The GPU tier should be built only after it has demonstrated accuracy
+    against published experimental polars &mdash; it is the differentiator, but it is also the only
+    part whose core assumption is unproven.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">08</span><div>
+    <p class="eyebrow">Sequencing</p>
+    <h2>What to do, in what order</h2>
+  </div></div>
+
+  <div class="ph">
+    <div class="ph-k"><b>Phase 0</b>2&ndash;3 days</div>
+    <div>
+      <p><strong>Close the evidence gaps, not the code gaps.</strong> Vendor the section catalog
+      (UIUC coordinates with provenance) and generate polars with XFOIL at our Reynolds numbers,
+      retaining <span class="num">Cp_min</span> and <span class="num">Ncrit</span>. Read Typhoon's
+      source to learn its method. Sweep <span class="num">t/c</span> through the estimator to
+      <strong>answer the thickness question with measurement</strong> rather than a retailer blog.</p>
+      <p class="aside">The thickness gap is the largest in the knowledge base and the tool can
+      settle it about itself.</p>
+    </div>
+  </div>
+  <div class="ph">
+    <div class="ph-k"><b>Phase 1</b>the product</div>
+    <div>
+      <p><strong>Layers 1&ndash;3, end to end.</strong> Parametric geometry with the four-concept
+      grammar, section catalog, closed-form estimator, WPF interface with live response. Discipline
+      presets from the geometry catalog. Salt and fresh as an ITTC-sourced fluid record.</p>
+      <p class="aside">Every estimator step gets a unit test against a hand-worked value &mdash;
+      Helmbold must approach 2&pi; as AR grows, induced drag must match the elliptical result at
+      <span class="num">e = 1</span>, ITTC friction must match published tables.</p>
+    </div>
+  </div>
+  <div class="ph">
+    <div class="ph-k"><b>Phase 2</b>real 3D loading</div>
+    <div>
+      <p><strong>Panel/VLM over the same stations.</strong> Spanwise loading, computed span
+      efficiency, stabiliser downwash, decalage and pitch stability. The estimator stays as the fast
+      preview and becomes the regression oracle &mdash; the two should agree within a known band, and
+      where they do not, that is the finding.</p>
+    </div>
+  </div>
+  <div class="ph">
+    <div class="ph-k"><b>Phase 3</b>gated on proof</div>
+    <div>
+      <p><strong>The GPU LBM tier &mdash; validation first.</strong> The first deliverable is not a
+      solver but a comparison: a NACA section at a Reynolds number with published experimental
+      polars, computed lift and drag set against them. Free surface and submergence follow only if
+      that holds.</p>
+      <p class="aside">If drag proves unreliable at this Reynolds range while lift holds, the tool
+      says so on screen. It does not report both as equally trustworthy.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">09</span><div>
+    <p class="eyebrow">The case against, re-tested</p>
+    <h2>What survives the scope cut</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The v1 counter-argument rested on three gaps in the existing free tools. The scope cut removes
+  one, so the argument was re-run rather than carried forward.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Gap</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Free surface</strong> &mdash; no small tool models submergence effects or ventilation</td>
+        <td><strong>Holds, and is now the load-bearing justification.</strong> Hydrofoils run shallow; lift falls with depth and ventilation can collapse it. XFLR5 and Typhoon cannot see this at all</td></tr>
+      <tr><td style="text-decoration:line-through; color:var(--muted)">Planing &mdash; no small tool handles a surfboard</td>
+        <td><span class="conf f">Retired</span> with the scope cut</td></tr>
+      <tr><td><strong>Integration</strong> &mdash; nothing joins sections, geometry, estimation and equilibrium interactively</td>
+        <td><strong>Holds, and v2 strengthened it.</strong> The estimation chain and catalog are real absent capabilities, not repackaging</td></tr>
+      <tr><td><strong>New in v2:</strong> nothing couples a section catalog retaining <span class="num">Cp_min</span> to a cavitation check and a live L/D estimate over parametric multi-surface geometry</td>
+        <td>XFLR5 has polars but no cavitation model and no hydrofoil framing; Typhoon has equilibrium but an undocumented method; retail guides have discipline knowledge but no physics</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p><strong>Verdict: the case against survives the cut, but with less margin.</strong> The honest
+  position is now smaller than v1's, and it should be stated that way rather than dressed up:</p>
+
+  <div class="callout">
+    <p>The defensible project is a <strong>design tool</strong> whose core is closed-form estimation
+    over a parametric geometry model, with simulation reserved for free-surface and separation
+    questions no low-order method can reach. It is not a CFD package. On the hydrofoil-only scope it
+    is <strong>closer to a better XFLR5-for-hydrofoils than to a new solver</strong> &mdash; and that
+    is a perfectly good thing to build, provided nobody pretends otherwise.</p>
+  </div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Evidence base:</strong> <code>docs/knowledge/cfd-hydrofoil-simulation/</code> &mdash;
+  12 documents, 40 sources, every claim confidence-labelled. Fluid properties read directly from ITTC
+  7.5-02-01-03 Rev&nbsp;02; design practice from the International Hydrofoil Society compilation;
+  estimation chain executed and its output tabulated.</p>
+  <p><strong>Confidence:</strong> 24 Verified &middot; 11 Inferred &middot; 9 Flagged. The largest
+  evidence gap is <strong>thickness-ratio guidance</strong> &mdash; the only quantitative source is a
+  retailer blog whose adjacent tables published physically impossible aspect ratios. Phase 0 settles
+  it by measurement. Also still open: ILGPU on Blackwell, LBM accuracy above Re&nbsp;10&#8310;, and
+  this laptop's real measured throughput.</p>
+</footer>
+
+</div>
