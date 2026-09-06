@@ -1,0 +1,653 @@
+<title>Session Coordination Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#F6F8F7; --surface:#FFFFFF; --sunk:#EDF1F0;
+    --ink:#0C1B21; --body:#22343A; --muted:#5A6E75; --muted2:#8A9AA0;
+    --rule:#D6DFDE; --rule-strong:#B7C6C4;
+    --accent:#C8500F;
+    --go:#1F6F5C; --warn:#8A6100; --stop:#A32C1E;
+    --go-bg:#E3F0EB; --warn-bg:#F6EED9; --stop-bg:#F6E2DE;
+    --s1:#1F6F5C; --s2:#2E6F8E; --s3:#7A5AA6; --s4:#C8500F;
+    --shadow:0 1px 2px rgba(12,27,33,.05), 0 8px 24px -12px rgba(12,27,33,.18);
+    --measure:66ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+      --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+      --rule:#1E333A; --rule-strong:#2C464E;
+      --accent:#F0793C;
+      --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+      --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+      --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+    --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+    --rule:#1E333A; --rule-strong:#2C464E;
+    --accent:#F0793C;
+    --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+    --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+    --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--body);
+    font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+    font-size:17px; line-height:1.62; margin:0; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px 96px}
+  .col{max-width:var(--measure)}
+  h1,h2,h3,h4{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+  h1{font-size:clamp(2.1rem,4.4vw,3.1rem); line-height:1.06; font-weight:700;
+     letter-spacing:-.022em; color:var(--ink); margin:0 0 .5rem; text-wrap:balance}
+  h2{font-size:1.55rem; font-weight:700; letter-spacing:-.015em; color:var(--ink);
+     margin:0 0 .2rem; text-wrap:balance}
+  h3{font-size:1.08rem; font-weight:600; letter-spacing:-.008em; color:var(--ink);
+     margin:0 0 .35rem; text-wrap:balance}
+  h4{font-size:.95rem; font-weight:600; color:var(--ink); margin:1.3rem 0 .3rem}
+  p{margin:0 0 1.05rem}
+  strong{color:var(--ink); font-weight:600}
+  a{color:var(--accent)}
+  code,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:.87em; font-variant-numeric:tabular-nums}
+  code{background:var(--sunk); padding:.1em .38em; border-radius:3px; color:var(--ink)}
+  pre{background:var(--sunk); border:1px solid var(--rule); padding:16px 18px;
+    overflow-x:auto; margin:0 0 1.3rem; border-radius:2px}
+  pre code{background:none; padding:0; font-size:.8rem; line-height:1.62; color:var(--body)}
+  .cm{color:var(--muted2)} .kw{color:var(--accent); font-weight:500}
+  .eyebrow{font-family:Archivo,sans-serif; font-size:.7rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 .55rem}
+  header.top{border-bottom:2px solid var(--ink); padding:56px 0 22px}
+  .kicker{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:18px}
+  .kicker .dot{color:var(--rule-strong)} .kicker .hl{color:var(--accent)}
+  .standfirst{font-size:1.16rem; line-height:1.55; color:var(--body); max-width:60ch; margin:0}
+  .rig{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0;
+    border-bottom:1px solid var(--rule); margin:0 0 52px}
+  .rig div{padding:16px 18px 18px; border-right:1px solid var(--rule)}
+  .rig div:last-child{border-right:0}
+  .rig dt{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
+  .rig dd{margin:0; font-family:"IBM Plex Mono",monospace; font-size:.95rem; font-weight:500;
+    color:var(--ink); font-variant-numeric:tabular-nums}
+  .rig dd.bad{color:var(--stop)} .rig dd.good{color:var(--go)}
+  section{padding:44px 0; border-top:1px solid var(--rule)}
+  .sec-head{display:flex; gap:14px; align-items:baseline; margin-bottom:1.4rem}
+  .sec-num{font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--accent);
+    font-weight:500; padding-top:.28rem; flex:none}
+  .callout{background:var(--surface); border:1px solid var(--rule);
+    border-left:3px solid var(--accent); padding:20px 24px; margin:0 0 1.4rem; box-shadow:var(--shadow)}
+  .callout p:last-child{margin-bottom:0}
+  .callout.quiet{border-left-color:var(--rule-strong); box-shadow:none; background:var(--sunk)}
+  .callout.cut{border-left-color:var(--stop); box-shadow:none; background:var(--stop-bg)}
+  .tscroll{overflow-x:auto; margin:0 0 1.3rem; border:1px solid var(--rule); background:var(--surface)}
+  table{border-collapse:collapse; width:100%; font-size:.88rem}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top}
+  thead th{font-family:Archivo,sans-serif; font-size:.64rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); background:var(--sunk);
+    border-bottom:1px solid var(--rule-strong); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .conf{font-family:Archivo,sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.08em;
+    text-transform:uppercase; padding:2px 6px; border-radius:2px; white-space:nowrap}
+  .conf.v{background:var(--go-bg); color:var(--go)}
+  .conf.i{background:var(--warn-bg); color:var(--warn)}
+  .conf.f{background:var(--stop-bg); color:var(--stop)}
+  .tag{font-family:Archivo,sans-serif; font-size:.62rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; padding:3px 7px; border-radius:2px}
+  .tag.a{background:var(--go-bg); color:var(--go)}
+  .tag.b{background:var(--warn-bg); color:var(--warn)}
+  .tag.c{background:var(--stop-bg); color:var(--stop)}
+  figure{margin:0 0 1.4rem; border:1px solid var(--rule); background:var(--surface); padding:22px 24px 18px}
+  figcaption{font-size:.83rem; color:var(--muted); margin-top:12px; line-height:1.5}
+  svg{display:block; width:100%; height:auto}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:10px;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600; color:var(--muted)}
+  .legend span{display:flex; align-items:center; gap:6px}
+  .legend i{width:14px; height:3px; border-radius:2px; display:block}
+  ul.body-list{margin:0 0 1.1rem; padding-left:1.15em}
+  ul.body-list li{margin-bottom:.5rem}
+  ul.body-list li::marker{color:var(--muted2)}
+  ol.body-list{margin:0 0 1.1rem; padding-left:1.3em}
+  ol.body-list li{margin-bottom:.55rem}
+  .stack{border:1px solid var(--rule); background:var(--surface); margin-bottom:1.4rem}
+  .layer{display:grid; grid-template-columns:130px 1fr 110px; gap:18px; padding:15px 20px;
+    border-bottom:1px solid var(--rule); align-items:start}
+  .layer:last-child{border-bottom:0}
+  .layer-k{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--muted); padding-top:.2rem}
+  .layer p{margin:0; font-size:.89rem; line-height:1.5}
+  .layer .cost{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--accent);
+    text-align:right; padding-top:.15rem; white-space:nowrap}
+  .ph{display:grid; grid-template-columns:120px 1fr; gap:20px; padding:18px 0;
+    border-bottom:1px solid var(--rule)}
+  .ph:last-child{border-bottom:0}
+  .ph-k{font-family:Archivo,sans-serif; font-size:.68rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); padding-top:.22rem}
+  .ph-k b{display:block; font-family:"IBM Plex Mono",monospace; font-size:.95rem; color:var(--ink);
+    letter-spacing:0; text-transform:none; font-weight:600; margin-bottom:2px}
+  .ph p{margin:0 0 .4rem; font-size:.93rem}
+  .ph p:last-child{margin-bottom:0}
+  .ph .aside{color:var(--muted); font-size:.87rem}
+  .wire{border:1px solid var(--rule-strong); background:var(--surface); padding:0;
+    margin:0 0 1.4rem; overflow:hidden}
+  .wire-bar{background:var(--sunk); border-bottom:1px solid var(--rule);
+    padding:8px 14px; font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  footer{border-top:2px solid var(--ink); padding:26px 0 0; margin-top:44px;
+    font-size:.85rem; color:var(--muted)}
+  footer p{margin:0 0 .5rem; max-width:70ch}
+  @media (max-width:760px){
+    .ph{grid-template-columns:1fr; gap:6px}
+    .layer{grid-template-columns:1fr; gap:5px}
+    .layer .cost{text-align:left}
+    body{font-size:16px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">
+    <span>CFD-Bench</span><span class="dot">/</span>
+    <span class="hl">Session Coordination</span><span class="dot">/</span>
+    <span>Worktrees &amp; parallelism</span><span class="dot">/</span>
+    <span>6 September 2026</span>
+  </div>
+  <h1>Divide by artifact, not by task</h1>
+  <p class="standfirst">How to split this build across sessions and worktrees &mdash; and why the
+  highest-leverage move is a twenty-line file, not an org chart.</p>
+</header>
+
+<dl class="rig">
+  <div><dt>Worktrees now</dt><dd>1</dd></div>
+  <div><dt>Sessions registered</dt><dd class="bad">0</dd></div>
+  <div><dt>Class registry</dt><dd class="bad">absent</dd></div>
+  <div><dt>Merge drivers</dt><dd class="bad">none</dd></div>
+  <div><dt>Edit boundary</dt><dd class="good">enforcing</dd></div>
+  <div><dt>Tracks proposed</dt><dd>5</dd></div>
+</dl>
+
+<section style="border-top:0">
+  <div class="sec-head"><span class="sec-num">01</span><div>
+    <p class="eyebrow">Measured, not assumed</p>
+    <h2>Where the coordination layer actually is</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The pack ships a real coordination layer in <code>coord-core.py</code> &mdash; leases, artifact
+  classes, seam requests, merge drivers, worktree lifecycle, and four metrics. I ran it against this
+  repo rather than assuming its state.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Check</th><th>Result</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><code>coord doctor</code> &rarr; registry</td>
+        <td><span class="conf f">NOT PRESENT</span></td>
+        <td><strong>Every path is treated as <code>authored</code>; nothing is regenerated.</strong>
+        <code>.agents/artifacts.yml</code> does not exist</td></tr>
+      <tr><td><code>coord doctor</code> &rarr; merge driver</td>
+        <td><span class="conf f">none declared</span></td>
+        <td>308 tracked files scanned, no driver. Derived and append-only files will hard-conflict</td></tr>
+      <tr><td><code>coord doctor</code> &rarr; harness boundary</td>
+        <td><span class="conf v">enforcing</span> (both)</td>
+        <td>The <em>enforcement</em> half is live for Claude Code and Copilot</td></tr>
+      <tr><td><code>coord collaborate summary</code></td>
+        <td><span class="conf f">BLOCKER</span> COORD-COLLAB-NOT-CHECKED-EMPTY</td>
+        <td>0 active sessions, contract missing, no collaboration state established</td></tr>
+      <tr><td><code>coord worktree list</code></td>
+        <td>1 &mdash; the primary, HELD</td>
+        <td>This entire session ran in the primary checkout &mdash; <strong>WT4's recorded
+        exception</strong>, defensible for solo research, not for the build</td></tr>
+      <tr><td><code>coord metrics</code></td>
+        <td>0 decisions; 7 commits in one place</td>
+        <td>Nothing has been claimed or checked yet, because nothing needed to be</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>The state is precise and slightly odd: the layer is half-live.</strong> Enforcement is
+    on &mdash; the harnesses will refuse edits outside a session's boundary. Classification, session
+    registration and the collaboration contract are all unconfigured. So today the layer can *stop*
+    you without being able to *route* you, which is the least useful of the four possible states and
+    the easiest to fix.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><div>
+    <p class="eyebrow">The finding that reorders everything</p>
+    <h2>Contention is a property of the artifact</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The instinct is to divide by task and give each session a lane. That is the wrong axis. The
+  pack's own engine carries the counter-evidence in a comment beside the class registry:</p>
+
+  <div class="callout">
+    <p style="font-style:italic">&ldquo;The class decides the MECHANISM entirely. Measured: the six
+    busiest files in the reference repo are all generated, so a uniform lease aims at
+    <strong>13/60</strong> and misses <strong>58/60</strong>.&rdquo;</p>
+  </div>
+
+  <p>In other words: <strong>most contention is not two people editing the same prose &mdash; it is
+  two sessions regenerating the same derived file.</strong> A lease system aimed at authorship
+  addresses a fifth of the problem. Classification addresses almost all of it, and needs no
+  coordination at all.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Class</th><th>Merge mechanism</th><th>Coordination needed</th></tr></thead>
+    <tbody>
+      <tr><td><strong><code>authored</code></strong></td>
+        <td>Conventional conflict markers &mdash; a human resolves</td>
+        <td><strong>Real.</strong> One owner per file, or a lease</td></tr>
+      <tr><td><strong><code>derived</code></strong></td>
+        <td><code>merge-derived</code> resolves to ours, records a regen owed, <strong>always returns
+        0</strong>; <code>coord regen</code> rebuilds it. A failed regen <em>stays owed</em> and
+        reports non-zero, because a stale derived artifact looks finished</td>
+        <td><strong>None.</strong> Never merge what you can rebuild</td></tr>
+      <tr><td><strong><code>register</code></strong></td>
+        <td><code>merge-register</code> unions the append-only entries &mdash; always 0</td>
+        <td><strong>None.</strong> Two sessions appending never conflict</td></tr>
+      <tr><td><code>hotspot</code></td>
+        <td>Declared in <code>CLASSES</code> but no distinct mechanism is implemented</td>
+        <td>Not usable yet &mdash; recorded so nobody plans around it</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p><strong>This repo's three worst contention points are all non-<code>authored</code> files that
+  are currently classified <code>authored</code>:</strong></p>
+
+  <ul class="body-list">
+    <li><code>docs/docs-index.js</code> &mdash; <strong>derived</strong>. Regenerated by
+    <code>docs-graph.py derive</code>. Every session that adds a knowledge artifact rewrites the
+    whole file. Two sessions doing so <em>guarantees</em> a conflict, and resolving it by hand is
+    both pointless and error-prone.</li>
+    <li><code>docs/audit/audit-log.jsonl</code> and <code>change-log.jsonl</code> &mdash;
+    <strong>register</strong>. Append-only by design. Every session appends on every substantive
+    turn. Union-merge is exactly right and hand-resolution is exactly wrong.</li>
+    <li><code>docs/audit/audit-data.js</code> &mdash; <strong>derived</strong> projection of the
+    JSONL.</li>
+  </ul>
+
+  <p><strong>Those four files are the ones this session touched on every single commit.</strong> In a
+  two-session world they would conflict on essentially every merge, and each conflict would be a
+  human resolving a machine-generated file by hand &mdash; the worst kind of work.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><div>
+    <p class="eyebrow">Do this first</p>
+    <h2>Twenty lines that remove most of the problem</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The registry format is <code>pattern: class [command]</code>, one per line, <code>#</code> for
+  comments &mdash; a deliberately line-oriented parser, not general YAML. Longest matching pattern
+  wins; a <code>derived</code> entry <strong>must</strong> carry a regenerate command, because a
+  derived class with no command would resolve every merge and leave the artifact permanently stale
+  while claiming to be handled.</p>
+  </div>
+
+  <pre><code><span class="cm"># .agents/artifacts.yml — what each artifact IS decides how it merges.</span>
+<span class="cm"># Written 2026-09-06. Format: pattern: class [regenerate command]</span>
+
+<span class="cm"># --- derived: never merge, always rebuild ---</span>
+docs/docs-index.js:        <span class="kw">derived</span>   python docs/ai-forward-pack/scripts/docs-graph.py derive
+docs/audit/audit-data.js:  <span class="kw">derived</span>   python docs/ai-forward-pack/scripts/audit-log.py render
+
+<span class="cm"># --- register: append-only, union-merge ---</span>
+docs/audit/audit-log.jsonl:   <span class="kw">register</span>
+docs/audit/change-log.jsonl:  <span class="kw">register</span>
+docs/health-history.jsonl:    <span class="kw">register</span>
+
+<span class="cm"># --- everything else stays `authored` by default. Do not enumerate it.        ---</span>
+<span class="cm"># NOTE: docs/audit/audit-log.md is AUTHORED prose about the logs, not a</span>
+<span class="cm"># projection of them — deliberately absent so it keeps conflict markers.</span></code></pre>
+
+  <div class="col">
+  <div class="callout quiet">
+    <p><strong>Both regenerate commands are Verified, and one of them caught an error.</strong>
+    <code>docs-graph.py derive</code> rebuilds <code>docs-index.js</code> &mdash; run a dozen times
+    this session. For the audit projection I first wrote <code>audit-log.py regen</code> from
+    inference; <strong>there is no such subcommand</strong> &mdash; the real one is
+    <code>render</code> ("Regenerate audit-data.js from the JSONL and ensure the viewer exists").
+    Checking it also showed that <code>audit-log.md</code> is <em>authored prose about</em> the logs,
+    not a projection of them, so it stays out of the registry.</p>
+    <p style="margin-top:.8rem"><strong>That near-miss is the argument for the rule.</strong> A wrong
+    regenerate command is worse than no entry: the merge resolves silently and the artifact goes
+    permanently stale while claiming to be handled. Verify every command in this file by running
+    it.</p>
+  </div>
+
+  <p>Then declare the driver and install the boundary hook:</p>
+  </div>
+
+  <pre><code>python docs/ai-forward-pack/scripts/coord-core.py install
+python docs/ai-forward-pack/scripts/coord-core.py doctor   <span class="cm"># expect: registry present, driver declared</span></code></pre>
+
+  <div class="col">
+  <p><strong>Cost: about twenty lines and one command. Benefit: the four files this project touches
+  on every commit stop being conflict sources entirely.</strong> Nothing else in this proposal comes
+  close to that ratio, which is why it is section 03 and not an appendix.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><div>
+    <p class="eyebrow">The division</p>
+    <h2>Five tracks, one-way dependencies</h2>
+  </div></div>
+
+  <div class="col">
+  <p>With derived and register files handled mechanically, what remains is <code>authored</code>
+  code &mdash; and there the rule is simple: <strong>one owner per file, and make every dependency
+  one-way.</strong> A dependency graph that is a DAG needs far less coordination than one with
+  cycles, because the downstream side rebases and the upstream side never has to ask.</p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 830 340" role="img" aria-label="Track dependency diagram. A serial spine at the top feeds three parallel tracks: Core, Solver and Knowledge. Surface depends on Core's interfaces, and AI depends on Core's results. All dependencies point one way.">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--rule-strong)"></path>
+        </marker>
+        <marker id="ard" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"></path>
+        </marker>
+      </defs>
+
+      <rect x="250" y="20" width="330" height="52" fill="var(--s3)" opacity="0.16" stroke="var(--s3)" stroke-width="2"></rect>
+      <text x="415" y="42" font-family="Archivo, sans-serif" font-size="12.5" font-weight="700" fill="var(--ink)" text-anchor="middle">SPINE &#183; serial, one session</text>
+      <text x="415" y="60" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="middle">units &#183; conventions &#183; geometry model &#183; file format &#183; interfaces</text>
+
+      <g stroke="var(--rule-strong)" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+        <path d="M 330 72 L 175 118"></path>
+        <path d="M 415 72 L 415 118"></path>
+        <path d="M 500 72 L 655 118"></path>
+        <path d="M 175 176 L 175 222"></path>
+      </g>
+      <path d="M 250 150 C 300 150, 320 200, 340 244" stroke="var(--accent)" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#ard)"></path>
+
+      <g font-family="Archivo, sans-serif" font-size="12" font-weight="700">
+        <rect x="60" y="120" width="230" height="56" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"></rect>
+        <text x="72" y="141" fill="var(--ink)">A &#183; CORE</text>
+        <text x="72" y="160" font-family="IBM Plex Mono, monospace" font-size="9.5" font-weight="400" fill="var(--muted)">geometry &#183; sections &#183; estimator &#183; VLM</text>
+        <text x="278" y="141" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--s1)" text-anchor="end">critical path</text>
+
+        <rect x="320" y="120" width="190" height="56" fill="var(--surface)" stroke="var(--s4)" stroke-width="2"></rect>
+        <text x="332" y="141" fill="var(--ink)">C &#183; SOLVER</text>
+        <text x="332" y="160" font-family="IBM Plex Mono, monospace" font-size="9.5" font-weight="400" fill="var(--muted)">de-risk &#183; OpenFOAM &#183; CUDA</text>
+        <text x="498" y="141" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--s4)" text-anchor="end">independent</text>
+
+        <rect x="580" y="120" width="190" height="56" fill="var(--surface)" stroke="var(--s3)" stroke-width="2"></rect>
+        <text x="592" y="141" fill="var(--ink)">E &#183; KNOWLEDGE</text>
+        <text x="592" y="160" font-family="IBM Plex Mono, monospace" font-size="9.5" font-weight="400" fill="var(--muted)">ADRs &#183; specs &#183; expert review</text>
+        <text x="758" y="141" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--s3)" text-anchor="end">docs only</text>
+
+        <rect x="60" y="224" width="230" height="56" fill="var(--surface)" stroke="var(--s2)" stroke-width="2"></rect>
+        <text x="72" y="245" fill="var(--ink)">B &#183; SURFACE</text>
+        <text x="72" y="264" font-family="IBM Plex Mono, monospace" font-size="9.5" font-weight="400" fill="var(--muted)">WPF shell &#183; charts &#183; CAD editor</text>
+        <text x="278" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--s2)" text-anchor="end">follows A</text>
+
+        <rect x="340" y="224" width="190" height="56" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect>
+        <text x="352" y="245" fill="var(--ink)">D &#183; AI</text>
+        <text x="352" y="264" font-family="IBM Plex Mono, monospace" font-size="9.5" font-weight="400" fill="var(--muted)">numeral check &#183; explain &#183; intent</text>
+        <text x="518" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--accent)" text-anchor="end">additive</text>
+      </g>
+
+      <text x="600" y="252" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--muted2)">&#8212;&#8212;&#8594;  hard dependency</text>
+      <text x="600" y="270" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--accent)">- - -&#8594;  reads results only</text>
+      <text x="600" y="292" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--muted2)">no arrow points upward or sideways</text>
+    </svg>
+    <figcaption>Every edge points one way. <strong>A never waits on B</strong>; B rebases. C and E
+    depend only on the spine. That property &mdash; not the number of tracks &mdash; is what makes
+    concurrent sessions cheap.</figcaption>
+  </figure>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Track</th><th>Owns (authored)</th><th>Depends on</th><th>Contention risk</th></tr></thead>
+    <tbody>
+      <tr><td><strong>A &middot; Core</strong></td>
+        <td>Geometry model, section catalog, estimator, VLM tier</td>
+        <td>Spine only</td>
+        <td><span class="tag a">Low</span> nothing upstream of it</td></tr>
+      <tr><td><strong>B &middot; Surface</strong></td>
+        <td>WPF shell, ScottPlot charts, curve editors, HelixToolkit viewport</td>
+        <td><strong>A's interfaces</strong>, not its internals</td>
+        <td><span class="tag b">Medium</span> the seam is the risk, not the files</td></tr>
+      <tr><td><strong>C &middot; Solver</strong></td>
+        <td>De-risk slice, <code>ICfdBackend</code>, case generation, CUDA kernels</td>
+        <td>Spine only (geometry types)</td>
+        <td><span class="tag a">Very low</span> separate project, separate toolchain</td></tr>
+      <tr><td><strong>D &middot; AI</strong></td>
+        <td>Numeral check, explain, brief&rarr;intent, evals</td>
+        <td>A's <em>results</em>, read-only</td>
+        <td><span class="tag a">Very low</span> additive by COMMIT-04</td></tr>
+      <tr><td><strong>E &middot; Knowledge</strong></td>
+        <td><code>docs/</code> &mdash; ADRs, the units spec, expert reviews</td>
+        <td>Nothing</td>
+        <td><span class="tag a">Low once registered</span> its only overlap is the derived index and the registers</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p><strong>Track E is the one that looks free and is not.</strong> Documentation work touches
+  <code>docs-index.js</code> and both audit registers on every commit &mdash; which is precisely why
+  section 03 comes first. <em>Unregistered, E collides with everything. Registered, it collides with
+  nothing.</em></p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><div>
+    <p class="eyebrow">The protocol</p>
+    <h2>What a session actually does</h2>
+  </div></div>
+
+  <div class="stack">
+    <div class="layer">
+      <div class="layer-k">Open</div>
+      <p><code>coord worktree new --branch &lt;work-name&gt; --session &lt;id&gt;</code>. Branch named
+      for the <strong>work</strong>, not the session (WT5). One session per tree, one tree per session
+      (WT3). A new <em>task</em> means a new <em>session</em> even in the same tree (WT1a) &mdash; a
+      worktree isolates the tree, nothing isolates the context.</p>
+      <div class="cost">WT1, WT3, WT5</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Claim</div>
+      <p><code>coord claim --wi &lt;work-item&gt; --path &lt;path&gt; [--ttl]</code> before writing an
+      <code>authored</code> file outside your track's ownership. <code>coord check</code> answers
+      "may this session touch this path?". <strong>Derived and register files need no claim</strong>
+      &mdash; that is the whole point of classifying them.</p>
+      <div class="cost">TTL'd</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Compose</div>
+      <p><strong>Do not share files &mdash; share requests.</strong> When B needs an interface change
+      from A, <code>coord request add</code> records a <em>seam request</em>; A resolves it on its own
+      cadence with <code>coord request resolve</code>. Neither session blocks, and the seam is
+      recorded rather than negotiated in a merge.</p>
+      <div class="cost">the key primitive</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Commit</div>
+      <p>The pre-commit hook is <strong>the universal floor: it refuses unclaimed staged paths</strong>.
+      <code>coord guard</code> refuses to move HEAD over work held in one place. Both are already
+      enforcing for Claude Code and Copilot.</p>
+      <div class="cost">enforcing</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Close</div>
+      <p><code>coord release</code>, then <code>coord worktree cleanup</code> &mdash; which
+      <strong>reports by default and deletes only with <code>--remove</code></strong>. A tree is
+      removable only when it is not primary, not your cwd, clean including untracked, holds no commit
+      that exists nowhere else, and is unheld. Anything else is <strong>reported, never
+      removed</strong>, and the tool prints every refusal with its reason (WT7, WT8, WT12).</p>
+      <div class="cost">WT6&ndash;WT12</div>
+    </div>
+  </div>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>Never remove a worktree to resolve a conflict (WT11).</strong> If two sessions have
+    collided, deleting one side destroys the evidence of what collided. Resolve in the tree, then
+    release.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><div>
+    <p class="eyebrow">The serial spine</p>
+    <h2>What must not be parallel</h2>
+  </div></div>
+
+  <div class="col">
+  <p>GO5's independence test requires all three of: no data edge, <strong>no decision edge</strong>,
+  and no shared exclusive resource. The middle one is the binding constraint here, and it produces a
+  hard sequencing rule:</p>
+
+  <div class="callout cut">
+    <p><strong>Until the interfaces are fixed, every track's result changes every other track's
+    shape.</strong> That fails GO5(b) outright. The spine &mdash; units and coordinate conventions,
+    the geometry model, the file format, and the interface signatures between layers &mdash;
+    <strong>must be authored serially, in one session, before any track forks.</strong></p>
+  </div>
+
+  <p>Three more things stay serial for the same reason:</p>
+
+  <ul class="body-list">
+    <li><strong>Any change to the geometry model schema.</strong> It is the shared vocabulary; a
+    change to it invalidates in-flight work in every track. Route it through a seam request, and let
+    the spine owner make it.</li>
+    <li><strong>Two sessions in the same layer.</strong> Not forbidden by the tooling, but it fails
+    the coupling test &mdash; tightly-coupled work is cheaper and more reliable in one coherent
+    session.</li>
+    <li><strong>The first commit after the class registry lands.</strong> Verify the driver is
+    effective (<code>coord doctor</code>) before two sessions rely on it, or the first merge will
+    quietly conflict anyway.</li>
+  </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">07</span><div>
+    <p class="eyebrow">The honest part</p>
+    <h2>Parallelism is probably not the prize</h2>
+  </div></div>
+
+  <div class="col">
+  <p>You asked to optimise for parallelism. The evidence in the pack argues for tempering that, and
+  it would be a poor proposal that didn't say so.</p>
+
+  <p><strong>GO6 is blunt about it:</strong> parallelism is <em>a cost multiplier, not a saving</em>,
+  when branches are separate explorations &mdash; the production orchestrator-worker shape reports
+  roughly <strong>15&times; token usage</strong>, justified only for open-ended, breadth-first,
+  loosely-coupled work. <em>Pay the multiplier deliberately or not at all.</em></p>
+
+  <p>And this is a one-person project. Two concurrent sessions do not halve the calendar for a solo
+  developer; they add context-switching cost, and each session re-reads its own context on every
+  request.</p>
+
+  <div class="callout">
+    <p><strong>So what do worktrees actually buy here? Three things, and none of them is
+    speed:</strong></p>
+    <ol class="body-list" style="margin-top:.8rem; margin-bottom:0">
+      <li><strong>Isolation.</strong> The de-risking slice (Track C) hand-builds a mesh and runs a
+      solver. That should not touch the tree where the application is being written. WT2 exists
+      exactly for this.</li>
+      <li><strong>Long-running work.</strong> A CFD run takes hours. A worktree lets it own a tree
+      while you keep working elsewhere &mdash; the clearest genuine parallelism in the whole project,
+      because the waiting is machine time, not yours.</li>
+      <li><strong>Context hygiene.</strong> WT1a's measured shape is a 23-hour session growing from
+      159k to 564k tokens across three unrelated tasks with <strong>zero compactions</strong>, because
+      a long-context tier never forces one. Class <strong>CTX-A</strong>. A new task in a new session
+      is worth more than a new tree.</li>
+    </ol>
+  </div>
+
+  <p><strong>Where parallelism does become real is if you run agents concurrently</strong> &mdash;
+  Track C's solver work and Track E's documentation genuinely can proceed while you are in Track A.
+  That is the case the tracks above are designed for, and the artifact registry is what makes it
+  cheap. But it is a decision to make deliberately, with the 15&times; multiplier in view, rather than
+  a default.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">08</span><div>
+    <p class="eyebrow">Order of operations</p>
+    <h2>What to do, and what it costs</h2>
+  </div></div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Cost</th><th>Why now</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Write <code>.agents/artifacts.yml</code>; verify the regen commands; run <code>coord install</code> and <code>coord doctor</code></td>
+        <td class="n">~30 min</td>
+        <td><strong>Removes the four files that conflict on every commit.</strong> Best ratio in the plan, and it is needed even for one session</td></tr>
+      <tr><td class="n">2</td><td>Author the spine in one session &mdash; units, conventions, geometry model, file format, interface signatures</td>
+        <td class="n">P0 (2.5 wk)</td>
+        <td>GO5(b): until interfaces are fixed, nothing is independent</td></tr>
+      <tr><td class="n">3</td><td>Fork <strong>Track C</strong> for the de-risking slice</td>
+        <td class="n">1 tree</td>
+        <td>Genuinely independent, and the first work that benefits from isolation</td></tr>
+      <tr><td class="n">4</td><td>Fork <strong>Track E</strong> for the ADR back-fill and the units spec review</td>
+        <td class="n">1 tree</td>
+        <td>Docs-only; zero code contention once registered</td></tr>
+      <tr><td class="n">5</td><td>Keep <strong>A</strong> and <strong>B</strong> serial in one session until the estimator interface has held through one UI build</td>
+        <td class="n">&mdash;</td>
+        <td>Coupling test: they are tightly coupled early and cheap to split late</td></tr>
+      <tr><td class="n">6</td><td>Review <code>coord metrics</code> at each phase boundary</td>
+        <td class="n">minutes</td>
+        <td>Refused decisions and edits outside a lease are the signal that the division is wrong</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <div class="callout quiet">
+    <p><strong>One thing to fix about how we got here.</strong> This entire session ran in the primary
+    checkout &mdash; WT4's <em>recorded exception</em>, not the default. For solo research that was
+    the right call and it is now recorded. <strong>The build should not inherit it:</strong> step 2
+    onward belongs in named worktrees, and <code>coord worktree list</code> should stop showing a
+    lone HELD primary as the only tree in the project.</p>
+  </div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Grounded in:</strong> <code>.claude/knowledge/session-worktree-discipline.md</code>
+  (WT1&ndash;WT12), <code>execution-graph-optimization.md</code> (GO5&ndash;GO7), and
+  <code>coord-core.py</code> &mdash; whose CLI, artifact-class registry parser, merge-driver
+  behaviour and doctor output were read and run against this repo rather than recalled.</p>
+  <p><strong>Verification note:</strong> every command in the proposed registry was run before it
+  was written down. That caught one error &mdash; <code>audit-log.py regen</code> does not exist; the
+  subcommand is <code>render</code> &mdash; which would have resolved merges silently and left
+  <code>audit-data.js</code> permanently stale. The residual risk is <code>health-history.jsonl</code>,
+  which does not exist in this repo yet; the pattern is harmless until it does.</p>
+</footer>
+
+</div>

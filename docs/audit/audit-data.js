@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T16:04:16Z",
+  "generated": "2026-09-06T16:13:36Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -325,6 +325,42 @@ window.AUDIT_DATA = {
       "git": {
         "sha": "25d4d56e947a908c9ebb3360e46c902b0467c45c",
         "short": "25d4d56e9",
+        "branch": "main",
+        "pushed": false
+      }
+    },
+    {
+      "id": "al-01M1VQY98S53C81F85WNR8EK3B",
+      "shortname": "session-coordination-proposal",
+      "datetime": "2026-09-06T16:13:36Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "prompt": "ground yourself in the multi-session, multi-agent coordination protocols we have established as part of the ai-forward pack; think of how we can have a clean separation of concerns that would allow us to have optimal division of labor between multiple sessions in different work-trees that optimizes for composition, coordination and parallelism while minimizing contention; produce this as the last proposal",
+      "summary": "Session-coordination proposal, grounded by RUNNING coord-core.py against this repo rather than recalling the protocol. Measured state: the coordination layer is HALF-LIVE — harness edit boundary enforcing for both hosts, but the class registry (.agents/artifacts.yml) is absent, no merge driver is declared across 308 tracked files, collaborate reports BLOCKER COORD-COLLAB-NOT-CHECKED-EMPTY with 0 active sessions and contract missing, and the only worktree is the primary (this whole session ran in WT4's recorded exception). Central finding: contention is a property of the ARTIFACT, not the task — the engine's own comment records that the six busiest files in the reference repo are all generated, so a uniform lease aims at 13/60 and misses 58/60. Four classes exist (authored, derived, register, hotspot; hotspot is declared but unimplemented). This repo's four highest-traffic files — docs-index.js, audit-data.js, audit-log.jsonl, change-log.jsonl — are all non-authored but currently classified authored, so they would conflict on essentially every merge in a two-session world. Highest-leverage action is therefore a ~20-line registry, not an org chart. Proposed five tracks with strictly one-way dependencies (Spine serial; then Core, Solver, Knowledge parallel; Surface follows Core's interfaces; AI reads Core's results), a contention matrix, and the session protocol mapped to WT1-WT12 plus coord claim/check/request/release. Named the serial spine: GO5(b) means that until interfaces are fixed every track's result changes every other track's shape. Tempered the parallelism ask honestly against GO6 (~15x token multiplier, pay deliberately or not at all) — for a solo developer worktrees buy isolation, long-running-work overlap and context hygiene (WT1a, class CTX-A) rather than speed; real parallelism arrives only if agents run tracks concurrently. VERIFICATION CATCH: the proposed registry initially carried 'audit-log.py regen' from inference; running the CLI showed no such subcommand — the real one is 'render' — and also showed audit-log.md is authored prose rather than a projection, so it stays unregistered. A wrong regenerate command resolves merges silently and leaves the artifact permanently stale, which is worse than the conflict it replaces.",
+      "kind": "skill",
+      "skill": "collectknowledge",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/proposals/session-coordination-plan.html"
+      ],
+      "tags": [
+        "coordination",
+        "worktrees",
+        "parallelism",
+        "contention"
+      ],
+      "outcome": "success",
+      "goal": "A proposal for dividing the build across sessions and worktrees, grounded in the pack's actual coordination protocols",
+      "done_when": "Grounded by running coord-core.py; tracks, contention matrix, session protocol and serial spine stated; proposal written to docs/proposals",
+      "tier": "T2",
+      "fan_out": 0,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true
+      },
+      "git": {
+        "sha": "b7121f796a2bfffa480f1a1598091675dd40dd50",
+        "short": "b7121f796",
         "branch": "main",
         "pushed": false
       }
