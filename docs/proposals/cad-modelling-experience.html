@@ -1,0 +1,516 @@
+<title>Wing Modelling Experience</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#F6F8F7; --surface:#FFFFFF; --sunk:#EDF1F0;
+    --ink:#0C1B21; --body:#22343A; --muted:#5A6E75; --muted2:#8A9AA0;
+    --rule:#D6DFDE; --rule-strong:#B7C6C4;
+    --accent:#C8500F;
+    --go:#1F6F5C; --warn:#8A6100; --stop:#A32C1E;
+    --go-bg:#E3F0EB; --warn-bg:#F6EED9; --stop-bg:#F6E2DE;
+    --s1:#1F6F5C; --s2:#2E6F8E; --s3:#7A5AA6; --s4:#C8500F;
+    --shadow:0 1px 2px rgba(12,27,33,.05), 0 8px 24px -12px rgba(12,27,33,.18);
+    --measure:66ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+      --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+      --rule:#1E333A; --rule-strong:#2C464E;
+      --accent:#F0793C;
+      --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+      --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+      --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+    --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+    --rule:#1E333A; --rule-strong:#2C464E;
+    --accent:#F0793C;
+    --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+    --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+    --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--body);
+    font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+    font-size:17px; line-height:1.62; margin:0; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px 96px}
+  .col{max-width:var(--measure)}
+  h1,h2,h3,h4{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+  h1{font-size:clamp(2.1rem,4.4vw,3.1rem); line-height:1.06; font-weight:700;
+     letter-spacing:-.022em; color:var(--ink); margin:0 0 .5rem; text-wrap:balance}
+  h2{font-size:1.55rem; font-weight:700; letter-spacing:-.015em; color:var(--ink);
+     margin:0 0 .2rem; text-wrap:balance}
+  h3{font-size:1.08rem; font-weight:600; letter-spacing:-.008em; color:var(--ink);
+     margin:0 0 .35rem; text-wrap:balance}
+  h4{font-size:.95rem; font-weight:600; color:var(--ink); margin:1.3rem 0 .3rem}
+  p{margin:0 0 1.05rem}
+  strong{color:var(--ink); font-weight:600}
+  a{color:var(--accent)}
+  code,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:.87em; font-variant-numeric:tabular-nums}
+  code{background:var(--sunk); padding:.1em .38em; border-radius:3px; color:var(--ink)}
+  pre{background:var(--sunk); border:1px solid var(--rule); padding:16px 18px;
+    overflow-x:auto; margin:0 0 1.3rem; border-radius:2px}
+  pre code{background:none; padding:0; font-size:.8rem; line-height:1.62; color:var(--body)}
+  .cm{color:var(--muted2)} .kw{color:var(--accent); font-weight:500}
+  .eyebrow{font-family:Archivo,sans-serif; font-size:.7rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 .55rem}
+  header.top{border-bottom:2px solid var(--ink); padding:56px 0 22px}
+  .kicker{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:18px}
+  .kicker .dot{color:var(--rule-strong)} .kicker .hl{color:var(--accent)}
+  .standfirst{font-size:1.16rem; line-height:1.55; color:var(--body); max-width:60ch; margin:0}
+  .rig{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0;
+    border-bottom:1px solid var(--rule); margin:0 0 52px}
+  .rig div{padding:16px 18px 18px; border-right:1px solid var(--rule)}
+  .rig div:last-child{border-right:0}
+  .rig dt{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
+  .rig dd{margin:0; font-family:"IBM Plex Mono",monospace; font-size:.95rem; font-weight:500;
+    color:var(--ink); font-variant-numeric:tabular-nums}
+  .rig dd.bad{color:var(--stop)} .rig dd.good{color:var(--go)}
+  section{padding:44px 0; border-top:1px solid var(--rule)}
+  .sec-head{display:flex; gap:14px; align-items:baseline; margin-bottom:1.4rem}
+  .sec-num{font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--accent);
+    font-weight:500; padding-top:.28rem; flex:none}
+  .callout{background:var(--surface); border:1px solid var(--rule);
+    border-left:3px solid var(--accent); padding:20px 24px; margin:0 0 1.4rem; box-shadow:var(--shadow)}
+  .callout p:last-child{margin-bottom:0}
+  .callout.quiet{border-left-color:var(--rule-strong); box-shadow:none; background:var(--sunk)}
+  .callout.cut{border-left-color:var(--stop); box-shadow:none; background:var(--stop-bg)}
+  .tscroll{overflow-x:auto; margin:0 0 1.3rem; border:1px solid var(--rule); background:var(--surface)}
+  table{border-collapse:collapse; width:100%; font-size:.88rem}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top}
+  thead th{font-family:Archivo,sans-serif; font-size:.64rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); background:var(--sunk);
+    border-bottom:1px solid var(--rule-strong); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .conf{font-family:Archivo,sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.08em;
+    text-transform:uppercase; padding:2px 6px; border-radius:2px; white-space:nowrap}
+  .conf.v{background:var(--go-bg); color:var(--go)}
+  .conf.i{background:var(--warn-bg); color:var(--warn)}
+  .conf.f{background:var(--stop-bg); color:var(--stop)}
+  .tag{font-family:Archivo,sans-serif; font-size:.62rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; padding:3px 7px; border-radius:2px}
+  .tag.a{background:var(--go-bg); color:var(--go)}
+  .tag.b{background:var(--warn-bg); color:var(--warn)}
+  .tag.c{background:var(--stop-bg); color:var(--stop)}
+  figure{margin:0 0 1.4rem; border:1px solid var(--rule); background:var(--surface); padding:22px 24px 18px}
+  figcaption{font-size:.83rem; color:var(--muted); margin-top:12px; line-height:1.5}
+  svg{display:block; width:100%; height:auto}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:10px;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600; color:var(--muted)}
+  .legend span{display:flex; align-items:center; gap:6px}
+  .legend i{width:14px; height:3px; border-radius:2px; display:block}
+  ul.body-list{margin:0 0 1.1rem; padding-left:1.15em}
+  ul.body-list li{margin-bottom:.5rem}
+  ul.body-list li::marker{color:var(--muted2)}
+  ol.body-list{margin:0 0 1.1rem; padding-left:1.3em}
+  ol.body-list li{margin-bottom:.55rem}
+  .stack{border:1px solid var(--rule); background:var(--surface); margin-bottom:1.4rem}
+  .layer{display:grid; grid-template-columns:130px 1fr 110px; gap:18px; padding:15px 20px;
+    border-bottom:1px solid var(--rule); align-items:start}
+  .layer:last-child{border-bottom:0}
+  .layer-k{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--muted); padding-top:.2rem}
+  .layer p{margin:0; font-size:.89rem; line-height:1.5}
+  .layer .cost{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--accent);
+    text-align:right; padding-top:.15rem; white-space:nowrap}
+  .ph{display:grid; grid-template-columns:120px 1fr; gap:20px; padding:18px 0;
+    border-bottom:1px solid var(--rule)}
+  .ph:last-child{border-bottom:0}
+  .ph-k{font-family:Archivo,sans-serif; font-size:.68rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); padding-top:.22rem}
+  .ph-k b{display:block; font-family:"IBM Plex Mono",monospace; font-size:.95rem; color:var(--ink);
+    letter-spacing:0; text-transform:none; font-weight:600; margin-bottom:2px}
+  .ph p{margin:0 0 .4rem; font-size:.93rem}
+  .ph p:last-child{margin-bottom:0}
+  .ph .aside{color:var(--muted); font-size:.87rem}
+  .wire{border:1px solid var(--rule-strong); background:var(--surface); padding:0;
+    margin:0 0 1.4rem; overflow:hidden}
+  .wire-bar{background:var(--sunk); border-bottom:1px solid var(--rule);
+    padding:8px 14px; font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  footer{border-top:2px solid var(--ink); padding:26px 0 0; margin-top:44px;
+    font-size:.85rem; color:var(--muted)}
+  footer p{margin:0 0 .5rem; max-width:70ch}
+  @media (max-width:760px){
+    .ph{grid-template-columns:1fr; gap:6px}
+    .layer{grid-template-columns:1fr; gap:5px}
+    .layer .cost{text-align:left}
+    body{font-size:16px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">
+    <span>CFD-Bench</span><span class="dot">/</span>
+    <span class="hl">Modelling Experience</span><span class="dot">/</span>
+    <span>WPF CAD</span><span class="dot">/</span>
+    <span>6 September 2026</span>
+  </div>
+  <h1>Editing a wing, not a surface</h1>
+  <p class="standfirst">What a foil editor in WPF should feel like, which paradigm it should borrow
+  from &mdash; and why the answer is Shape3d rather than Rhino.</p>
+</header>
+
+<dl class="rig">
+  <div><dt>Viewport</dt><dd>HelixToolkit</dd></div>
+  <div><dt>Kernel</dt><dd>OCCT</dd></div>
+  <div><dt>Paradigm</dt><dd>Direct + constrained</dd></div>
+  <div><dt>Editable curves</dt><dd>5</dd></div>
+  <div><dt>Spline degree</dt><dd>5</dd></div>
+  <div><dt>Build from scratch</dt><dd class="good">3 of 7 layers</dd></div>
+</dl>
+
+<section style="border-top:0">
+  <div class="sec-head"><span class="sec-num">01</span><div>
+    <p class="eyebrow">The paradigm choice</p>
+    <h2>Three ways to build CAD, and only one fits</h2>
+  </div></div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Paradigm</th><th>Exemplar</th><th>Mental model</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Direct NURBS manipulation</strong></td><td>Rhino</td>
+        <td>No history tree. Curves, surfaces and solids are first-class; you push control points and
+        manage continuity G0&ndash;G3</td>
+        <td><span class="tag b">Half right</span> The interaction model is right; unconstrained
+        surface editing is not</td></tr>
+      <tr><td><strong>Visual programming</strong></td><td>Grasshopper</td>
+        <td>Components wired on a canvas. Grew from Rutten's 2008 question &mdash; <em>&ldquo;what if
+        you could have explicit control over the history?&rdquo;</em></td>
+        <td><span class="tag c">Not v1</span> Large surface, and the generative layer already covers
+        the parametric need</td></tr>
+      <tr><td><strong>Relational geometry</strong></td><td>MultiSurf / SurfaceWorks</td>
+        <td>A hierarchy of dependencies; change a parameter and dependents update</td>
+        <td><span class="tag b">The idea, not the format</span> Its model is <strong>not
+        NURBS</strong>, so it does not round-trip to other CAD &mdash; a trap we must avoid</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>The recommendation: direct manipulation of a constrained parametric model.</strong>
+    The user does not want free-form NURBS editing &mdash; that is Rhino, and it would let them build
+    something that is not a foil. They want to edit <em>the outline, the anhedral, the chord, the
+    thickness, the twist</em>. Those are exactly the distribution curves already in the station
+    model.</p>
+    <p style="margin-top:.8rem">So: <strong>the editable objects are the distribution curves, never
+    the surface.</strong> Editing &ldquo;the outline&rdquo; means editing the chord-versus-span
+    curve. The surface is always derived. That single decision preserves two invariants at once
+    &mdash; the geometry is always a valid foil, and every edit maps to parameters the estimator
+    understands, so <strong>L/D can update while you drag.</strong></p>
+  </div>
+
+  <p>The MultiSurf lesson is worth stating separately because it is the closest existing analogue
+  &mdash; parametric relational surfaces for marine design &mdash; and its recorded weakness is
+  precisely the one we must dodge: <strong>a native model that other CAD systems cannot read.</strong>
+  Our model may be relational internally, but what leaves the tool must be NURBS/B-Rep.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><div>
+    <p class="eyebrow">The closest analogue</p>
+    <h2>What Shape3d already got right</h2>
+  </div></div>
+
+  <div class="col">
+  <p>Shape3d designs surfboards from concept to CNC &mdash; a lofted marine surface edited through
+  orthogonal curves. It is a closer analogue to a foil editor than any mechanical CAD package, and
+  its interaction details are worth copying almost verbatim.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Shape3d behaviour</th><th>Why it matters for a foil</th></tr></thead>
+    <tbody>
+      <tr><td>Left-click a control point to select (turns red); move with <strong>mouse or arrow
+        keys</strong>, with accurate keyboard displacement steps</td>
+        <td><strong>Keyboard nudge is not optional.</strong> Precision work needs it; mouse-only
+        editing is for sketching</td></tr>
+      <tr><td><strong>Double-click on the curve adds</strong> a control point there; Delete or
+        right-click removes one</td>
+        <td>Control-point count is a design decision, not a fixed property. Fewer points = fairer
+        curve</td></tr>
+      <tr><td>Multi-point selection and alignment</td>
+        <td>Straightening a run of stations is a real operation</td></tr>
+      <tr><td>Hold left-click in outline/profile/thickness view to see the <strong>slice flow with
+        width, rocker and thickness plus distance from each end simultaneously</strong></td>
+        <td><strong>The most valuable idea here.</strong> Show derived quantities <em>during</em> the
+        drag. Our version adds the one Shape3d cannot: <strong>live L/D</strong></td></tr>
+      <tr><td>Display thickness between any two curves</td>
+        <td>Direct analogue: t/c between upper and lower section surfaces</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p><strong>The multi-view paradigm transfers exactly.</strong> A surfboard is edited as outline +
+  profile + thickness. A foil is edited as <strong>planform outline, anhedral, chord distribution,
+  thickness distribution and twist distribution</strong> &mdash; five orthogonal curves that fully
+  determine the surface.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><div>
+    <p class="eyebrow">The screen</p>
+    <h2>Five curves, one surface, live numbers</h2>
+  </div></div>
+
+  <div class="wire">
+    <div class="wire-bar">Wing Editor &mdash; E818 root &middot; AR 11.4 &middot; unsaved</div>
+    <svg viewBox="0 0 1000 480" role="img" aria-label="Wireframe of the wing editor: a 3D viewport top left with the lofted wing, a curve editor top right showing the chord distribution with control points and a curvature comb, a row of five curve tabs, and a live properties strip along the bottom.">
+      <g font-family="Archivo, sans-serif" font-size="11" font-weight="600" fill="var(--muted)">
+        <!-- 3D viewport -->
+        <rect x="8" y="10" width="560" height="300" fill="var(--surface)" stroke="var(--rule)"></rect>
+        <text x="22" y="30" letter-spacing="1">3D &#183; LOFTED SURFACE</text>
+        <path d="M 90 200 C 180 130, 300 110, 400 108 C 500 110, 620 130, 500 200
+                 C 420 224, 300 232, 200 226 Z" fill="var(--s2)" opacity="0.16"
+              stroke="var(--s2)" stroke-width="1.6"></path>
+        <g stroke="var(--s2)" stroke-width="0.7" opacity="0.55">
+          <line x1="150" y1="163" x2="212" y2="216"></line>
+          <line x1="230" y1="132" x2="272" y2="224"></line>
+          <line x1="310" y1="114" x2="332" y2="229"></line>
+          <line x1="400" y1="108" x2="400" y2="230"></line>
+          <line x1="480" y1="116" x2="468" y2="226"></line>
+        </g>
+        <circle cx="400" cy="108" r="4" fill="var(--accent)"></circle>
+        <circle cx="310" cy="114" r="4" fill="var(--accent)"></circle>
+        <circle cx="230" cy="132" r="4" fill="var(--accent)"></circle>
+        <g font-family="IBM Plex Mono, monospace" font-size="9" font-weight="400" fill="var(--muted2)">
+          <text x="100" y="262">station y = 0.000  0.180  0.330  0.450  0.490</text>
+          <text x="100" y="280">curvature comb: clean &#183; no reversals</text>
+        </g>
+        <rect x="470" y="24" width="88" height="22" fill="var(--sunk)" stroke="var(--rule)"></rect>
+        <text x="514" y="39" font-size="9" letter-spacing="1" text-anchor="middle">GHOST: PREV</text>
+
+        <!-- curve editor -->
+        <rect x="576" y="10" width="416" height="300" fill="var(--surface)" stroke="var(--rule)"></rect>
+        <text x="590" y="30" letter-spacing="1" fill="var(--accent)">CHORD DISTRIBUTION</text>
+        <line x1="604" y1="250" x2="972" y2="250" stroke="var(--rule)"></line>
+        <line x1="604" y1="52" x2="604" y2="250" stroke="var(--rule)"></line>
+        <path d="M 604 96 C 680 100, 760 122, 832 158 C 890 188, 940 226, 972 248"
+              fill="none" stroke="var(--s1)" stroke-width="2.6"></path>
+        <!-- control points + handles -->
+        <g>
+          <line x1="604" y1="96" x2="668" y2="99" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 2"></line>
+          <circle cx="604" cy="96" r="5" fill="var(--accent)"></circle>
+          <circle cx="668" cy="99" r="3.5" fill="none" stroke="var(--accent)" stroke-width="1.4"></circle>
+          <line x1="770" y1="108" x2="832" y2="158" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 2"></line>
+          <circle cx="832" cy="158" r="6" fill="var(--stop)"></circle>
+          <circle cx="770" cy="108" r="3.5" fill="none" stroke="var(--accent)" stroke-width="1.4"></circle>
+          <circle cx="972" cy="248" r="5" fill="var(--accent)"></circle>
+        </g>
+        <!-- curvature comb -->
+        <g stroke="var(--s3)" stroke-width="0.9" opacity="0.85">
+          <line x1="628" y1="97" x2="628" y2="79"></line>
+          <line x1="660" y1="99" x2="660" y2="78"></line>
+          <line x1="700" y1="105" x2="700" y2="80"></line>
+          <line x1="740" y1="116" x2="740" y2="86"></line>
+          <line x1="780" y1="133" x2="780" y2="99"></line>
+          <line x1="820" y1="152" x2="820" y2="120"></line>
+          <line x1="860" y1="177" x2="860" y2="150"></line>
+          <line x1="900" y1="204" x2="900" y2="182"></line>
+          <line x1="940" y1="230" x2="940" y2="213"></line>
+          <path d="M 628 79 L 660 78 L 700 80 L 740 86 L 780 99 L 820 120 L 860 150 L 900 182 L 940 213"
+                fill="none" stroke="var(--s3)" stroke-width="1.2"></path>
+        </g>
+        <g font-family="IBM Plex Mono, monospace" font-size="9" font-weight="400" fill="var(--muted2)">
+          <text x="604" y="268">root</text><text x="972" y="268" text-anchor="end">tip</text>
+          <text x="598" y="56" text-anchor="end">c</text>
+          <text x="840" y="176" fill="var(--stop)">y=0.330  c=0.098 m</text>
+          <text x="604" y="286" fill="var(--s3)">curvature comb (degree 5)</text>
+        </g>
+
+        <!-- curve tabs -->
+        <rect x="8" y="320" width="984" height="34" fill="var(--sunk)" stroke="var(--rule)"></rect>
+        <g font-size="10" letter-spacing="1">
+          <rect x="16" y="326" width="130" height="22" fill="var(--surface)" stroke="var(--rule)"></rect>
+          <text x="81" y="341" text-anchor="middle" fill="var(--muted)">OUTLINE</text>
+          <rect x="152" y="326" width="130" height="22" fill="var(--accent)"></rect>
+          <text x="217" y="341" text-anchor="middle" fill="var(--surface)">CHORD</text>
+          <rect x="288" y="326" width="130" height="22" fill="var(--surface)" stroke="var(--rule)"></rect>
+          <text x="353" y="341" text-anchor="middle" fill="var(--muted)">ANHEDRAL</text>
+          <rect x="424" y="326" width="130" height="22" fill="var(--surface)" stroke="var(--rule)"></rect>
+          <text x="489" y="341" text-anchor="middle" fill="var(--muted)">THICKNESS</text>
+          <rect x="560" y="326" width="130" height="22" fill="var(--surface)" stroke="var(--rule)"></rect>
+          <text x="625" y="341" text-anchor="middle" fill="var(--muted)">TWIST</text>
+          <rect x="700" y="326" width="150" height="22" fill="var(--surface)" stroke="var(--rule-strong)"></rect>
+          <text x="775" y="341" text-anchor="middle" fill="var(--muted)">SECTIONS &#183; CST</text>
+        </g>
+
+        <!-- live properties -->
+        <rect x="8" y="364" width="984" height="106" fill="var(--surface)" stroke="var(--rule)"></rect>
+        <text x="22" y="384" letter-spacing="1">LIVE &#183; RECOMPUTED ON DRAG</text>
+        <g font-family="IBM Plex Mono, monospace" font-size="11" font-weight="400">
+          <text x="22" y="410" fill="var(--muted)">span</text><text x="22" y="428" fill="var(--ink)" font-size="14">0.98 m</text>
+          <text x="150" y="410" fill="var(--muted)">area</text><text x="150" y="428" fill="var(--ink)" font-size="14">842 cm&#178;</text>
+          <text x="290" y="410" fill="var(--muted)">aspect ratio</text><text x="290" y="428" fill="var(--ink)" font-size="14">11.4</text>
+          <text x="430" y="410" fill="var(--muted)">mean chord</text><text x="430" y="428" fill="var(--ink)" font-size="14">86 mm</text>
+          <text x="570" y="410" fill="var(--muted)">t/c max</text><text x="570" y="428" fill="var(--ink)" font-size="14">9.4%</text>
+          <text x="700" y="410" fill="var(--muted)">L/D @ 16 kn</text><text x="700" y="428" fill="var(--go)" font-size="16" font-weight="600">19.8</text>
+          <text x="850" y="410" fill="var(--muted)">cavitation-free</text><text x="850" y="428" fill="var(--ink)" font-size="14">38.2 kn</text>
+          <text x="22" y="454" fill="var(--muted2)" font-size="9">all derived from stations &#183; nothing stored</text>
+          <text x="700" y="454" fill="var(--warn)" font-size="9">&#9888; tip &#945;_eff 9.1&#176; &#8212; near envelope edge</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="col">
+  <h4>The three decisions this screen encodes</h4>
+  <ol class="body-list">
+    <li><strong>Curve tabs, not a feature tree.</strong> Five curves fully determine the surface, and
+    each is a familiar 2D editing problem. A user who understands surfboard shaping already
+    understands this.</li>
+    <li><strong>The curvature comb is always on.</strong> Curvature discontinuities are
+    hydrodynamically real and visually invisible &mdash; the exact hazard flagged in the geometry
+    knowledge base. At G1 the combs are <em>parallel where they meet but of different lengths</em>;
+    at G2 they match. Degree-5 splines give G4 continuity internally against degree-3's G2, which is
+    why <strong>degree 5 is the default</strong> for a surface whose pressure distribution is a
+    derivative of its curvature.</li>
+    <li><strong>The live strip carries L/D and cavitation margin.</strong> This is the thing no
+    existing CAD tool does and the whole reason to build rather than buy: <strong>the estimator runs
+    on every drag</strong>, so the designer sees the hydrodynamic consequence of a control-point move
+    at the moment they make it. The warning on tip &alpha;<sub>eff</sub> is the validity envelope
+    enforcing itself.</li>
+  </ol>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><div>
+    <p class="eyebrow">The stack</p>
+    <h2>Build three layers, buy four</h2>
+  </div></div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Layer</th><th>Decision</th><th>Choice</th><th>Reasoning</th></tr></thead>
+    <tbody>
+      <tr><td>Station / loft model</td><td><span class="tag a">Build</span></td><td>&mdash;</td>
+        <td>It is the domain model. Small, and no library has it</td></tr>
+      <tr><td>Section curves (CST, NACA, catalog)</td><td><span class="tag a">Build</span></td><td>&mdash;</td>
+        <td>Already specified. A few hundred lines, and the CST class function guarantees validity</td></tr>
+      <tr><td>Spline eval, curvature combs, fairing</td><td><span class="tag a">Build</span></td><td>&mdash;</td>
+        <td>Standard maths, and we need exact control over degree and continuity</td></tr>
+      <tr><td>3D viewport, camera, picking, gizmos</td><td><span class="tag b">Buy</span></td>
+        <td><strong>HelixToolkit.Wpf.SharpDX 3.1.2</strong></td>
+        <td>The only mature open-source WPF 3D viewport with a manipulator story. DirectX 11 via
+        SharpDX, XAML/MVVM, <code>Viewport3DX</code>. Months of work, already solved</td></tr>
+      <tr><td>NURBS surfaces, B-Rep, booleans, STEP</td><td><span class="tag b">Buy</span></td>
+        <td><strong>OCCT + OCC C# Wrapper</strong></td>
+        <td>Years of work. <strong>Do not attempt.</strong> And STEP export is what makes the tool
+        manufacturable &mdash; see below</td></tr>
+      <tr><td>2D charts</td><td><span class="tag b">Buy</span></td><td>ScottPlot</td>
+        <td>Best .NET performance on large scientific datasets</td></tr>
+      <tr><td>Mesh / STL output</td><td><span class="tag b">Either</span></td><td>&mdash;</td>
+        <td>Trivial from our own loft; OCCT also does it</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>The OCCT decision deserves to be made explicitly rather than drifted into.</strong>
+    It is a large native dependency with a wrapper build step and a real learning curve. It earns its
+    place for exactly one reason: <strong>STEP export.</strong> STL is not appropriate for CNC
+    &mdash; tessellation discards tolerance and produces facets on the surface whose curvature is the
+    entire point of the design. STEP needs a B-Rep kernel, and writing one is not a reasonable
+    undertaking.</p>
+    <p style="margin-top:.8rem"><strong>So the honest sequencing is:</strong> if v1 exports STL for
+    meshing and visualisation only, <strong>OCCT is deferrable</strong>. It becomes required the
+    moment someone wants to machine a mold. Decide by asking whether CAM is a v1 requirement, not by
+    asking whether a kernel would be nice.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><div>
+    <p class="eyebrow">Where designs come from</p>
+    <h2>Three doors into the editor</h2>
+  </div></div>
+
+  <div class="stack">
+    <div class="layer">
+      <div class="layer-k">From the optimiser</div>
+      <p>A candidate from the goal-driven experience arrives as explicit stations. <strong>The
+      generative layer burst into editable geometry</strong> &mdash; and the flow is one-way by
+      design, so hand edits never fight the parameters that produced them.</p>
+      <div class="cost">primary</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">From a catalog</div>
+      <p>A discipline preset &mdash; downwind, race, surf &mdash; instantiated at the user's rider
+      weight and speed range. The fastest path to a sane starting point.</p>
+      <div class="cost">easy</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">From a file</div>
+      <p>Opening an existing wing. <strong>This is the hard one and should be scoped honestly:</strong>
+      importing an arbitrary STEP surface and back-fitting it to stations is a <em>fitting</em>
+      problem, not a parsing problem, and it is substantially harder than export.</p>
+      <div class="cost">defer</div>
+    </div>
+  </div>
+
+  <div class="col">
+  <p>A realistic middle path for import: accept <strong>section coordinates plus a planform table
+  </strong> &mdash; formats we already read &mdash; rather than arbitrary B-Rep. That covers
+  &ldquo;open a wing someone described&rdquo; without solving surface reconstruction.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><div>
+    <p class="eyebrow">Risks</p>
+    <h2>What could make this harder than it looks</h2>
+  </div></div>
+
+  <div class="col">
+  <ul class="body-list">
+    <li><strong>OCCT licensing.</strong> LGPL-family with exceptions. <em>Load-bearing and
+    unverified</em> &mdash; it must be read before commitment, because it gates the STEP path and
+    therefore the whole fabrication story.</li>
+    <li><strong>Does HelixToolkit's gizmo generalise to control-point dragging?</strong> The demos
+    show object transforms. Dragging one control point in a 3D view, constrained to a plane, is a
+    different interaction. <strong>Worth a spike before committing.</strong></li>
+    <li><strong>Spline lofting can produce invisible defects.</strong> Interpolation through sparse
+    stations can introduce curvature reversals that are real and unseen &mdash; which is why the comb
+    is always on rather than a menu item.</li>
+    <li><strong>Undo across a parametric model is not free.</strong> A control-point drag changes a
+    curve, which regenerates the surface, which re-runs the estimator. Undo must restore the model,
+    not the surface, and the granularity of a &ldquo;drag&rdquo; needs deciding early.</li>
+  </ul>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Evidence:</strong> <code>docs/knowledge/cad-ux-and-geometry/</code> &mdash; Shape3d
+  interaction detail, Rhino/Grasshopper/MultiSurf paradigm comparison, Autodesk Alias continuity
+  vocabulary, HelixToolkit and OCCT capability. Export-format reasoning in
+  <code>docs/knowledge/fabrication-and-interop/</code>.</p>
+  <p><strong>Scope:</strong> the design object is a <strong>single wing</strong>, front or rear. The
+  editor never edits an assembly &mdash; other surfaces appear only as context.</p>
+</footer>
+
+</div>

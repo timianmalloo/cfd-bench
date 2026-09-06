@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T05:18:30Z",
+  "generated": "2026-09-06T15:13:45Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -148,6 +148,51 @@ window.AUDIT_DATA = {
         "branch": "main",
         "pushed": false
       }
+    },
+    {
+      "id": "al-01M1VMG1WKK82JD7KTDQGQSYJM",
+      "shortname": "collectknowledge-wave2-plus-cuda",
+      "datetime": "2026-09-06T15:13:24Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "prompt": "continue building knowledge and proposals before specify; scope is designing front or rear wings not the whole assembly. (1) install CUDA toolkit. (2) collectknowledge on wrapping/orchestrating OpenFOAM from C# and interop architecture, no input file wrangling. (3) goal-driven design from a stated goal plus constraints with sliders, constraint solver and pre-evaluation, converging on a proposed shape - propose the UX. (4) CAD experience in WPF, study shape3d/rhino/multisurf/fusion360, collectknowledge on CAD UX in C#, OSS controls and libraries - propose the UX. (5) collectknowledge on MCP integration with CAD ranked by fidelity, gcode for molds, export formats. (6) collectknowledge on chart surfaces, 2D/3D streamline visualization with alpha and velocity sweeps and video export - propose.",
+      "summary": "CUDA Toolkit 13.3.73 installed and VERIFIED: native sm_120 kernel compiled with MSVC 14.51 and executed on the RTX 5090 Laptop. Measured STREAM triad 811.6 GB/s = 90.6 percent of the 896.1 GB/s theoretical read from the device, which promotes the previously Flagged vendor bandwidth figure to Verified. The v2 throughput estimate is corroborated to 0.02 percent: FluidX3D's published desktop result implies 58.7 percent real-kernel efficiency, which applied to this device gives 9,572 MLUPs/s against the earlier 9,570, and 221.6 steps/s at 43.2M cells against the claimed ~220. Scope narrowed to a SINGLE WING (front or rear), with the multi-surface grammar retained as context because a rear wing sits in the front wing's downwash. Five new knowledge bases: cfd-orchestration (PyFoam/CaseFOAM/fluidsimfoam prior art, four Windows substrates, ICfdBackend boundary, meshing as the real work, cloud economics), design-automation (constraints vs objectives vs context, interactive MOPSO over AVL precedent, PAVED preference brush, 10us evaluation as the enabling asset), cad-ux-and-geometry (three CAD paradigms with direct-manipulation-of-constrained-parametric recommended, Shape3d interaction detail, G0-G3 continuity and curvature combs, HelixToolkit + OCCT stack, build-vs-buy table), fabrication-and-interop (STEP AP242 for CNC not STL, mold boolean needs B-Rep, do-not-build-CAM, CAD MCP fidelity ranking with Onshape FeatureScript highest), flow-visualization (12 charts across two tiers, quasi-3D alpha_eff correction for spanwise section views, LIC/streamlines, and the finding that NO VTK .NET binding exists). Three proposals written to docs/proposals/ as self-contained HTML: goal-driven-design-experience, cad-modelling-experience, visualisation-experience.",
+      "kind": "skill",
+      "skill": "collectknowledge",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/knowledge/cfd-orchestration/index.md",
+        "docs/knowledge/design-automation/index.md",
+        "docs/knowledge/cad-ux-and-geometry/index.md",
+        "docs/knowledge/fabrication-and-interop/index.md",
+        "docs/knowledge/flow-visualization/index.md",
+        "docs/proposals/goal-driven-design-experience.html",
+        "docs/proposals/cad-modelling-experience.html",
+        "docs/proposals/visualisation-experience.html"
+      ],
+      "tags": [
+        "cuda",
+        "openfoam",
+        "cad-ux",
+        "visualization",
+        "constraints",
+        "scope-change"
+      ],
+      "outcome": "success",
+      "goal": "Five knowledge passes plus three proposals, CUDA installed, design scope narrowed to a single wing",
+      "done_when": "CUDA installed or reason recorded; sourced knowledge for orchestration, design automation, CAD UX, fabrication and visualisation; three proposals in docs/proposals; scope reconciled; graph, audit and change log current",
+      "tier": "T2",
+      "fan_out": 0,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true
+      },
+      "git": {
+        "sha": "e7ec6d8c4bd9721994342c7a90db1684ab05c42c",
+        "short": "e7ec6d8c4",
+        "branch": "main",
+        "pushed": false
+      }
     }
   ],
   "changes": [
@@ -240,6 +285,38 @@ window.AUDIT_DATA = {
         "commits": []
       },
       "audit_ref": "al-01M1TJE84RRX29SEDW48Y189Y7"
+    },
+    {
+      "id": "cl-01M1VMGPYXER4XQNCMWE64DSE6",
+      "datetime": "2026-09-06T15:13:45Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "kind": "knowledge",
+      "skill": "collectknowledge",
+      "title": "Design object narrowed to a single wing; CUDA verified on hardware; five knowledge bases added",
+      "prompt": "continue building knowledge and proposals before specify; scope should be designing front or rear wings not the whole foil assembly; install CUDA; collectknowledge on OpenFOAM orchestration from C#, goal-driven design with constraints, CAD UX in C#, MCP/gcode/export, and visualization; produce proposals",
+      "summary": "Three structural decisions. (1) SCOPE: the design object is a single lifting surface, front or rear, not the assembly. Whole-craft equilibrium, stability eigenvalues, decalage as a design variable and strut drag leave scope; the multi-surface grammar is retained as CONTEXT because a rear wing operates in the front wing's downwash and evaluating it in free stream is wrong. (2) CUDA verified on hardware: native sm_120 compiles and runs; measured 811.6 GB/s STREAM triad at 90.6 percent of the 896.1 GB/s theoretical read from the device; the v2 throughput estimate is corroborated to 0.02 percent. ILGPU is now moot for the decision since the native path is demonstrated. (3) Five knowledge bases establish the architecture beyond the solver: OpenFOAM has no library API so orchestration is a generation-plus-process problem behind one ICfdBackend interface with meshing as the real work; constraints, objectives and context are three different input types that must not share a widget, and the 10us estimator is what makes interactive optimisation possible at all; the CAD paradigm is direct manipulation of a constrained parametric model where the editable objects are five distribution curves and never the surface; STEP AP242 not STL is the fabrication format and mold generation needs B-Rep booleans, which is the concrete argument for the OCCT dependency; and there is NO VTK binding for .NET, so 3D flow rendering must be built on the same HelixToolkit viewport the CAD editor already needs.",
+      "rationale": "The scope cut aligns the product with the model that was already there - the parametric grammar, section catalog, estimator and CAD editor all operate on a wing - while preserving the one piece of assembly context that is physically load-bearing. The CUDA verification removes the last toolchain risk from the simulation tier and converts the performance plan from transferred estimate to measured hardware, leaving a single transferred figure (LBM kernel efficiency) instead of an unverified chain. The five knowledge bases were needed before /specify because each contains at least one finding that changes the architecture rather than merely informing it: the absence of a VTK .NET binding forces a build-it-ourselves visualisation decision; STEP-over-STL forces the OCCT dependency question to be answered explicitly rather than drifted into; the constraint/objective/context distinction determines the shape of the primary UI; and OpenFOAM's file-and-process interface means there is no FFI problem to solve, which is a materially cheaper integration than assumed.",
+      "artifacts": [
+        "docs/knowledge/cfd-orchestration/index.md",
+        "docs/knowledge/cad-ux-and-geometry/index.md",
+        "docs/knowledge/flow-visualization/index.md",
+        "docs/proposals/goal-driven-design-experience.html"
+      ],
+      "tags": [
+        "scope-change",
+        "cuda",
+        "architecture",
+        "cad-ux",
+        "visualization"
+      ],
+      "git": {
+        "before": "e7ec6d8",
+        "after": "e7ec6d8c4bd9721994342c7a90db1684ab05c42c",
+        "branch": "main",
+        "pushed": false,
+        "commits": []
+      },
+      "audit_ref": "al-01M1VMG1WKK82JD7KTDQGQSYJM"
     }
   ]
 };

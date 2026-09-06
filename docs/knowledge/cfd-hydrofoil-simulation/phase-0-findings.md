@@ -219,3 +219,70 @@ None is blocking for Phase 1, because Phase 1 is layers 1–3 and touches no GPU
    reference that validates the VLM choice".
 5. **Phase 1 loses a dependency**: section analysis needs no XFOIL binary, so the catalog and
    estimator can be built entirely in managed code with a Python-side generation step.
+
+---
+
+# Phase 0b — the GPU questions, closed on hardware (2026-09-06)
+
+CUDA Toolkit **13.3.73** installed via `winget install Nvidia.CUDA` (exit 0). Host compiler is
+MSVC **14.51.36231** from Visual Studio Community 2026. A native `sm_120` kernel was compiled and
+executed on the GPU.
+
+## Q1 — native sm_120 codegen: **WORKS**
+
+```
+nvcc -O3 -std=c++17 -arch=sm_120 -o gpu_probe.exe gpu_probe.cu
+```
+
+compiles a native Blackwell cubin and runs. Device reports **compute capability 12.0**, 82 SMs,
+23.89 GiB. **The CUDA path is unblocked** — Option 3's native C++/CUDA boundary has no toolchain
+risk remaining. *(Verified — compiled and executed here.)*
+
+*Note for the port:* `cudaDeviceProp::memoryClockRate` was **removed in CUDA 13**; use
+`cudaDeviceGetAttribute(&v, cudaDevAttrMemoryClockRate, 0)`. The first build failed on exactly this.
+
+## Q3 — real throughput: **MEASURED, and it corroborates the estimate**
+
+| Quantity | Value | Source |
+|---|---|---|
+| Theoretical bandwidth | **896.1 GB/s** | read from the device (256-bit @ 14,001 MHz) |
+| STREAM-triad measured | **811.6 GB/s** | benchmarked here, 50 iterations |
+| Achieved efficiency | **90.6%** of theoretical | measured |
+| Pure-triad LBM ceiling | 14,756 MLUPs/s | at 55 B/cell |
+
+**The vendor-spec bandwidth figure that was Flagged in v2 is now Verified** — 896.1 GB/s read from
+the device matches the 896 GB/s spec exactly.
+
+**The throughput estimate survives contact with the hardware.** FluidX3D's published desktop result
+(19,141 MLUPs/s at 1792 GB/s theoretical) implies a real-kernel efficiency of **58.7%** of
+theoretical. Applying that same efficiency to this device's measured 896.1 GB/s gives
+**9,572 MLUPs/s** — against the v2 bandwidth-scaled estimate of 9,570. **They agree to 0.02%.**
+
+| Domain | Steps/s on measured hardware | v2 claim |
+|---|---|---|
+| 5.4 M cells (30 cells/chord) | 1,772 | — |
+| 12.8 M cells (40 cells/chord) | 748 | — |
+| **43.2 M cells (60 cells/chord)** | **221.6** | ~220 |
+| 100 M cells | 95.7 | — |
+
+*(Inferred — the 58.7% figure is transferred from FluidX3D's published desktop benchmark, not
+measured with an LBM kernel here. What is now **Verified** is the hardware's bandwidth and its 90.6%
+STREAM efficiency; what remains transferred is the LBM kernel's share of it.)*
+
+**Interpretation:** a real LBM kernel runs at roughly **65% of the pure-triad ceiling**, which is
+the expected penalty for the scattered access pattern of stream-and-collide. The estimate was not
+lucky — it was the right model, and the hardware behaves as the model assumed.
+
+## Q2 — LBM accuracy above Re 10⁶: **still open**
+
+Unchanged. This needs a working LBM and a validation case, not a toolchain. It is the last
+substantive open risk on the simulation tier, and it is a physics question rather than an
+engineering one.
+
+## What this changes
+
+- **Option 3's toolchain risk is gone.** Native CUDA on Blackwell is proven on this machine.
+- **ILGPU is now moot for the decision.** There is no reason to accept an unverified pure-.NET path
+  when the native one is demonstrated. ILGPU stays a future simplification, not a candidate.
+- **Performance planning can proceed on measured numbers**, with the residual uncertainty isolated
+  to one transferred efficiency figure rather than the whole chain.

@@ -1,0 +1,542 @@
+<title>Goal-Driven Wing Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#F6F8F7; --surface:#FFFFFF; --sunk:#EDF1F0;
+    --ink:#0C1B21; --body:#22343A; --muted:#5A6E75; --muted2:#8A9AA0;
+    --rule:#D6DFDE; --rule-strong:#B7C6C4;
+    --accent:#C8500F;
+    --go:#1F6F5C; --warn:#8A6100; --stop:#A32C1E;
+    --go-bg:#E3F0EB; --warn-bg:#F6EED9; --stop-bg:#F6E2DE;
+    --s1:#1F6F5C; --s2:#2E6F8E; --s3:#7A5AA6; --s4:#C8500F;
+    --shadow:0 1px 2px rgba(12,27,33,.05), 0 8px 24px -12px rgba(12,27,33,.18);
+    --measure:66ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+      --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+      --rule:#1E333A; --rule-strong:#2C464E;
+      --accent:#F0793C;
+      --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+      --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+      --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+    --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+    --rule:#1E333A; --rule-strong:#2C464E;
+    --accent:#F0793C;
+    --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+    --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+    --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--body);
+    font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+    font-size:17px; line-height:1.62; margin:0; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px 96px}
+  .col{max-width:var(--measure)}
+  h1,h2,h3,h4{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+  h1{font-size:clamp(2.1rem,4.4vw,3.1rem); line-height:1.06; font-weight:700;
+     letter-spacing:-.022em; color:var(--ink); margin:0 0 .5rem; text-wrap:balance}
+  h2{font-size:1.55rem; font-weight:700; letter-spacing:-.015em; color:var(--ink);
+     margin:0 0 .2rem; text-wrap:balance}
+  h3{font-size:1.08rem; font-weight:600; letter-spacing:-.008em; color:var(--ink);
+     margin:0 0 .35rem; text-wrap:balance}
+  h4{font-size:.95rem; font-weight:600; color:var(--ink); margin:1.3rem 0 .3rem}
+  p{margin:0 0 1.05rem}
+  strong{color:var(--ink); font-weight:600}
+  a{color:var(--accent)}
+  code,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:.87em; font-variant-numeric:tabular-nums}
+  code{background:var(--sunk); padding:.1em .38em; border-radius:3px; color:var(--ink)}
+  pre{background:var(--sunk); border:1px solid var(--rule); padding:16px 18px;
+    overflow-x:auto; margin:0 0 1.3rem; border-radius:2px}
+  pre code{background:none; padding:0; font-size:.8rem; line-height:1.62; color:var(--body)}
+  .cm{color:var(--muted2)} .kw{color:var(--accent); font-weight:500}
+  .eyebrow{font-family:Archivo,sans-serif; font-size:.7rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 .55rem}
+  header.top{border-bottom:2px solid var(--ink); padding:56px 0 22px}
+  .kicker{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:18px}
+  .kicker .dot{color:var(--rule-strong)} .kicker .hl{color:var(--accent)}
+  .standfirst{font-size:1.16rem; line-height:1.55; color:var(--body); max-width:60ch; margin:0}
+  .rig{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0;
+    border-bottom:1px solid var(--rule); margin:0 0 52px}
+  .rig div{padding:16px 18px 18px; border-right:1px solid var(--rule)}
+  .rig div:last-child{border-right:0}
+  .rig dt{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
+  .rig dd{margin:0; font-family:"IBM Plex Mono",monospace; font-size:.95rem; font-weight:500;
+    color:var(--ink); font-variant-numeric:tabular-nums}
+  .rig dd.bad{color:var(--stop)} .rig dd.good{color:var(--go)}
+  section{padding:44px 0; border-top:1px solid var(--rule)}
+  .sec-head{display:flex; gap:14px; align-items:baseline; margin-bottom:1.4rem}
+  .sec-num{font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--accent);
+    font-weight:500; padding-top:.28rem; flex:none}
+  .callout{background:var(--surface); border:1px solid var(--rule);
+    border-left:3px solid var(--accent); padding:20px 24px; margin:0 0 1.4rem; box-shadow:var(--shadow)}
+  .callout p:last-child{margin-bottom:0}
+  .callout.quiet{border-left-color:var(--rule-strong); box-shadow:none; background:var(--sunk)}
+  .callout.cut{border-left-color:var(--stop); box-shadow:none; background:var(--stop-bg)}
+  .tscroll{overflow-x:auto; margin:0 0 1.3rem; border:1px solid var(--rule); background:var(--surface)}
+  table{border-collapse:collapse; width:100%; font-size:.88rem}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top}
+  thead th{font-family:Archivo,sans-serif; font-size:.64rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); background:var(--sunk);
+    border-bottom:1px solid var(--rule-strong); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .conf{font-family:Archivo,sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.08em;
+    text-transform:uppercase; padding:2px 6px; border-radius:2px; white-space:nowrap}
+  .conf.v{background:var(--go-bg); color:var(--go)}
+  .conf.i{background:var(--warn-bg); color:var(--warn)}
+  .conf.f{background:var(--stop-bg); color:var(--stop)}
+  .tag{font-family:Archivo,sans-serif; font-size:.62rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; padding:3px 7px; border-radius:2px}
+  .tag.a{background:var(--go-bg); color:var(--go)}
+  .tag.b{background:var(--warn-bg); color:var(--warn)}
+  .tag.c{background:var(--stop-bg); color:var(--stop)}
+  figure{margin:0 0 1.4rem; border:1px solid var(--rule); background:var(--surface); padding:22px 24px 18px}
+  figcaption{font-size:.83rem; color:var(--muted); margin-top:12px; line-height:1.5}
+  svg{display:block; width:100%; height:auto}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:10px;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600; color:var(--muted)}
+  .legend span{display:flex; align-items:center; gap:6px}
+  .legend i{width:14px; height:3px; border-radius:2px; display:block}
+  ul.body-list{margin:0 0 1.1rem; padding-left:1.15em}
+  ul.body-list li{margin-bottom:.5rem}
+  ul.body-list li::marker{color:var(--muted2)}
+  ol.body-list{margin:0 0 1.1rem; padding-left:1.3em}
+  ol.body-list li{margin-bottom:.55rem}
+  .stack{border:1px solid var(--rule); background:var(--surface); margin-bottom:1.4rem}
+  .layer{display:grid; grid-template-columns:130px 1fr 110px; gap:18px; padding:15px 20px;
+    border-bottom:1px solid var(--rule); align-items:start}
+  .layer:last-child{border-bottom:0}
+  .layer-k{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--muted); padding-top:.2rem}
+  .layer p{margin:0; font-size:.89rem; line-height:1.5}
+  .layer .cost{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--accent);
+    text-align:right; padding-top:.15rem; white-space:nowrap}
+  .ph{display:grid; grid-template-columns:120px 1fr; gap:20px; padding:18px 0;
+    border-bottom:1px solid var(--rule)}
+  .ph:last-child{border-bottom:0}
+  .ph-k{font-family:Archivo,sans-serif; font-size:.68rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); padding-top:.22rem}
+  .ph-k b{display:block; font-family:"IBM Plex Mono",monospace; font-size:.95rem; color:var(--ink);
+    letter-spacing:0; text-transform:none; font-weight:600; margin-bottom:2px}
+  .ph p{margin:0 0 .4rem; font-size:.93rem}
+  .ph p:last-child{margin-bottom:0}
+  .ph .aside{color:var(--muted); font-size:.87rem}
+  .wire{border:1px solid var(--rule-strong); background:var(--surface); padding:0;
+    margin:0 0 1.4rem; overflow:hidden}
+  .wire-bar{background:var(--sunk); border-bottom:1px solid var(--rule);
+    padding:8px 14px; font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  footer{border-top:2px solid var(--ink); padding:26px 0 0; margin-top:44px;
+    font-size:.85rem; color:var(--muted)}
+  footer p{margin:0 0 .5rem; max-width:70ch}
+  @media (max-width:760px){
+    .ph{grid-template-columns:1fr; gap:6px}
+    .layer{grid-template-columns:1fr; gap:5px}
+    .layer .cost{text-align:left}
+    body{font-size:16px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">
+    <span>CFD-Bench</span><span class="dot">/</span>
+    <span class="hl">Goal-Driven Design</span><span class="dot">/</span>
+    <span>Single wing</span><span class="dot">/</span>
+    <span>6 September 2026</span>
+  </div>
+  <h1>From a sentence to a wing</h1>
+  <p class="standfirst">&ldquo;A racing wing for wingfoil racing, 10&ndash;20 knots, span under a
+  metre.&rdquo; What has to happen between that sentence and a geometry you can machine &mdash; and
+  what the person doing it should see.</p>
+</header>
+
+<dl class="rig">
+  <div><dt>Design object</dt><dd>One wing</dd></div>
+  <div><dt>Design vector</dt><dd>~14 numbers</dd></div>
+  <div><dt>Evaluation</dt><dd class="good">~10 &micro;s</dd></div>
+  <div><dt>Full search</dt><dd class="good">~0.2 s</dd></div>
+  <div><dt>Objectives</dt><dd>5</dd></div>
+  <div><dt>Hard constraints</dt><dd>4</dd></div>
+</dl>
+
+<section style="border-top:0">
+  <div class="sec-head"><span class="sec-num">01</span><div>
+    <p class="eyebrow">The distinction everything rests on</p>
+    <h2>Constraints are not objectives</h2>
+  </div></div>
+
+  <div class="col">
+  <p>&ldquo;Span under a metre&rdquo; and &ldquo;as efficient as possible&rdquo; are different kinds
+  of statement, and a tool that puts them on the same kind of slider will produce nonsense.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Kind</th><th>What it does</th><th>Example</th><th>Widget</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Constraint</strong></td>
+        <td>Partitions the space into feasible and infeasible. Violating it makes a design
+        <em>invalid</em>, not <em>worse</em></td>
+        <td>Span &le; 1.0 m &middot; t/c &ge; 9% for structure</td>
+        <td>A limit with a <strong>feasible-space readout</strong></td></tr>
+      <tr><td><strong>Objective</strong></td>
+        <td>Orders the feasible designs</td>
+        <td>Maximise L/D at cruise</td>
+        <td>A priority weight with a <strong>cost-of-moving readout</strong></td></tr>
+      <tr><td><strong>Requirement</strong></td>
+        <td>An objective with a threshold. Behaves as a constraint until met, an objective after</td>
+        <td>Flying by 8 kn</td>
+        <td>A target marker on the objective's own axis</td></tr>
+      <tr><td><strong>Context</strong></td>
+        <td>Not a design variable at all &mdash; it defines the problem</td>
+        <td>Rider 95 kg &middot; seawater 15 &deg;C</td>
+        <td>A plain input. Changing it <strong>re-poses the problem</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p><strong>Why this matters concretely.</strong> A solver that treats span as an objective will
+  happily return a 1.4&nbsp;m wing that is 3% more efficient and unusable. A solver that treats
+  rider weight as a design variable will &ldquo;optimise&rdquo; by making the rider lighter. Both are
+  real failure modes of naive slider UIs, and both are prevented by typing the inputs.</p>
+
+  <div class="callout quiet">
+    <p><strong>The fourth category is the one usually missed.</strong> Rider weight, water type and
+    wind range are <em>context</em>. When the user drags rider weight from 75 to 95 kg they are not
+    adjusting the design &mdash; they are asking a different question, and every result on screen
+    becomes stale. The UI must show that, not silently re-rank.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><div>
+    <p class="eyebrow">Why this is possible at all</p>
+    <h2>Ten microseconds is the whole argument</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The closed-form estimation chain evaluates a candidate wing in about <span class="num">10
+  &micro;s</span>. That single number decides which experiences are available.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Tier</th><th>Cost</th><th>Candidates per 100 ms</th><th>What the interface can do</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Estimator</strong></td><td class="n">~10 &micro;s</td><td class="n">~10,000</td>
+        <td><strong>Re-optimise while the slider is still moving.</strong> The Pareto front updates live</td></tr>
+      <tr><td>Panel / VLM</td><td class="n">10&ndash;100 ms</td><td class="n">1&ndash;10</td>
+        <td>Re-evaluate the current design on release; optimise in a background job</td></tr>
+      <tr><td>OpenFOAM / SU2</td><td class="n">minutes&ndash;hours</td><td class="n">&mdash;</td>
+        <td>Verify a chosen design. <strong>Never in a loop</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p>A population of 200 over 100 generations is 20,000 evaluations &mdash; <strong>0.2
+  seconds</strong>. <em>The search is free.</em> That inverts the usual engineering problem: the hard
+  part is not finding good designs, it is helping someone decide which good design they want.</p>
+
+  <p>This is also the strongest evidence for the layered architecture. <strong>A tool built directly
+  on CFD cannot offer this experience at any price.</strong></p>
+
+  <div class="callout">
+    <p><strong>Precedent, and it is close.</strong> An interactive framework pairing <em>Athena
+    Vortex Lattice</em> &mdash; a low-fidelity solver at the same tier as our VLM &mdash; with
+    interactive multi-objective particle swarm optimisation was demonstrated for aerodynamic shape
+    design, with the decision maker <em>periodically supplying preference information during the
+    optimisation to steer the search</em>. Two things are validated at once: a cheap solver in the
+    loop, and <strong>preference expressed during the run rather than declared up front.</strong></p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><div>
+    <p class="eyebrow">The experience</p>
+    <h2>Four panes, one live model</h2>
+  </div></div>
+
+  <div class="wire">
+    <div class="wire-bar">Wing Designer &mdash; racing wing, wingfoil, 10&ndash;20 kn</div>
+    <svg viewBox="0 0 1000 470" role="img" aria-label="Wireframe of the goal-driven design screen: a brief and constraints panel on the left, a live wing preview top centre, a performance envelope chart below it, and a candidate list with Pareto ranking on the right.">
+      <g font-family="Archivo, sans-serif" font-size="11" font-weight="600" fill="var(--muted)">
+        <!-- LEFT: brief + constraints -->
+        <rect x="8" y="10" width="248" height="450" fill="var(--sunk)" stroke="var(--rule)"></rect>
+        <text x="22" y="32" letter-spacing="1">THE BRIEF</text>
+        <rect x="22" y="42" width="220" height="46" fill="var(--surface)" stroke="var(--rule-strong)"></rect>
+        <text x="30" y="60" font-family="Source Serif 4, Georgia, serif" font-size="11" font-weight="400" fill="var(--body)">racing wing, wingfoil,</text>
+        <text x="30" y="76" font-family="Source Serif 4, Georgia, serif" font-size="11" font-weight="400" fill="var(--body)">target wind 10&#8211;20 kn</text>
+
+        <text x="22" y="112" letter-spacing="1" fill="var(--stop)">CONSTRAINTS &#183; HARD</text>
+        <g font-family="IBM Plex Mono, monospace" font-size="10" font-weight="400" fill="var(--body)">
+          <text x="22" y="130">span</text><text x="242" y="130" text-anchor="end">&#8804; 1.00 m</text>
+          <rect x="22" y="136" width="220" height="4" fill="var(--rule)"></rect>
+          <rect x="22" y="136" width="176" height="4" fill="var(--stop)"></rect>
+          <circle cx="198" cy="138" r="5" fill="var(--stop)"></circle>
+          <text x="22" y="158">t/c min</text><text x="242" y="158" text-anchor="end">&#8805; 9.0%</text>
+          <rect x="22" y="164" width="220" height="4" fill="var(--rule)"></rect>
+          <rect x="22" y="164" width="88" height="4" fill="var(--stop)"></rect>
+          <circle cx="110" cy="166" r="5" fill="var(--stop)"></circle>
+        </g>
+        <text x="22" y="192" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="400" fill="var(--muted2)">62% of design space still feasible</text>
+
+        <text x="22" y="222" letter-spacing="1" fill="var(--accent)">OBJECTIVES</text>
+        <g font-family="IBM Plex Mono, monospace" font-size="10" font-weight="400" fill="var(--body)">
+          <text x="22" y="240">L/D at 16 kn</text><text x="242" y="240" text-anchor="end">high</text>
+          <rect x="22" y="246" width="220" height="4" fill="var(--rule)"></rect>
+          <rect x="22" y="246" width="200" height="4" fill="var(--accent)"></rect>
+          <text x="22" y="268">take-off speed</text><text x="242" y="268" text-anchor="end">med</text>
+          <rect x="22" y="274" width="220" height="4" fill="var(--rule)"></rect>
+          <rect x="22" y="274" width="120" height="4" fill="var(--accent)"></rect>
+          <text x="22" y="296">cavitation margin</text><text x="242" y="296" text-anchor="end">low</text>
+          <rect x="22" y="302" width="220" height="4" fill="var(--rule)"></rect>
+          <rect x="22" y="302" width="60" height="4" fill="var(--accent)"></rect>
+        </g>
+
+        <text x="22" y="340" letter-spacing="1">CONTEXT</text>
+        <g font-family="IBM Plex Mono, monospace" font-size="10" font-weight="400" fill="var(--body)">
+          <text x="22" y="358">rider + gear</text><text x="242" y="358" text-anchor="end">95 kg</text>
+          <text x="22" y="378">water</text><text x="242" y="378" text-anchor="end">salt 15&#176;C</text>
+          <text x="22" y="398">speed range</text><text x="242" y="398" text-anchor="end">10&#8211;20 kn</text>
+        </g>
+        <rect x="22" y="412" width="220" height="30" fill="var(--warn-bg)" stroke="var(--warn)"></rect>
+        <text x="32" y="431" font-family="Source Serif 4, Georgia, serif" font-size="10" font-weight="400" fill="var(--warn)">context changed &#8212; results stale</text>
+
+        <!-- CENTRE: live wing -->
+        <rect x="266" y="10" width="450" height="230" fill="var(--surface)" stroke="var(--rule)"></rect>
+        <text x="280" y="32" letter-spacing="1">CANDIDATE &#183; LIVE</text>
+        <path d="M 300 150 C 360 108, 430 100, 491 100 C 552 100, 622 108, 682 150
+                 C 640 162, 560 168, 491 168 C 422 168, 342 162, 300 150 Z"
+              fill="var(--s2)" opacity="0.18" stroke="var(--s2)" stroke-width="1.6"></path>
+        <line x1="491" y1="92" x2="491" y2="176" stroke="var(--rule-strong)" stroke-dasharray="3 3"></line>
+        <g font-family="IBM Plex Mono, monospace" font-size="10" font-weight="400" fill="var(--muted)">
+          <text x="300" y="196">span 0.98 m</text>
+          <text x="430" y="196">area 842 cm&#178;</text>
+          <text x="570" y="196">AR 11.4</text>
+          <text x="300" y="214">section E818 @ root</text>
+          <text x="570" y="214">t/c 9.4%</text>
+        </g>
+        <text x="682" y="32" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="var(--go)" text-anchor="end">L/D 19.8</text>
+
+        <!-- CENTRE LOWER: envelope -->
+        <rect x="266" y="248" width="450" height="212" fill="var(--surface)" stroke="var(--rule)"></rect>
+        <text x="280" y="270" letter-spacing="1">PERFORMANCE ENVELOPE</text>
+        <line x1="296" y1="430" x2="696" y2="430" stroke="var(--rule)"></line>
+        <line x1="296" y1="288" x2="296" y2="430" stroke="var(--rule)"></line>
+        <rect x="356" y="288" width="200" height="142" fill="var(--accent)" opacity="0.06"></rect>
+        <polyline points="296,412 336,384 376,352 416,330 456,320 496,322 536,334 576,352 616,374 656,396 696,414"
+                  fill="none" stroke="var(--s1)" stroke-width="2.4"></polyline>
+        <polyline points="296,420 336,400 376,376 416,358 456,348 496,346 536,354 576,368 616,386 656,404 696,420"
+                  fill="none" stroke="var(--muted2)" stroke-width="1.4" stroke-dasharray="4 3"></polyline>
+        <g font-family="IBM Plex Mono, monospace" font-size="9" font-weight="400" fill="var(--muted2)">
+          <text x="356" y="446">10 kn</text><text x="546" y="446">20 kn</text>
+          <text x="290" y="292" text-anchor="end">25</text><text x="290" y="434" text-anchor="end">0</text>
+          <text x="600" y="300" fill="var(--muted2)">- - previous</text>
+        </g>
+        <text x="386" y="282" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="400" fill="var(--accent)">target window</text>
+
+        <!-- RIGHT: candidates -->
+        <rect x="726" y="10" width="266" height="450" fill="var(--sunk)" stroke="var(--rule)"></rect>
+        <text x="740" y="32" letter-spacing="1">CANDIDATES &#183; PARETO</text>
+        <g font-family="IBM Plex Mono, monospace" font-size="10" font-weight="400">
+          <rect x="740" y="42" width="238" height="52" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"></rect>
+          <text x="750" y="60" fill="var(--ink)">A &#183; AR 11.4 &#183; 842 cm&#178;</text>
+          <text x="750" y="78" fill="var(--go)">L/D 19.8</text><text x="968" y="78" text-anchor="end" fill="var(--muted)">lift 9.1 kn</text>
+          <rect x="740" y="102" width="238" height="52" fill="var(--surface)" stroke="var(--rule)"></rect>
+          <text x="750" y="120" fill="var(--ink)">B &#183; AR 9.8 &#183; 910 cm&#178;</text>
+          <text x="750" y="138" fill="var(--body)">L/D 18.9</text><text x="968" y="138" text-anchor="end" fill="var(--muted)">lift 8.4 kn</text>
+          <rect x="740" y="162" width="238" height="52" fill="var(--surface)" stroke="var(--rule)"></rect>
+          <text x="750" y="180" fill="var(--ink)">C &#183; AR 12.6 &#183; 790 cm&#178;</text>
+          <text x="750" y="198" fill="var(--body)">L/D 20.4</text><text x="968" y="198" text-anchor="end" fill="var(--stop)">lift 10.2 kn</text>
+        </g>
+        <text x="740" y="240" letter-spacing="1">TRADE-OFF</text>
+        <line x1="754" y1="410" x2="968" y2="410" stroke="var(--rule)"></line>
+        <line x1="754" y1="256" x2="754" y2="410" stroke="var(--rule)"></line>
+        <g>
+          <circle cx="790" cy="386" r="4" fill="var(--muted2)"></circle>
+          <circle cx="830" cy="352" r="4" fill="var(--muted2)"></circle>
+          <circle cx="866" cy="322" r="6" fill="var(--accent)"></circle>
+          <circle cx="906" cy="300" r="4" fill="var(--muted2)"></circle>
+          <circle cx="944" cy="286" r="4" fill="var(--muted2)"></circle>
+          <path d="M 790 386 C 830 352, 866 322, 944 286" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="3 3"></path>
+        </g>
+        <g font-family="IBM Plex Mono, monospace" font-size="9" font-weight="400" fill="var(--muted2)">
+          <text x="754" y="426">take-off speed &#8594;</text>
+          <text x="748" y="252">L/D</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="col">
+  <h4>What each pane is for</h4>
+  <ol class="body-list">
+    <li><strong>The brief</strong> is prose, and it stays visible. It is not parsed into settings and
+    then discarded &mdash; it is the record of intent that the constraints below are meant to
+    encode, and the user should be able to see when the two have drifted apart.</li>
+    <li><strong>Constraints show remaining feasible space</strong> (&ldquo;62% of design space still
+    feasible&rdquo;). This is the single most useful thing a constraint widget can display: it tells
+    you when you have over-constrained the problem <em>before</em> the optimiser returns nothing.</li>
+    <li><strong>Objectives are priorities, not weights.</strong> High/medium/low is what a designer
+    can actually express; 0.42 versus 0.38 is not. The optimiser converts.</li>
+    <li><strong>Context is visually separate and marks results stale</strong> when changed. It is a
+    different kind of act.</li>
+    <li><strong>The candidate list is a Pareto set, not a ranking.</strong> Three designs that are
+    each best at something. The trade-off scatter underneath shows why they all survive.</li>
+    <li><strong>The envelope chart keeps the previous design as a ghost line.</strong> Design is
+    comparative; the question is always &ldquo;is this better than what I had?&rdquo;</li>
+  </ol>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><div>
+    <p class="eyebrow">Interaction</p>
+    <h2>Three gestures, in order of value</h2>
+  </div></div>
+
+  <div class="col">
+  <h4>1. Drag a constraint &mdash; watch feasibility, not the design</h4>
+  <p>Tightening span from 1.0&nbsp;m to 0.9&nbsp;m should immediately show <em>how much you gave
+  up</em>: the feasible fraction drops, the Pareto front retreats, and the best achievable L/D falls
+  by a stated amount. <strong>The answer to &ldquo;can I have a shorter span?&rdquo; is a number,
+  not a yes.</strong></p>
+
+  <h4>2. Brush the trade-off &mdash; the preference brush</h4>
+  <p>Brushing is the standard gesture for filtering a design space. The refinement worth adopting is
+  the <strong>preference brush</strong>: a range brush <em>locked at the high-quality end of an
+  axis</em>, so it always contains the best solutions while removing the need to choose a threshold.
+  The user says &ldquo;more of this&rdquo; without inventing a number.</p>
+
+  <h4>3. Pin and compare</h4>
+  <p>Design exploration is non-linear and people need to go back. MIT's Design Space Exploration
+  toolset explicitly supports <em>reconstructing previous designs</em>, and that capability is worth
+  copying directly. Every candidate ever shown is pinnable; the ghost line in the envelope chart is
+  the pinned design.</p>
+
+  <div class="callout">
+    <p><strong>What the tool must never do: silently move something the user set.</strong> If a
+    constraint makes the objective unreachable, say so and show the closest feasible design &mdash;
+    do not quietly relax the constraint to produce a result. This is the difference between a tool
+    that is trusted and one that is second-guessed.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><div>
+    <p class="eyebrow">Under it</p>
+    <h2>The solver, and why it is the easy part</h2>
+  </div></div>
+
+  <div class="stack">
+    <div class="layer">
+      <div class="layer-k">Design vector</div>
+      <p>~6&ndash;8 planform numbers (area, aspect, taper, sweep, anhedral, washout) plus CST section
+      coefficients. Small, continuous, and <strong>always valid by construction</strong> &mdash; the
+      CST class function makes non-airfoils unrepresentable.</p>
+      <div class="cost">~14 dims</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Constraints</div>
+      <p><strong>Feasibility-first ranking:</strong> any feasible design beats any infeasible one;
+      among infeasible, less violation wins. Keeps the population inside the space without penalty
+      weights that need tuning.</p>
+      <div class="cost">4 hard</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Search</div>
+      <p><strong>NSGA-II or MOPSO</strong> over the estimator. Chosen not for sophistication but
+      because at 10 &micro;s per evaluation the entire search costs 0.2 s. Population-based, no
+      gradients, native multi-objective.</p>
+      <div class="cost">~0.2 s</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">Verification</div>
+      <p>Estimator optima are <strong>candidates, never answers</strong>. Each finalist re-evaluated
+      at the VLM tier before it is offered, and at CFD before it is machined.</p>
+      <div class="cost">10&ndash;100 ms</div>
+    </div>
+  </div>
+
+  <div class="col">
+  <div class="callout cut">
+    <p><strong>The real risk, stated plainly: optimisation amplifies model error.</strong> A search
+    over 20,000 candidates will find precisely the corner of the design space where the estimator is
+    most wrong, and present it as the winner. This is not a hypothetical &mdash; it is what
+    optimisers do.</p>
+    <p style="margin-top:.8rem">Three mitigations, all mandatory: <strong>(a)</strong> every optimum
+    is re-checked at a higher tier before display; <strong>(b)</strong> the tool shows where a
+    candidate sits relative to the estimator's validity envelope &mdash; attached flow, small
+    &alpha;, high Re &mdash; and flags any that sit near the edge; <strong>(c)</strong> candidates
+    are ranked with a <em>confidence</em> alongside the score, not by score alone.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><div>
+    <p class="eyebrow">Honest limits</p>
+    <h2>What this cannot do yet</h2>
+  </div></div>
+
+  <div class="col">
+  <ul class="body-list">
+    <li><strong>It cannot invent a section.</strong> It selects from the catalog and perturbs CST
+    coefficients. True inverse design &mdash; naming a pressure distribution and getting a shape
+    &mdash; is a different and much larger capability. The frontier work (3DID and similar) couples
+    a learned latent representation with physics-aware optimisation, and needs a training corpus
+    that does not exist for hydrofoils.</li>
+    <li><strong>It cannot judge structure.</strong> Thickness is treated as a constraint with a
+    hydrodynamic price, but nothing here computes whether a 9% section actually survives the loads.
+    <strong>That is a real gap</strong> and the reason t/c must stay a user-set constraint rather
+    than something optimised.</li>
+    <li><strong>It optimises steady, attached flow.</strong> Pumping, take-off transients and
+    manoeuvre are unsteady, and none of the tiers models them.</li>
+    <li><strong>Multi-objective UIs can overwhelm.</strong> PAVED handles up to ten criteria, but
+    &ldquo;handles&rdquo; is not &ldquo;is useful&rdquo;. Five objectives is a guess, and it should
+    be tested with a real user before it is built out.</li>
+  </ul>
+
+  <div class="callout quiet">
+    <p><strong>Scope note.</strong> The design object is a <strong>single wing</strong> &mdash; front
+    or rear. A rear wing is still designed <em>in the downwash of a front wing</em>, so the
+    surrounding assembly must be present as <em>context</em> that supplies the flow field. A
+    stabiliser evaluated in free stream is evaluated wrong.</p>
+  </div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Evidence:</strong> <code>docs/knowledge/design-automation/</code> &mdash; interactive
+  MOPSO over AVL (Aegis UAV), PAVED Pareto-front interaction, MIT Design Space Exploration, ARCADE
+  real-time optimisation, 3DID inverse design. Evaluation costs from
+  <code>docs/knowledge/cfd-hydrofoil-simulation/estimation-methods.md</code>.</p>
+  <p><strong>Load-bearing uncertainty:</strong> whether the estimator is accurate enough to optimise
+  against. It is the assumption the whole experience rests on, and the mitigation &mdash; verify
+  every optimum at a higher tier &mdash; is a requirement, not a nicety.</p>
+</footer>
+
+</div>

@@ -242,6 +242,41 @@ window.DOCS_INDEX = {
       "sourceSha256": "a1370d492bbe2485c564b0c58865371469bd855eb17105bcacd5422974a531da"
     },
     {
+      "id": "kb-cad-ux-geometry",
+      "path": "docs/knowledge/cad-ux-and-geometry/index.md",
+      "title": "CAD UX Paradigms and the .NET Geometry Stack",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-05",
+      "reviewSuggested": [],
+      "summary": "The three CAD interaction paradigms and which fits a foil editor, what Shape3d and Rhino actually do at the control-point level, the continuity and curvature-comb vocabulary a surface editor must speak, and the concrete .NET stack — HelixToolkit for the viewport, OCCT for the kernel — with the build-versus-buy line drawn.",
+      "tags": [
+        "cad",
+        "ux",
+        "wpf",
+        "nurbs",
+        "opencascade",
+        "helixtoolkit",
+        "splines",
+        "shape3d",
+        "rhino"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-parametric-geometry",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "4944098a8a44b8196435a4f66bb7e527cd833c3ce041b41f83767332786e137b"
+    },
+    {
       "id": "kb-cfd-comparables",
       "path": "docs/knowledge/cfd-hydrofoil-simulation/comparables.md",
       "title": "Comparable Solutions — Foil and CFD Tools",
@@ -443,7 +478,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "197c486ece566b08173c7e4bd7fb4038cf5f7855ea5bf6460d2edfad61c6926a"
+      "sourceSha256": "40d1cb8ed98c75a61b433f26a7fcbc8c9f76aa054ea2e9cc342867c89f80b848"
     },
     {
       "id": "kb-cfd-open-questions",
@@ -470,6 +505,36 @@ window.DOCS_INDEX = {
       ],
       "diagrams": [],
       "sourceSha256": "5b721f6ee292e9ad7a234442232946974069680e7d91914c5f1c00001402de5e"
+    },
+    {
+      "id": "kb-cfd-orchestration",
+      "path": "docs/knowledge/cfd-orchestration/index.md",
+      "title": "Orchestrating OpenFOAM and SU2 from a C# Application",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-05",
+      "reviewSuggested": [],
+      "summary": "How a C# desktop application can drive OpenFOAM and SU2 without the user ever seeing a dictionary file — the case-generation layer, the four candidate execution substrates on Windows, the interop boundary that keeps solvers replaceable, and what cloud execution costs.",
+      "tags": [
+        "openfoam",
+        "su2",
+        "orchestration",
+        "interop",
+        "docker",
+        "wsl",
+        "cloud",
+        "csharp"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "56bc896bbfadb69e0919d9dc5edfc4ae3b9df20f60e275a80f0e894730766925"
     },
     {
       "id": "kb-cfd-parametric-geometry",
@@ -548,7 +613,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "96dce42fabcd4374011c4d3574c14a257cba317afa2f62d9260c7a7a613ee97f"
+      "sourceSha256": "d21b3f53622731d65bf9917f44ecc7cb29ed004bf0e4e9908d5ef0649b2c1251"
     },
     {
       "id": "kb-cfd-references",
@@ -694,6 +759,107 @@ window.DOCS_INDEX = {
       ],
       "diagrams": [],
       "sourceSha256": "007dac5f0e95e9ea2a7409705f5113b054e0919f7d3bc1d30c67eac285b71065"
+    },
+    {
+      "id": "kb-design-automation",
+      "path": "docs/knowledge/design-automation/index.md",
+      "title": "Goal-Driven Design, Constraints and Interactive Optimisation",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-05",
+      "reviewSuggested": [],
+      "summary": "Evidence for turning a stated design goal and a set of constraints into a proposed wing — the distinction between constraints and objectives, interactive multi-objective optimisation with a low-fidelity solver in the loop, Pareto-front interaction patterns, and why the estimation chain is what makes any of it feasible.",
+      "tags": [
+        "optimization",
+        "constraints",
+        "pareto",
+        "surrogate",
+        "design-space",
+        "interaction"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-estimation-methods",
+          "rel": "depends-on"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "f8440987728abce7d22ea7379f9009bfd1a989d0be8419c7b7885d1c058dce87"
+    },
+    {
+      "id": "kb-fabrication-interop",
+      "path": "docs/knowledge/fabrication-and-interop/index.md",
+      "title": "Fabrication, Export Formats and CAD Interoperability",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-05",
+      "reviewSuggested": [],
+      "summary": "What format a foil should leave the tool in for each destination — STEP for machining, STL/3MF for printing — why STL is the wrong answer for a mold, where CAM and G-code generation sit, and an honest ranking of what CAD MCP servers can and cannot model today.",
+      "tags": [
+        "export",
+        "step",
+        "stl",
+        "3mf",
+        "cam",
+        "gcode",
+        "mcp",
+        "cad-interop",
+        "molds"
+      ],
+      "links": [
+        {
+          "to": "kb-cad-ux-geometry",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "32ecd9c83983d7c3bb601508ccf8299b1d7c7c84b024e1e71ff0a028fb8d8198"
+    },
+    {
+      "id": "kb-flow-visualization",
+      "path": "docs/knowledge/flow-visualization/index.md",
+      "title": "Analysis Charts and Flow Visualisation for Foil Design",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-05",
+      "reviewSuggested": [],
+      "summary": "The chart set that actually diagnoses a foil, the quasi-3D coupling that makes a 2D section view at a spanwise station physically meaningful, streamline and LIC techniques for 2D and 3D flow, and the .NET libraries for plotting and video export — including the gap where VTK has no .NET binding.",
+      "tags": [
+        "visualization",
+        "charts",
+        "cp",
+        "polars",
+        "streamlines",
+        "lic",
+        "video",
+        "scottplot"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-estimation-methods",
+          "rel": "depends-on"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "f61df53b34799c6a19a0d8d535d11f085beeb1d68ee4935d3fe537f03aa5e8d2"
     }
   ],
   "surfaces": [
@@ -711,7 +877,28 @@ window.DOCS_INDEX = {
       "title": "CFD-Bench Solver Strategy",
       "kind": "knowledge-tool",
       "description": "Open an interactive knowledge artifact."
+    },
+    {
+      "id": "surface-proposals-visualisation-experience",
+      "path": "docs/proposals/visualisation-experience.html",
+      "title": "Foil Visualisation",
+      "kind": "knowledge-tool",
+      "description": "Open an interactive knowledge artifact."
+    },
+    {
+      "id": "surface-proposals-goal-driven-design-experience",
+      "path": "docs/proposals/goal-driven-design-experience.html",
+      "title": "Goal-Driven Wing Design",
+      "kind": "knowledge-tool",
+      "description": "Open an interactive knowledge artifact."
+    },
+    {
+      "id": "surface-proposals-cad-modelling-experience",
+      "path": "docs/proposals/cad-modelling-experience.html",
+      "title": "Wing Modelling Experience",
+      "kind": "knowledge-tool",
+      "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "509a3debcda098d9436c0714c4589d13d82c4319e9db398592c03bd5a1fe3212"
+  "graphSha256": "2dcc12e4e223f5a08d90f3b6569291b658d1446ab3f820ad8b4a22c020048fc8"
 };

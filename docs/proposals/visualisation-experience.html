@@ -1,0 +1,442 @@
+<title>Foil Visualisation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#F6F8F7; --surface:#FFFFFF; --sunk:#EDF1F0;
+    --ink:#0C1B21; --body:#22343A; --muted:#5A6E75; --muted2:#8A9AA0;
+    --rule:#D6DFDE; --rule-strong:#B7C6C4;
+    --accent:#C8500F;
+    --go:#1F6F5C; --warn:#8A6100; --stop:#A32C1E;
+    --go-bg:#E3F0EB; --warn-bg:#F6EED9; --stop-bg:#F6E2DE;
+    --s1:#1F6F5C; --s2:#2E6F8E; --s3:#7A5AA6; --s4:#C8500F;
+    --shadow:0 1px 2px rgba(12,27,33,.05), 0 8px 24px -12px rgba(12,27,33,.18);
+    --measure:66ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+      --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+      --rule:#1E333A; --rule-strong:#2C464E;
+      --accent:#F0793C;
+      --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+      --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+      --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+    --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+    --rule:#1E333A; --rule-strong:#2C464E;
+    --accent:#F0793C;
+    --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+    --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+    --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--body);
+    font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+    font-size:17px; line-height:1.62; margin:0; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px 96px}
+  .col{max-width:var(--measure)}
+  h1,h2,h3,h4{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+  h1{font-size:clamp(2.1rem,4.4vw,3.1rem); line-height:1.06; font-weight:700;
+     letter-spacing:-.022em; color:var(--ink); margin:0 0 .5rem; text-wrap:balance}
+  h2{font-size:1.55rem; font-weight:700; letter-spacing:-.015em; color:var(--ink);
+     margin:0 0 .2rem; text-wrap:balance}
+  h3{font-size:1.08rem; font-weight:600; letter-spacing:-.008em; color:var(--ink);
+     margin:0 0 .35rem; text-wrap:balance}
+  h4{font-size:.95rem; font-weight:600; color:var(--ink); margin:1.3rem 0 .3rem}
+  p{margin:0 0 1.05rem}
+  strong{color:var(--ink); font-weight:600}
+  a{color:var(--accent)}
+  code,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:.87em; font-variant-numeric:tabular-nums}
+  code{background:var(--sunk); padding:.1em .38em; border-radius:3px; color:var(--ink)}
+  pre{background:var(--sunk); border:1px solid var(--rule); padding:16px 18px;
+    overflow-x:auto; margin:0 0 1.3rem; border-radius:2px}
+  pre code{background:none; padding:0; font-size:.8rem; line-height:1.62; color:var(--body)}
+  .cm{color:var(--muted2)} .kw{color:var(--accent); font-weight:500}
+  .eyebrow{font-family:Archivo,sans-serif; font-size:.7rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 .55rem}
+  header.top{border-bottom:2px solid var(--ink); padding:56px 0 22px}
+  .kicker{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:18px}
+  .kicker .dot{color:var(--rule-strong)} .kicker .hl{color:var(--accent)}
+  .standfirst{font-size:1.16rem; line-height:1.55; color:var(--body); max-width:60ch; margin:0}
+  .rig{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0;
+    border-bottom:1px solid var(--rule); margin:0 0 52px}
+  .rig div{padding:16px 18px 18px; border-right:1px solid var(--rule)}
+  .rig div:last-child{border-right:0}
+  .rig dt{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
+  .rig dd{margin:0; font-family:"IBM Plex Mono",monospace; font-size:.95rem; font-weight:500;
+    color:var(--ink); font-variant-numeric:tabular-nums}
+  .rig dd.bad{color:var(--stop)} .rig dd.good{color:var(--go)}
+  section{padding:44px 0; border-top:1px solid var(--rule)}
+  .sec-head{display:flex; gap:14px; align-items:baseline; margin-bottom:1.4rem}
+  .sec-num{font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--accent);
+    font-weight:500; padding-top:.28rem; flex:none}
+  .callout{background:var(--surface); border:1px solid var(--rule);
+    border-left:3px solid var(--accent); padding:20px 24px; margin:0 0 1.4rem; box-shadow:var(--shadow)}
+  .callout p:last-child{margin-bottom:0}
+  .callout.quiet{border-left-color:var(--rule-strong); box-shadow:none; background:var(--sunk)}
+  .callout.cut{border-left-color:var(--stop); box-shadow:none; background:var(--stop-bg)}
+  .tscroll{overflow-x:auto; margin:0 0 1.3rem; border:1px solid var(--rule); background:var(--surface)}
+  table{border-collapse:collapse; width:100%; font-size:.88rem}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top}
+  thead th{font-family:Archivo,sans-serif; font-size:.64rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); background:var(--sunk);
+    border-bottom:1px solid var(--rule-strong); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .conf{font-family:Archivo,sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.08em;
+    text-transform:uppercase; padding:2px 6px; border-radius:2px; white-space:nowrap}
+  .conf.v{background:var(--go-bg); color:var(--go)}
+  .conf.i{background:var(--warn-bg); color:var(--warn)}
+  .conf.f{background:var(--stop-bg); color:var(--stop)}
+  .tag{font-family:Archivo,sans-serif; font-size:.62rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; padding:3px 7px; border-radius:2px}
+  .tag.a{background:var(--go-bg); color:var(--go)}
+  .tag.b{background:var(--warn-bg); color:var(--warn)}
+  .tag.c{background:var(--stop-bg); color:var(--stop)}
+  figure{margin:0 0 1.4rem; border:1px solid var(--rule); background:var(--surface); padding:22px 24px 18px}
+  figcaption{font-size:.83rem; color:var(--muted); margin-top:12px; line-height:1.5}
+  svg{display:block; width:100%; height:auto}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:10px;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600; color:var(--muted)}
+  .legend span{display:flex; align-items:center; gap:6px}
+  .legend i{width:14px; height:3px; border-radius:2px; display:block}
+  ul.body-list{margin:0 0 1.1rem; padding-left:1.15em}
+  ul.body-list li{margin-bottom:.5rem}
+  ul.body-list li::marker{color:var(--muted2)}
+  ol.body-list{margin:0 0 1.1rem; padding-left:1.3em}
+  ol.body-list li{margin-bottom:.55rem}
+  .stack{border:1px solid var(--rule); background:var(--surface); margin-bottom:1.4rem}
+  .layer{display:grid; grid-template-columns:130px 1fr 110px; gap:18px; padding:15px 20px;
+    border-bottom:1px solid var(--rule); align-items:start}
+  .layer:last-child{border-bottom:0}
+  .layer-k{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--muted); padding-top:.2rem}
+  .layer p{margin:0; font-size:.89rem; line-height:1.5}
+  .layer .cost{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--accent);
+    text-align:right; padding-top:.15rem; white-space:nowrap}
+  .ph{display:grid; grid-template-columns:120px 1fr; gap:20px; padding:18px 0;
+    border-bottom:1px solid var(--rule)}
+  .ph:last-child{border-bottom:0}
+  .ph-k{font-family:Archivo,sans-serif; font-size:.68rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); padding-top:.22rem}
+  .ph-k b{display:block; font-family:"IBM Plex Mono",monospace; font-size:.95rem; color:var(--ink);
+    letter-spacing:0; text-transform:none; font-weight:600; margin-bottom:2px}
+  .ph p{margin:0 0 .4rem; font-size:.93rem}
+  .ph p:last-child{margin-bottom:0}
+  .ph .aside{color:var(--muted); font-size:.87rem}
+  .wire{border:1px solid var(--rule-strong); background:var(--surface); padding:0;
+    margin:0 0 1.4rem; overflow:hidden}
+  .wire-bar{background:var(--sunk); border-bottom:1px solid var(--rule);
+    padding:8px 14px; font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  footer{border-top:2px solid var(--ink); padding:26px 0 0; margin-top:44px;
+    font-size:.85rem; color:var(--muted)}
+  footer p{margin:0 0 .5rem; max-width:70ch}
+  @media (max-width:760px){
+    .ph{grid-template-columns:1fr; gap:6px}
+    .layer{grid-template-columns:1fr; gap:5px}
+    .layer .cost{text-align:left}
+    body{font-size:16px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">
+    <span>CFD-Bench</span><span class="dot">/</span>
+    <span class="hl">Visualisation</span><span class="dot">/</span>
+    <span>Charts, flow, video</span><span class="dot">/</span>
+    <span>6 September 2026</span>
+  </div>
+  <h1>Seeing what the wing is doing</h1>
+  <p class="standfirst">The chart set that actually diagnoses a foil, why a 2D section view at a
+  spanwise station needs a correction most tools skip, and how to render and export it all from
+  .NET &mdash; where the obvious library is unavailable.</p>
+</header>
+
+<dl class="rig">
+  <div><dt>Diagnostic charts</dt><dd>6</dd></div>
+  <div><dt>Foil-specific</dt><dd>6</dd></div>
+  <div><dt>2D charts</dt><dd>ScottPlot</dd></div>
+  <div><dt>3D field</dt><dd>HelixToolkit</dd></div>
+  <div><dt>VTK for .NET</dt><dd class="bad">none exists</dd></div>
+  <div><dt>Video</dt><dd>FFMpegCore</dd></div>
+</dl>
+
+<section style="border-top:0">
+  <div class="sec-head"><span class="sec-num">01</span><div>
+    <p class="eyebrow">The chart set</p>
+    <h2>Six that diagnose, six that are foil-specific</h2>
+  </div></div>
+
+  <div class="col">
+  <p>Standard airfoil post-processing has a settled core. The second tier is where a hydrofoil tool
+  earns its keep, because generic aerodynamic tools do not carry it.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Chart</th><th>Axes</th><th>What it tells you</th></tr></thead>
+    <tbody>
+      <tr><td colspan="3" style="background:var(--sunk); font-family:Archivo,sans-serif; font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)">Tier 1 &mdash; the standard set</td></tr>
+      <tr><td><strong>Cp distribution</strong></td><td class="n">Cp vs x/c, <strong>y inverted</strong></td>
+        <td><strong>The most informative single plot.</strong> Suction-peak height reads cavitation
+        risk; pressure-recovery shape reads separation risk; and it shows directly whether the
+        section achieves the flat <em>rooftop</em> the IHS criterion demands</td></tr>
+      <tr><td>Drag polar</td><td class="n">Cd vs Cl</td><td>The efficiency signature</td></tr>
+      <tr><td>Cl vs &alpha;</td><td class="n">&mdash;</td><td>Lift-curve slope, zero-lift angle, stall onset <em>and its sharpness</em></td></tr>
+      <tr><td>Cd vs &alpha;</td><td class="n">&mdash;</td><td>Drag-bucket location and width &mdash; where a laminar section actually pays</td></tr>
+      <tr><td>L/D vs &alpha; or speed</td><td class="n">&mdash;</td><td>Where the design point should sit</td></tr>
+      <tr><td>Cm vs &alpha;</td><td class="n">&mdash;</td><td>Pitching moment &mdash; directly the &ldquo;high camber feels unstable at speed&rdquo; effect</td></tr>
+      <tr><td colspan="3" style="background:var(--sunk); font-family:Archivo,sans-serif; font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)">Tier 2 &mdash; foil-specific, and mostly absent from generic tools</td></tr>
+      <tr><td><strong>Cavitation bucket</strong></td><td class="n">&sigma;&#7522; = &minus;Cp_min vs Cl</td>
+        <td><strong>Width</strong> = tolerance to angle variation; <strong>depth</strong> = tolerance
+        to low cavitation number. The IHS gives the exact construction recipe</td></tr>
+      <tr><td>V_crit vs Cl</td><td class="n">knots</td><td>The same data in units a rider understands</td></tr>
+      <tr><td>Transition location</td><td class="n">x_tr vs &alpha;, both surfaces</td><td>Where laminar flow ends &mdash; the mechanism behind the drag bucket</td></tr>
+      <tr><td>Displacement thickness</td><td class="n">&delta;* vs x/c</td><td>The standard boundary-layer plot; precursor to separation</td></tr>
+      <tr><td>Separation region</td><td class="n">marked <em>on</em> the Cp plot</td>
+        <td>Trailing-edge stall propagates forward along the chord and <strong>is evident in the Cp
+        distribution</strong> &mdash; so it belongs there, not as a separate chart</td></tr>
+      <tr><td><strong>Spanwise loading</strong></td><td class="n">Cl(y) vs elliptical ideal</td>
+        <td>3D only. Shows where the planform wastes span</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>Two rules for every chart in the set.</strong> <em>Overlay is mandatory</em> &mdash;
+    comparing two candidate sections is the actual task, and a chart that cannot overlay is half a
+    chart. And <em>every ranked view must be Reynolds-parameterised</em>, because Phase 0 measured
+    the section ranking <strong>flipping</strong> between Re 6&times;10&#8309; and 10&#8310;. A
+    &ldquo;best sections&rdquo; list with no Reynolds number on it is misinformation.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><div>
+    <p class="eyebrow">The correction most tools skip</p>
+    <h2>A 2D section at a spanwise station</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The request was a 2D view of a section &ldquo;expressed as distance from mid point&rdquo;. That
+  has a proper method behind it &mdash; <strong>quasi-3D strip theory</strong> &mdash; and getting it
+  wrong produces a picture that looks right and is not.</p>
+
+  <p>The established chain: a vortex lattice method computes spanwise loading, then strip theory
+  applies 2D analysis at spanwise stations. The wing is treated as a sum of section strips, and
+  <strong>the 3D effect is the downwash from the trailing vortex sheet, producing a local induced
+  angle of attack that modifies sectional lift.</strong></p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 840 250" role="img" aria-label="Diagram of the quasi-3D chain: vortex lattice gives spanwise circulation, which gives local induced angle of attack, which is subtracted from the geometric angle to give the effective angle used for the 2D section analysis.">
+      <g font-family="Archivo, sans-serif" font-size="11" font-weight="600">
+        <rect x="10" y="40" width="150" height="72" fill="var(--surface)" stroke="var(--rule-strong)"></rect>
+        <text x="85" y="66" text-anchor="middle" fill="var(--ink)">VLM</text>
+        <text x="85" y="86" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="400" fill="var(--muted)">spanwise</text>
+        <text x="85" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="400" fill="var(--muted)">circulation &#915;(y)</text>
+
+        <path d="M 168 76 L 200 76" stroke="var(--accent)" stroke-width="1.6"></path>
+        <path d="M 200 76 l -7 -4 l 0 8 z" fill="var(--accent)"></path>
+
+        <rect x="206" y="40" width="150" height="72" fill="var(--surface)" stroke="var(--rule-strong)"></rect>
+        <text x="281" y="66" text-anchor="middle" fill="var(--ink)">DOWNWASH</text>
+        <text x="281" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="400" fill="var(--muted)">&#945;&#7522;(y)</text>
+
+        <path d="M 364 76 L 396 76" stroke="var(--accent)" stroke-width="1.6"></path>
+        <path d="M 396 76 l -7 -4 l 0 8 z" fill="var(--accent)"></path>
+
+        <rect x="402" y="40" width="196" height="72" fill="var(--accent)" opacity="0.1" stroke="var(--accent)" stroke-width="2"></rect>
+        <text x="500" y="66" text-anchor="middle" fill="var(--ink)">EFFECTIVE ANGLE</text>
+        <text x="500" y="90" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="500" fill="var(--accent)">&#945;_eff = &#945;_geo &#8722; &#945;&#7522;</text>
+
+        <path d="M 606 76 L 638 76" stroke="var(--accent)" stroke-width="1.6"></path>
+        <path d="M 638 76 l -7 -4 l 0 8 z" fill="var(--accent)"></path>
+
+        <rect x="644" y="40" width="186" height="72" fill="var(--surface)" stroke="var(--rule-strong)"></rect>
+        <text x="737" y="66" text-anchor="middle" fill="var(--ink)">2D SECTION</text>
+        <text x="737" y="86" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="400" fill="var(--muted)">Cp, BL, separation</text>
+        <text x="737" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="400" fill="var(--muted)">at local chord Re</text>
+
+        <rect x="10" y="150" width="820" height="70" fill="var(--stop-bg)" stroke="var(--stop)"></rect>
+        <text x="26" y="174" fill="var(--stop)" letter-spacing="1">THE ERROR TO AVOID</text>
+        <text x="26" y="196" font-family="Source Serif 4, Georgia, serif" font-size="12" font-weight="400" fill="var(--body)">Driving the section view from the GEOMETRIC angle ignores downwash and overstates loading &#8212;</text>
+        <text x="26" y="212" font-family="Source Serif 4, Georgia, serif" font-size="12" font-weight="400" fill="var(--body)">badly near the tips, where downwash is largest. The station slider must drive &#945;_eff, not &#945;.</text>
+      </g>
+    </svg>
+    <figcaption>The quasi-3D chain. Each station is analysed at its own effective angle and its own
+    local-chord Reynolds number &mdash; both vary along the span, and both change the answer.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><div>
+    <p class="eyebrow">Flow rendering</p>
+    <h2>Techniques, and which to build</h2>
+  </div></div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Technique</th><th>Character</th><th>Where</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Streamlines</strong></td><td>Integral curves of the velocity field; adjustable density, user-controlled seeding and panning</td><td>2D and 3D</td><td><span class="tag a">v1</span> The default. Familiar to everyone</td></tr>
+      <tr><td><strong>LIC</strong> (line integral convolution)</td><td>Dense texture representation, introduced 1993, <em>one of the most popular methods for vector fields</em>. GPUFLIC reaches interactive rates on unsteady flow</td><td>2D sections</td><td><span class="tag b">v2</span> Denser and more informative, but a shader to write and tune</td></tr>
+      <tr><td>Evenly-spaced <strong>illuminated</strong> streamlines</td><td>Controlled spacing, lit as tubes</td><td>3D</td><td><span class="tag a">v1</span> Plain 3D streamlines occlude badly; this is the established fix</td></tr>
+      <tr><td>Surface Cp contours</td><td>Scalar mapped on the wing surface</td><td>3D</td><td><span class="tag a">v1</span> Essential &mdash; pairs directly with the 2D Cp curve</td></tr>
+      <tr><td>Glyphs</td><td>Arrows at sample points</td><td>Both</td><td><span class="tag c">Skip</span> Clutters quickly</td></tr>
+      <tr><td>Iso-surfaces (Q-criterion, &lambda;&#8322;)</td><td>Vortex cores</td><td>3D</td><td><span class="tag b">Later</span> For tip vortices and separated wakes</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>An architectural advantage worth naming.</strong> Unlike most CFD, where visualisation
+    happens after computation, GPU-based rendering allows real-time visualisation <em>while the
+    computation runs</em>. Since the LBM tier already holds the field in VRAM, rendering from the
+    same buffers via D3D interop <strong>avoids a readback entirely</strong> &mdash; a concrete
+    reason to keep the solver in CUDA and the viewport in SharpDX rather than splitting them.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><div>
+    <p class="eyebrow">The stack</p>
+    <h2>And the gap where VTK should be</h2>
+  </div></div>
+
+  <div class="col">
+  <div class="callout cut">
+    <p><strong>VTK and ParaView have bindings for C++, Python, Tcl/Tk, Java and JavaScript. C# and
+    .NET are not among them.</strong> The default scientific-visualisation stack is simply
+    unavailable to a WPF application. This is a real finding, not a gap in the search, and it shapes
+    the whole approach.</p>
+  </div>
+
+  <p>Three ways forward:</p>
+  <ol class="body-list">
+    <li><strong>Render it ourselves in HelixToolkit / SharpDX.</strong> Full control, no interop, and
+    &mdash; the deciding point &mdash; <strong>the CAD editor needs this viewport anyway</strong>, so
+    it is not an additional dependency. Streamline integration and LIC are both implementable as
+    compute and pixel shaders. <em>Recommended.</em></li>
+    <li><strong>Shell out to ParaView</strong> for anything exotic, accepting a separate window. A
+    pragmatic escape hatch, not an interactive experience.</li>
+    <li><strong>Python sidecar with VTK</strong>, piping images back. Adds a Python runtime to a .NET
+    product for one feature.</li>
+  </ol>
+
+  <p><strong>The scope discipline that makes (1) safe:</strong> do not build a general visualisation
+  toolkit. Build the six views this domain needs. A general toolkit is how this becomes a two-year
+  project.</p>
+
+  <h4>2D charts &mdash; ScottPlot</h4>
+  <p>Free, open source, interactive, built for <strong>large datasets</strong>, WPF among many
+  targets. Comparisons place it <strong>ahead of OxyPlot and LiveCharts2 for large static
+  datasets</strong>; LiveCharts2 is the most modern-feeling with MVVM binding and animation, OxyPlot
+  has the broadest reach. Our charts are dense &mdash; a Cp distribution is hundreds of points, a
+  polar sweep thousands &mdash; and static per frame, so <strong>performance at scale is the
+  deciding axis and animation polish is not.</strong></p>
+
+  <h4>Video &mdash; FFMpegCore</h4>
+  <p>FFMpegCore <span class="num">5.4.0</span> writes video frames <strong>directly from program
+  memory</strong> via <code>IPipeSource</code> / <code>RawVideoPipeSource</code>, with no
+  intermediate PNGs &mdash; which matters when a sweep is hundreds of frames. FFMediaToolkit and
+  NReco VideoConverter are the alternatives. Render each sweep step to an offscreen target and pipe
+  it straight out.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><div>
+    <p class="eyebrow">The unifying idea</p>
+    <h2>The sweep is a domain object, not a UI loop</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The request was for both 2D and 3D views to sweep angle of attack and velocity, and to export as
+  video. Treating the sweep as a first-class object rather than an animation loop collapses four
+  features into one:</p>
+  </div>
+
+  <pre><code><span class="kw">sweep</span> {
+  variable   alpha            <span class="cm">// or velocity | station | reynolds</span>
+  from       -2deg  to  12deg
+  steps      57
+  hold       speed=16kn  depth=0.45m  fluid=seawater@15C
+}</code></pre>
+
+  <div class="col">
+  <ul class="body-list">
+    <li><strong>Every view binds to the same sweep</strong>, so scrubbing moves the charts, the 2D
+    section and the 3D field together.</li>
+    <li><strong>The sweep is the video timeline.</strong> Export becomes &ldquo;render this sweep to
+    frames&rdquo;, not a separate export mode with its own settings.</li>
+    <li><strong>A sweep is exactly what a polar is.</strong> The polar chart and the animation are
+    two views of one computation &mdash; compute once, present twice.</li>
+    <li><strong>Cacheable and re-orderable.</strong> At estimator cost the whole sweep precomputes
+    instantly; at CFD cost it becomes a job queue with the same interface.</li>
+  </ul>
+
+  <div class="callout quiet">
+    <p><strong>One consequence worth planning for:</strong> because a sweep at the estimator tier is
+    instantaneous and at the CFD tier takes hours, the <em>same</em> UI must gracefully represent
+    both. That argues for the sweep carrying its fidelity and its completion state, so a partially
+    computed sweep is a first-class thing the charts can draw.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><div>
+    <p class="eyebrow">Honest limits</p>
+    <h2>What not to draw</h2>
+  </div></div>
+
+  <div class="col">
+  <ul class="body-list">
+    <li><strong>Do not draw a separation marker the model cannot support.</strong> The closed-form
+    estimator has no separation model at all. NeuralFoil gives transition and boundary-layer
+    parameters but not a separation point. Showing separation honestly requires at least the
+    VLM+strip tier &mdash; and a confidently drawn marker with nothing behind it is worse than
+    omitting it.</li>
+    <li><strong>Slicing an LBM field for the 2D view is not free.</strong> A uniform Cartesian
+    lattice does not align with a swept, twisted station plane, so interpolation is required &mdash;
+    and its accuracy is worst near the surface, which is exactly where it matters.</li>
+    <li><strong>Colour maps need deciding deliberately.</strong> The default rainbow map is
+    known-poor for scalar fields; a perceptually uniform map should be the default. No source was
+    consulted on this and it should be before the first Cp contour is drawn.</li>
+    <li><strong>Every displayed number inherits its tier's confidence.</strong> A Cp curve from the
+    surrogate and one from OpenFOAM should not look identical on screen.</li>
+  </ul>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Evidence:</strong> <code>docs/knowledge/flow-visualization/</code> &mdash; XFOIL
+  analysis outputs, NASA post-stall airfoil database, quasi-3D strip theory coupling, LIC and GPUFLIC,
+  ScottPlot/OxyPlot/LiveCharts2 comparison, ParaView language bindings, FFMpegCore.</p>
+  <p><strong>Load-bearing finding:</strong> there is no VTK binding for .NET. The recommendation to
+  render in HelixToolkit follows from that, and is only safe if the scope stays at six views rather
+  than a general toolkit.</p>
+</footer>
+
+</div>

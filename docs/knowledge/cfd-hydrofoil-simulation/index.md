@@ -31,11 +31,31 @@ summary: >-
 
 # Small-footprint CFD for water-sports hydrofoils — domain knowledge
 
-**Version 2.1** (Phase 0 evidence folded in) · compiled 2026-09-05 · Lead: Domain Researcher
+**Version 3** (single-wing scope; Phase 0 + 0b evidence folded in) · compiled 2026-09-05 · Lead: Domain Researcher
 
-**Domain & problem.** Predicting hydrodynamic forces, efficiency (L/D) and cavitation margin for
-water-sports hydrofoils — surf, SUP/downwind, wing and windsurf/race foiling — in salt and fresh
-water, on a single Windows/NVIDIA machine, without deploying a general-purpose CFD package.
+**Domain & problem.** Designing and analysing **a single hydrofoil wing — a front wing or a rear
+wing/stabiliser — not a whole foil assembly.** Predicting its hydrodynamic forces, efficiency (L/D)
+and cavitation margin across water-sports disciplines (surf, SUP/downwind, wing, windsurf/race) in
+salt and fresh water, on a single Windows/NVIDIA machine, without deploying a general-purpose CFD
+package.
+
+> ### Scope change v3 (2026-09-06) — the design object is one wing
+> **The unit of design is a single lifting surface**, not the assembly. The mast/strut, fuselage and
+> whole-craft equilibrium are **out of scope as design targets**.
+>
+> **What this removes:** whole-craft trim and ride-height equilibrium, stability eigenvalues,
+> decalage as a design variable, strut drag as a deliverable, and the Typhoon-style
+> craft-equilibrium comparison as a product goal.
+>
+> **What survives, and must not be lost:** a rear wing is designed *in the downwash of a front
+> wing*, so the **multi-surface grammar is still required — as context, not as the design target.**
+> A stabiliser evaluated in free stream is evaluated wrong. The model therefore keeps
+> `assembly → surface → station → loft`, with exactly one surface marked as the one being designed
+> and any others present only to supply the flow field it operates in.
+>
+> **What this sharpens:** the deliverable is now a **wing**, which is exactly what the parametric
+> grammar, the section catalog, the estimator and the CAD editor all operate on. The scope cut
+> aligns the product with the model that was already there.
 
 > ### Scope change from v1 — recorded, not silent
 > **v1 covered hydrofoils *and* surfboards. v2 drops the surfboard/planing scenario entirely** at
