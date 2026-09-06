@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T15:40:26Z",
+  "generated": "2026-09-06T15:44:51Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -259,6 +259,38 @@ window.AUDIT_DATA = {
       "git": {
         "sha": "a04cf22605174debbf2cbaf9648e39e67c46e375",
         "short": "a04cf2260",
+        "branch": "main",
+        "pushed": false
+      }
+    },
+    {
+      "id": "al-01M1VP9MGR52K4ZZHZVQFTEWDK",
+      "shortname": "build-phasing-proposal",
+      "datetime": "2026-09-06T15:44:51Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "prompt": "C:/Program Files/Git/also create a proposal on the phases we should consider for how to build this step by step that i can review and provide as input when we do get to a specify stage later",
+      "summary": "Build-phasing proposal synthesised from the seven knowledge bases, four prior proposals, sixteen gaps and the backlog — no new research, a sequencing argument over existing evidence. Nine phases, each named for a verb the user gains: P0 conventions and spine (units/coordinate frames/file format/test strategy — the retrofit-hostile things, closes GAP-04/08/09), P1 estimator validated headless against DTIC ADA032272 (closes GAP-01), P2 read a wing (WPF + charts, gated on a provisional answer to GAP-03), P3 draw a wing (five distribution curves with live estimator — arguably the product, and a useful tool exists at 38 percent of effort), P4 trust the numbers (VLM + structures + multi-fidelity reconciliation, closes GAP-02/06), P5 state a goal (optimiser — HARD-GATED on P4 because COMMIT-01 forbids shipping estimator-only results), P6 build the wing (STEP export + manufacturing constraints feeding back, closes GAP-07, can run parallel from week 15), P7 explain it (AI, gated on SPIKE-04 numeral check, capabilities pullable forward), P8 prove it (CFD/LBM, gated on SPIKE-03). Key structural finding surfaced: COMMIT-01 is a dependency, not just a policy — it forces the VLM tier before the goal-driven experience, which is not the order enthusiasm would pick. Central risk named honestly: the differentiator (free surface) is last and might never arrive, leaving a very good XFLR5-for-hydrofoils; recommended a 1-2 week de-risking slice at week 15 costing ~4 percent of total to test the claim the other 96 percent rests on. Three natural stopping points identified with P6 as the honest v1 boundary at 72 percent. Four open questions listed that need user input before /specify, plus a recommendation to run /adddomainexperts first.",
+      "kind": "skill",
+      "skill": "collectknowledge",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/proposals/build-phasing-plan.html"
+      ],
+      "tags": [
+        "phasing",
+        "roadmap",
+        "specify-input",
+        "sequencing"
+      ],
+      "outcome": "success",
+      "goal": "A reviewable build-phasing proposal to feed into /specify",
+      "done_when": "Proposal in docs/proposals with phases, gates, deliverables, the ordering risk, stopping points and open questions; graph and audit current",
+      "tier": "T2",
+      "fan_out": 0,
+      "git": {
+        "sha": "da44afb216539c3a97091c89507d9adc1c32a545",
+        "short": "da44afb21",
         "branch": "main",
         "pushed": false
       }

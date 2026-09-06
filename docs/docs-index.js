@@ -1038,6 +1038,13 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     },
     {
+      "id": "surface-proposals-build-phasing-plan",
+      "path": "docs/proposals/build-phasing-plan.html",
+      "title": "Build Phasing Plan",
+      "kind": "knowledge-tool",
+      "description": "Open an interactive knowledge artifact."
+    },
+    {
       "id": "surface-proposals-cfd-bench-solver-strategy",
       "path": "docs/proposals/cfd-bench-solver-strategy.html",
       "title": "CFD-Bench Solver Strategy",
