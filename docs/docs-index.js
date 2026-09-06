@@ -310,6 +310,47 @@ window.DOCS_INDEX = {
       "sourceSha256": "a1370d492bbe2485c564b0c58865371469bd855eb17105bcacd5422974a531da"
     },
     {
+      "id": "domain-experts",
+      "path": "docs/domain-experts.md",
+      "title": "Domain Experts — the CFD-Bench Subject-Matter Roster",
+      "type": "knowledge",
+      "status": "accepted",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2027-03-06",
+      "reviewSuggested": [],
+      "summary": "The seven subject-matter lenses added to this repo's persona roster — what each catches that no general lens can, the seam that keeps them distinct from each other and from the Domain Researcher, their vetoes, and the candidates that were considered and rejected.",
+      "tags": [
+        "personas",
+        "domain-experts",
+        "roster",
+        "cfd",
+        "structures",
+        "gpu",
+        "geometry"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "depends-on"
+        },
+        {
+          "to": "knowledge-gap-register",
+          "rel": "depends-on"
+        },
+        {
+          "to": "kb-cfd-orchestration",
+          "rel": "depends-on"
+        },
+        {
+          "to": "kb-cad-ux-geometry",
+          "rel": "depends-on"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "422dce038058e6bc93e9945cf71b1f4dddcc60b3fcdbd2b18c3f634d8a8f262a"
+    },
+    {
       "id": "kb-ai-in-the-product",
       "path": "docs/knowledge/ai-in-the-product/index.md",
       "title": "LLMs Inside an Engineering Tool",
@@ -1073,5 +1114,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "e81ddfbd1e503c7b06c713e039a7d4226d9f6890b0174f759fdccdf2dd4377fc"
+  "graphSha256": "ce9886016093c0b400d8b464f160dc472adaed75832100754b798ed4be92355e"
 };

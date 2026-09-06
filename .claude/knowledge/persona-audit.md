@@ -309,6 +309,41 @@ A later request asked to reason over three personas: **the iPhone/Android app de
 
 **Roster total: 22** — the eighteen, plus Mobile App Developer, Native Desktop Developer, UX & Accessibility, and the Documentation Steward.
 
+### 8.9 Domain-expert triggers and ownership *(cfd-bench, added 2026-09-06 — extends §8.7 and §8.8)*
+
+Seven subject-matter lenses were added by `/adddomainexperts`. Roster: **23 general + 7 domain = 30**.
+Full rationale, seams, rejected candidates and the gate record: `docs/domain-experts.md`.
+
+**Convene-when predicates (extends §8.7):**
+
+| Expert | Predicate |
+|---|---|
+| `computational-fluid-dynamicist` | the change computes, reports or relies on a hydrodynamic quantity; or selects a solver tier, turbulence model, discretisation or mesh; or asserts a result is valid |
+| `experimental-fluid-dynamics-expert` | any claim that a result is validated, accurate, or agrees with experiment; any comparison to published or measured data |
+| `gpu-compute-expert` | the change writes or modifies a CUDA kernel, chooses a floating-point precision, changes GPU memory layout, or makes a GPU performance claim |
+| `composite-structures-expert` | the change sets or optimises thickness; presents a geometry as buildable or rideable; makes a load-bearing claim; or assumes the foil is rigid |
+| `openfoam-su2-specialist` | the change generates or modifies an OpenFOAM case, a meshing configuration, or an SU2 config |
+| `parametric-geometry-expert` | the change touches the geometry model, section parameterisation, loft rule, station schema, or the optimiser's design vector |
+| `cad-cam-interop-expert` | a decision could foreclose future export or manufacture, or a geometry is produced that is not physically buildable |
+
+**Failure classes owned (extends §8.8):**
+
+| Anti-pattern | Owner |
+|---|---|
+| Converged-But-Physically-Wrong · Validity-Envelope-Exceeded | `computational-fluid-dynamicist` |
+| Validation-By-Resemblance · Uncertainty-Free-Claim | `experimental-fluid-dynamics-expert` |
+| Non-Deterministic-Result · Unjustified-Precision · Roofline-Free-Claim | `gpu-compute-expert` |
+| Aero-Optimal-Structurally-Impossible · Rigid-Foil-Assumption | `composite-structures-expert` |
+| Solved-On-A-Bad-Mesh · Scheme-Physics-Mismatch | `openfoam-su2-specialist` |
+| Invisible-Curvature-Defect · Two-Definitions-Of-One-Quantity · Two-Way-Parametric-Sync | `parametric-geometry-expert` |
+| Mesh-Only-Lock-In · Unbuildable-As-Drawn | `cad-cam-interop-expert` |
+
+These sixteen are project-domain classes, not BoK Part VIII entries. The three seams that keep the
+fluid lenses distinct are worth restating, because collapsing them is the likeliest roster error:
+**the Test Architect proves the code does what was specified; the CFD Dynamicist proves the
+computation is physically right; the EFD Expert proves the comparison to reality is valid.** All
+three can pass while the tool is still wrong about the world.
+
 ### 9.3 Convene-when triggers added (extends §8.7)
 
 | Persona | Convene-when |

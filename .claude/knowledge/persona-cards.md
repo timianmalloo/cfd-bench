@@ -170,6 +170,13 @@ Their full *veto-clears-when* predicates are consolidated in `persona-audit.md` 
 
 The pack's lenses (§A–§C and §E) are domain-*general*. A given repo also needs *subject-matter* lenses — accounting for a finance system, fluid dynamics for a CFD solver, clinical safety for a medical app. Those are added per project by the **`/adddomainexperts`** skill, which derives the domain from the repo's own evidence, proposes the experts in peer and adversary modes, wires in any existing Claude domain skills that supply the capability, and writes each as a card conforming to **exactly the §8 schema above**. They are not listed here because they are project-specific; the authoritative list for a repo lives in its `docs/domain-experts.md`, and each expert's card sits beside the general ones in that repo's roster. A domain expert is *subject-matter judgment* — distinct from the **Domain Researcher** (P3), whose lens is *research method*.
 
+> **This repo (cfd-bench) has seven.** Added 2026-09-06: **Computational Fluid Dynamicist** (hard),
+> **Experimental Fluid Dynamics Expert** (hard), **GPU & CUDA Compute Expert** (hard),
+> **Composite Structures & Hydroelasticity Expert** (hard), **OpenFOAM & SU2 Case Specialist**
+> (soft), **Parametric Geometry & Design-Space Expert** (soft), and **CAD/CAM Interop &
+> Manufacturability Expert** (advisory). Roster is **23 general + 7 domain = 30**. Cards, seams,
+> vetoes, rejected candidates and the gate record: [`docs/domain-experts.md`](../../docs/domain-experts.md).
+
 ---
 
 ## E. The UX / UI / app & documentation lenses *(added in the UI/app + documentation expansion; UX/UI split in the specification-layers work)*

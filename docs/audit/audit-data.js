@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T15:44:51Z",
+  "generated": "2026-09-06T16:04:16Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -291,6 +291,40 @@ window.AUDIT_DATA = {
       "git": {
         "sha": "da44afb216539c3a97091c89507d9adc1c32a545",
         "short": "da44afb21",
+        "branch": "main",
+        "pushed": false
+      }
+    },
+    {
+      "id": "al-01M1VQD68MDF18PKF8BYF6ZQGE",
+      "shortname": "adddomainexperts-hydrofoil-cfd",
+      "datetime": "2026-09-06T16:04:16Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "prompt": "1: the user is an engineer (i.e. me) who understands fluid mechanics BUT must be able to think in terms of rider requirements. 2: Fabrication is NOT in scope but we dont want an architecture that makes it difficult to pull in scope in the future. 3: the de-risking slice should be included. 4: the budget is ok. /adddomainexperts — CFD expert; Experimental Fluid Dynamics expert; CAD/CAM expert; GPU/CUDA expert; OpenFoam/SU2 scripter; Parametric Design and CAD expert",
+      "summary": "Seven domain experts added; roster is now 23 general + 7 domain = 30, in both host trees. Confirmed with the maintainer before writing. The six requested all passed the Simplifier gate, plus one recommended and confirmed: Composite Structures and Hydroelasticity, which closes GAP-02 — Phase 0 proved thickness has no hydrodynamic optimum and is set entirely by structure, leaving a variable decided by physics nothing in the stack could see, with a failure mode of physical injury. Hard vetoes: Computational Fluid Dynamicist (no convergence/mesh-independence/validation basis, or a low-order method outside its envelope), Experimental Fluid Dynamics Expert (comparison conditions not comparable or no uncertainty statement), GPU and CUDA Expert (non-reproducible kernel results or precision with no error budget), Composite Structures (geometry presented as rideable with no structural basis). Soft: OpenFOAM/SU2 Specialist, Parametric Geometry Expert. Advisory: CAD/CAM Interop, scope-adapted into a foreclosure guard because fabrication is out of scope. Key seam recorded: the Test Architect proves the code does what was specified, the CFD Dynamicist proves the computation is physically right, the EFD Expert proves the comparison to reality is valid — all three can pass while the tool is still wrong about the world. Five candidates rejected with reasons. Backing Claude skills searched: none exist for CFD, structures, CAD or GPU in this environment, recorded as a finding rather than left implicit. Sixteen domain anti-patterns assigned. All roster surfaces updated: docs/domain-experts.md registry, persona-cards section D pointer, collaborative-personas section 5a casting addendum, persona-audit section 8.9 convene-when and ownership tables. Separately folded the four user answers into the phasing plan as revision 2: P2's user gate satisfied and the vocabulary bridge reversed direction to engineering-to-rider, fabrication phase removed with its architectural half threaded into P0 and P3 and SPIKE-02 deferred, and a two-week free-surface de-risking slice inserted at week 16 — net schedule unchanged at 40 weeks but the central claim now tested 16 weeks earlier.",
+      "kind": "skill",
+      "skill": "adddomainexperts",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/domain-experts.md",
+        "docs/proposals/build-phasing-plan.html"
+      ],
+      "tags": [
+        "personas",
+        "domain-experts",
+        "cfd",
+        "structures",
+        "scope"
+      ],
+      "outcome": "success",
+      "goal": "Add the domain-expert lenses the project needs and fold the four scope answers into the phasing plan",
+      "done_when": "Seven experts written to both host trees; registry, casting sheet, persona cards and persona audit updated; phasing plan revised; graph and audit current",
+      "tier": "T2",
+      "fan_out": 0,
+      "git": {
+        "sha": "25d4d56e947a908c9ebb3360e46c902b0467c45c",
+        "short": "25d4d56e9",
         "branch": "main",
         "pushed": false
       }

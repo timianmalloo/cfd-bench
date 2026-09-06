@@ -158,6 +158,24 @@ This is the swarm's casting sheet. The **five delivery workflows** carry a piece
 
 The four adversaries added by the persona audit — **AI Systems Engineer**, **Data & Persistence Architect**, **Privacy & Data Governance Counsel**, and **Release / Deployment Engineer** — and the three added in the UI/app + documentation expansion — **Mobile App Developer**, **Native Desktop Developer**, and **UX & Accessibility** — appear above by their triggers; their full cards are in `persona-cards.md`, and the rationale (proven against the governance lenses and anti-patterns; §9 for the UI/app reasoning) is in `persona-audit.md`. The platform/UX lenses are conditional-convene — summoned only when the relevant app/UI surface exists. `/collectknowledge` mints no new persona (it is led by the Domain Researcher) and runs before design; `/document` is owned by the **Documentation Steward**. **Per-project domain experts** added by `/adddomainexperts` (finance, CFD, clinical, legal…) join these same workflows by their own convene-when triggers, in peer and adversary modes, recorded in the repo's `docs/domain-experts.md`.
 
+### 5a. This repo's domain experts *(cfd-bench, added 2026-09-06)*
+
+Seven subject-matter lenses join the workflows above by their own predicates. Full rationale, seams
+and rejected candidates: `docs/domain-experts.md`.
+
+| Expert | Peers with | Attacks | Veto |
+|---|---|---|---|
+| **Computational Fluid Dynamicist** | Domain Researcher, Test Architect, AI Systems Engineer | Any claim that a hydrodynamic result is valid | **Hard** — no convergence/mesh-independence/validation basis, or a low-order method used outside its envelope |
+| **Experimental Fluid Dynamics Expert** | CFD Dynamicist, Domain Researcher | Any validation or accuracy claim | **Hard** — comparison conditions not comparable, or no uncertainty statement |
+| **GPU & CUDA Compute Expert** | SRE, C# Developer, CFD Dynamicist | Any CUDA kernel or GPU performance claim | **Hard** — non-reproducible results, or precision with no error budget |
+| **Composite Structures & Hydroelasticity Expert** | CFD Dynamicist, Parametric Geometry | Any thickness or buildability claim | **Hard** — geometry presented as rideable with no structural basis |
+| **OpenFOAM & SU2 Case Specialist** | CFD Dynamicist, SRE, Domain Researcher | Any generated case or mesh configuration | **Soft** — solved without `checkMesh` passing |
+| **Parametric Geometry & Design-Space Expert** | Data & Persistence, Patterns Expert, Simplifier | Any geometry-model or design-vector change | **Soft** — parameterisation admits invalid geometry, or a derived quantity is stored |
+| **CAD/CAM Interop & Manufacturability Expert** | Parametric Geometry, Enterprise Architect | A decision that could foreclose future fabrication | **Advisory** — escalates foreclosure to the Tech Lead |
+
+**Scope note.** Fabrication is out of scope by decision (2026-09-06), so the CAD/CAM lens is a
+*foreclosure guard* rather than an export owner — it cannot block, it warns that a door is closing.
+
 ---
 
 ## 6. Deploying a peer persona
