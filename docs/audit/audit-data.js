@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T15:34:15Z",
+  "generated": "2026-09-06T15:40:26Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -225,6 +225,40 @@ window.AUDIT_DATA = {
       "git": {
         "sha": "4f381d032382c7093e9e18e810fcc28bf7e19f8b",
         "short": "4f381d032",
+        "branch": "main",
+        "pushed": false
+      }
+    },
+    {
+      "id": "al-01M1VP1HJZ6EZT9E59HY1G55DA",
+      "shortname": "ai-augmentation-proposal",
+      "datetime": "2026-09-06T15:40:26Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "prompt": "/also consider the role of LLMs in the end-to-end, i am assuming we will include a claude api key in the solution to infuse AI into the experience. write a proposal on where AI would be useful, a couple places i was thinking: the text description for a foil we want to design; an explain feature that takes the goals we set and the design we ended up with and explains the fit and tradeoffs etc",
+      "summary": "Knowledge base and proposal on LLMs inside a deterministic engineering tool. Governing rule established: the model reads and writes LANGUAGE, the solver reads and writes NUMBERS, and numbers flow in as context but never out as results — which satisfies the AI Systems Engineer veto on non-determinism leaking into a deterministic path and is mechanically checkable (every numeral in model output must appear in the call's input). Seven capabilities ranked by value over risk, with the user's two ideas top: (a) brief to structured design intent using structured outputs plus a per-field stated/inferred/defaulted provenance flag and a human confirm gate; (b) explain the design against the goals, grounded with citations, under the hard constraint that every number must be passed in; (c) diagnose failed solver runs from logs, which is self-verifying and directly serves the no-input-files requirement; (d) knowledge-base Q&A over the ~25 sourced artifacts; (e) rider-to-engineer vocabulary bridging, which is the cheapest capability and may be what makes the tool usable by riders at all, connecting to GAP-03; (f) design reports; (g) section-selection rationale. Six explicit never-dos including computing any physical quantity, choosing the design, generating geometry, and judging structural safety (we have no structural model). Per-capability eval designs, with the numeral check as a deterministic guard on the non-deterministic component. Costs computed from Opus 5 rates: /usr/bin/bash.011 to /usr/bin/bash.085 per call, a heavy 74-interaction session about .57, and knowledge-prefix caching breaking even after 1.4 calls at 10x cheaper reads. Flagged honestly that a key shipped in a desktop binary is extractable, so BYOK is the correct design for this non-commercial single-user tool. C# integration surface taken from the official SDK reference rather than guessed. Added SPIKE-04 (numeral check) and COMMIT-04 (language in, numbers out) to the backlog.",
+      "kind": "skill",
+      "skill": "collectknowledge",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/knowledge/ai-in-the-product/index.md",
+        "docs/proposals/ai-augmentation-experience.html"
+      ],
+      "tags": [
+        "llm",
+        "claude-api",
+        "ai-ux",
+        "evals",
+        "cost"
+      ],
+      "outcome": "success",
+      "goal": "Proposal on where AI belongs in the end-to-end, with the boundary that keeps it out of the deterministic path",
+      "done_when": "Knowledge base written with sourced capability inventory, eval designs, measured costs and the C# surface; proposal in docs/proposals; backlog updated; graph/audit current",
+      "tier": "T2",
+      "fan_out": 0,
+      "git": {
+        "sha": "a04cf22605174debbf2cbaf9648e39e67c46e375",
+        "short": "a04cf2260",
         "branch": "main",
         "pushed": false
       }

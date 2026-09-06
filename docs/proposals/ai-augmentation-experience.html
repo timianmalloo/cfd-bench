@@ -1,0 +1,570 @@
+<title>AI in the Foil Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#F6F8F7; --surface:#FFFFFF; --sunk:#EDF1F0;
+    --ink:#0C1B21; --body:#22343A; --muted:#5A6E75; --muted2:#8A9AA0;
+    --rule:#D6DFDE; --rule-strong:#B7C6C4;
+    --accent:#C8500F;
+    --go:#1F6F5C; --warn:#8A6100; --stop:#A32C1E;
+    --go-bg:#E3F0EB; --warn-bg:#F6EED9; --stop-bg:#F6E2DE;
+    --s1:#1F6F5C; --s2:#2E6F8E; --s3:#7A5AA6; --s4:#C8500F;
+    --shadow:0 1px 2px rgba(12,27,33,.05), 0 8px 24px -12px rgba(12,27,33,.18);
+    --measure:66ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+      --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+      --rule:#1E333A; --rule-strong:#2C464E;
+      --accent:#F0793C;
+      --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+      --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+      --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#081317; --surface:#0E1F25; --sunk:#0A1A1F;
+    --ink:#E6EFEE; --body:#C3D3D3; --muted:#8CA3A6; --muted2:#7A9195;
+    --rule:#1E333A; --rule-strong:#2C464E;
+    --accent:#F0793C;
+    --go:#5FC0A3; --warn:#D8A93A; --stop:#E4796A;
+    --go-bg:#102C26; --warn-bg:#2C2412; --stop-bg:#2E1815;
+    --s1:#5FC0A3; --s2:#6FB3D6; --s3:#B79BE0; --s4:#F0793C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--body);
+    font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+    font-size:17px; line-height:1.62; margin:0; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px 96px}
+  .col{max-width:var(--measure)}
+  h1,h2,h3,h4{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+  h1{font-size:clamp(2.1rem,4.4vw,3.1rem); line-height:1.06; font-weight:700;
+     letter-spacing:-.022em; color:var(--ink); margin:0 0 .5rem; text-wrap:balance}
+  h2{font-size:1.55rem; font-weight:700; letter-spacing:-.015em; color:var(--ink);
+     margin:0 0 .2rem; text-wrap:balance}
+  h3{font-size:1.08rem; font-weight:600; letter-spacing:-.008em; color:var(--ink);
+     margin:0 0 .35rem; text-wrap:balance}
+  h4{font-size:.95rem; font-weight:600; color:var(--ink); margin:1.3rem 0 .3rem}
+  p{margin:0 0 1.05rem}
+  strong{color:var(--ink); font-weight:600}
+  a{color:var(--accent)}
+  code,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:.87em; font-variant-numeric:tabular-nums}
+  code{background:var(--sunk); padding:.1em .38em; border-radius:3px; color:var(--ink)}
+  pre{background:var(--sunk); border:1px solid var(--rule); padding:16px 18px;
+    overflow-x:auto; margin:0 0 1.3rem; border-radius:2px}
+  pre code{background:none; padding:0; font-size:.8rem; line-height:1.62; color:var(--body)}
+  .cm{color:var(--muted2)} .kw{color:var(--accent); font-weight:500}
+  .eyebrow{font-family:Archivo,sans-serif; font-size:.7rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 .55rem}
+  header.top{border-bottom:2px solid var(--ink); padding:56px 0 22px}
+  .kicker{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:18px}
+  .kicker .dot{color:var(--rule-strong)} .kicker .hl{color:var(--accent)}
+  .standfirst{font-size:1.16rem; line-height:1.55; color:var(--body); max-width:60ch; margin:0}
+  .rig{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0;
+    border-bottom:1px solid var(--rule); margin:0 0 52px}
+  .rig div{padding:16px 18px 18px; border-right:1px solid var(--rule)}
+  .rig div:last-child{border-right:0}
+  .rig dt{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
+  .rig dd{margin:0; font-family:"IBM Plex Mono",monospace; font-size:.95rem; font-weight:500;
+    color:var(--ink); font-variant-numeric:tabular-nums}
+  .rig dd.bad{color:var(--stop)} .rig dd.good{color:var(--go)}
+  section{padding:44px 0; border-top:1px solid var(--rule)}
+  .sec-head{display:flex; gap:14px; align-items:baseline; margin-bottom:1.4rem}
+  .sec-num{font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--accent);
+    font-weight:500; padding-top:.28rem; flex:none}
+  .callout{background:var(--surface); border:1px solid var(--rule);
+    border-left:3px solid var(--accent); padding:20px 24px; margin:0 0 1.4rem; box-shadow:var(--shadow)}
+  .callout p:last-child{margin-bottom:0}
+  .callout.quiet{border-left-color:var(--rule-strong); box-shadow:none; background:var(--sunk)}
+  .callout.cut{border-left-color:var(--stop); box-shadow:none; background:var(--stop-bg)}
+  .tscroll{overflow-x:auto; margin:0 0 1.3rem; border:1px solid var(--rule); background:var(--surface)}
+  table{border-collapse:collapse; width:100%; font-size:.88rem}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top}
+  thead th{font-family:Archivo,sans-serif; font-size:.64rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); background:var(--sunk);
+    border-bottom:1px solid var(--rule-strong); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .conf{font-family:Archivo,sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.08em;
+    text-transform:uppercase; padding:2px 6px; border-radius:2px; white-space:nowrap}
+  .conf.v{background:var(--go-bg); color:var(--go)}
+  .conf.i{background:var(--warn-bg); color:var(--warn)}
+  .conf.f{background:var(--stop-bg); color:var(--stop)}
+  .tag{font-family:Archivo,sans-serif; font-size:.62rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; padding:3px 7px; border-radius:2px}
+  .tag.a{background:var(--go-bg); color:var(--go)}
+  .tag.b{background:var(--warn-bg); color:var(--warn)}
+  .tag.c{background:var(--stop-bg); color:var(--stop)}
+  figure{margin:0 0 1.4rem; border:1px solid var(--rule); background:var(--surface); padding:22px 24px 18px}
+  figcaption{font-size:.83rem; color:var(--muted); margin-top:12px; line-height:1.5}
+  svg{display:block; width:100%; height:auto}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:10px;
+    font-family:Archivo,sans-serif; font-size:.72rem; font-weight:600; color:var(--muted)}
+  .legend span{display:flex; align-items:center; gap:6px}
+  .legend i{width:14px; height:3px; border-radius:2px; display:block}
+  ul.body-list{margin:0 0 1.1rem; padding-left:1.15em}
+  ul.body-list li{margin-bottom:.5rem}
+  ul.body-list li::marker{color:var(--muted2)}
+  ol.body-list{margin:0 0 1.1rem; padding-left:1.3em}
+  ol.body-list li{margin-bottom:.55rem}
+  .stack{border:1px solid var(--rule); background:var(--surface); margin-bottom:1.4rem}
+  .layer{display:grid; grid-template-columns:130px 1fr 110px; gap:18px; padding:15px 20px;
+    border-bottom:1px solid var(--rule); align-items:start}
+  .layer:last-child{border-bottom:0}
+  .layer-k{font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--muted); padding-top:.2rem}
+  .layer p{margin:0; font-size:.89rem; line-height:1.5}
+  .layer .cost{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--accent);
+    text-align:right; padding-top:.15rem; white-space:nowrap}
+  .ph{display:grid; grid-template-columns:120px 1fr; gap:20px; padding:18px 0;
+    border-bottom:1px solid var(--rule)}
+  .ph:last-child{border-bottom:0}
+  .ph-k{font-family:Archivo,sans-serif; font-size:.68rem; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); padding-top:.22rem}
+  .ph-k b{display:block; font-family:"IBM Plex Mono",monospace; font-size:.95rem; color:var(--ink);
+    letter-spacing:0; text-transform:none; font-weight:600; margin-bottom:2px}
+  .ph p{margin:0 0 .4rem; font-size:.93rem}
+  .ph p:last-child{margin-bottom:0}
+  .ph .aside{color:var(--muted); font-size:.87rem}
+  .wire{border:1px solid var(--rule-strong); background:var(--surface); padding:0;
+    margin:0 0 1.4rem; overflow:hidden}
+  .wire-bar{background:var(--sunk); border-bottom:1px solid var(--rule);
+    padding:8px 14px; font-family:Archivo,sans-serif; font-size:.66rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  footer{border-top:2px solid var(--ink); padding:26px 0 0; margin-top:44px;
+    font-size:.85rem; color:var(--muted)}
+  footer p{margin:0 0 .5rem; max-width:70ch}
+  @media (max-width:760px){
+    .ph{grid-template-columns:1fr; gap:6px}
+    .layer{grid-template-columns:1fr; gap:5px}
+    .layer .cost{text-align:left}
+    body{font-size:16px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">
+    <span>CFD-Bench</span><span class="dot">/</span>
+    <span class="hl">AI Augmentation</span><span class="dot">/</span>
+    <span>Claude in the loop</span><span class="dot">/</span>
+    <span>6 September 2026</span>
+  </div>
+  <h1>Language in, numbers out &mdash; never the reverse</h1>
+  <p class="standfirst">Where a language model belongs in a deterministic engineering tool, the one
+  rule that keeps it from poisoning the results, and what each capability costs to run.</p>
+</header>
+
+<dl class="rig">
+  <div><dt>Model</dt><dd>claude-opus-5</dd></div>
+  <div><dt>Capabilities</dt><dd>7</dd></div>
+  <div><dt>Heavy session</dt><dd class="good">~$2.57</dd></div>
+  <div><dt>Cache saving</dt><dd class="good">10&times;</dd></div>
+  <div><dt>Key strategy</dt><dd>BYOK</dd></div>
+  <div><dt>Offline</dt><dd class="good">fully usable</dd></div>
+</dl>
+
+<section style="border-top:0">
+  <div class="sec-head"><span class="sec-num">01</span><div>
+    <p class="eyebrow">The rule</p>
+    <h2>One sentence that governs everything</h2>
+  </div></div>
+
+  <div class="col">
+  <div class="callout">
+    <p style="font-size:1.1rem; line-height:1.5"><strong>The model reads and writes
+    <em>language</em>. The solver reads and writes <em>numbers</em>. Numbers flow into the model as
+    context; they never flow out of it as results.</strong></p>
+  </div>
+
+  <p>Every capability below is judged against that sentence. It exists because a CFD tool is about
+  as deterministic a path as software gets: <strong>a user who cannot reproduce a number cannot
+  trust the tool</strong>, and a number that came from a language model is not reproducible. The
+  project's own AI review lens holds a hard veto on exactly this &mdash; non-determinism leaking
+  into a deterministic path.</p>
+
+  <p>The useful thing about the rule is that <strong>it is mechanically checkable</strong>. Every
+  numeral appearing in model-generated text must also appear in the structured input given to that
+  call. That is a unit test, not a guideline &mdash; roughly twenty lines of code guarding the single
+  most damaging failure this feature set can produce.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><div>
+    <p class="eyebrow">Where it earns its place</p>
+    <h2>Seven capabilities, ranked</h2>
+  </div></div>
+
+  <div class="col">
+  <p>Ranked by value over risk. Your two ideas are the top two &mdash; they are the best on the
+  list, and for the same underlying reason: in both, the model is handling <em>language</em> about
+  facts it was handed.</p>
+  </div>
+
+  <div class="stack">
+    <div class="layer">
+      <div class="layer-k">A &middot; your idea</div>
+      <p><strong>Brief &rarr; structured design intent.</strong> Prose in, typed constraints,
+      objectives and context out. Structured outputs guarantee the <em>shape</em>, so the only
+      possible failure is a wrong value &mdash; and the user confirms before the optimiser runs.
+      <strong>Every extracted field carries a provenance flag: stated, inferred, or defaulted</strong>,
+      because an unstated span limit that quietly appears is worse than no extraction at all.</p>
+      <div class="cost">$0.015</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">B &middot; your idea</div>
+      <p><strong>Explain the design against the goals.</strong> All the facts are supplied; the model
+      does exposition, not computation. The valuable version is not a summary of the numbers &mdash;
+      you can read numbers &mdash; it is <em>why this design and not the neighbouring one</em>: which
+      constraint bound, what was given up, what would change if a constraint moved. Grounded in the
+      knowledge base with citations.</p>
+      <div class="cost">$0.048</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">C</div>
+      <p><strong>Diagnose a failed solver run.</strong> Read <code>checkMesh</code> output, diverging
+      residuals, a <code>snappyHexMesh</code> failure &mdash; say what broke and what to change. Log
+      interpretation is a classic model strength and the answer is <strong>self-verifying</strong>:
+      the fix works or it does not. This is what stops you being stranded when meshing automation
+      fails.</p>
+      <div class="cost">$0.062</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">D</div>
+      <p><strong>Knowledge-base Q&amp;A.</strong> ~25 artifacts of sourced, confidence-labelled
+      domain knowledge already exist. Retrieval and synthesis over vetted text with citations is the
+      lowest-risk application there is &mdash; and the stable prefix makes it the cheapest.</p>
+      <div class="cost">$0.027</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">E</div>
+      <p><strong>Vocabulary bridging.</strong> <em>&ldquo;It feels sticky on take-off&rdquo;</em>
+      &rarr; insufficient CL at low speed. <em>&ldquo;The tip breaches in turns&rdquo;</em> &rarr; tip
+      ventilation. <strong>This matters more than it looks:</strong> the gap register says we never
+      established who the user is, and the proposals lean engineer. This is what would let the tool
+      serve a <em>rider</em> at all &mdash; and it is the cheapest capability on the list.</p>
+      <div class="cost">$0.011</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">F</div>
+      <p><strong>Design report.</strong> The brief, what was built, why, and the caveats &mdash; the
+      natural artifact to hand a shaper or builder. Same machinery as B at longer form.</p>
+      <div class="cost">$0.085</div>
+    </div>
+    <div class="layer">
+      <div class="layer-k">G</div>
+      <p><strong>Section-selection rationale.</strong> Why E818 rather than NACA 4412 here. We
+      already have the numbers &mdash; 42.1 kn cavitation-free against 31.4 kn. The model supplies
+      the sentence, never the figure.</p>
+      <div class="cost">incl.</div>
+    </div>
+  </div>
+
+  <div class="col">
+  <div class="callout cut">
+    <p><strong>The hard constraint on B, and it is the whole ballgame.</strong> Every number in an
+    explanation must be a number that was passed in. The moment the model writes &ldquo;L/D is around
+    19&rdquo; instead of reading <span class="num">19.8</span> from the solver, it has fabricated
+    engineering data with total confidence and no visible tell. That is why the numeral check is
+    non-negotiable rather than nice-to-have.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><div>
+    <p class="eyebrow">The other half of the answer</p>
+    <h2>Where it must not go</h2>
+  </div></div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Never</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Compute or estimate any physical quantity</strong></td>
+        <td>The estimator, VLM and CFD tiers exist for this. A model-generated number is
+        unreproducible and <em>indistinguishable from a real one on screen</em></td></tr>
+      <tr><td><strong>Choose the design</strong></td>
+        <td>The optimiser is deterministic, inspectable and verifiable at a higher tier. Replacing
+        it forfeits all three</td></tr>
+      <tr><td><strong>Generate geometry directly</strong></td>
+        <td>A wing from a language model is unvalidated and un-auditable. Geometry comes from the
+        parametric model</td></tr>
+      <tr><td><strong>Judge structural safety</strong></td>
+        <td>We have <em>no structural model at all</em> (GAP-02). Asked whether a foil is strong
+        enough, a model will answer &mdash; worthlessly and confidently</td></tr>
+      <tr><td><strong>Silently alter a constraint the user set</strong></td>
+        <td>The tool's trustworthiness rests on never moving what the user set</td></tr>
+      <tr><td><strong>Be required for core function</strong></td>
+        <td>No key, no network &mdash; the wing still gets designed. AI is additive, never
+        load-bearing</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><div>
+    <p class="eyebrow">The gate</p>
+    <h2>Every capability ships with an eval</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The project's AI review lens holds a hard veto on <strong>an AI capability with no eval
+  harness</strong>. So each of these ships with one, or does not ship.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Capability</th><th>Eval set</th><th>Grading</th></tr></thead>
+    <tbody>
+      <tr><td>Brief &rarr; intent</td>
+        <td>Briefs with hand-written expected intents, <strong>including adversarial ones</strong>
+        &mdash; vague, contradictory, over-constrained</td>
+        <td>Exact match on numeric constraints, semantic on objectives, plus a
+        <strong>precision check: did it invent a field?</strong></td></tr>
+      <tr><td><strong>Explain</strong></td>
+        <td>Design/result pairs with known correct readings</td>
+        <td><strong>(1) Numeral check &mdash; mechanical, automatic fail.</strong> (2) No
+        unsupported claims. (3) Human usefulness rating</td></tr>
+      <tr><td>Diagnose</td>
+        <td>Genuinely failed runs with known root causes</td>
+        <td>Did it name the actual cause? <strong>Did the suggested fix work when applied?</strong></td></tr>
+      <tr><td>KB Q&amp;A</td>
+        <td>Questions with known answers, <strong>plus questions whose answers are not in the
+        base</strong></td>
+        <td>Correctness on the first set; <strong>refusal on the second</strong>. Confident answers
+        to unanswerable questions are the failure mode</td></tr>
+      <tr><td>Vocabulary bridge</td>
+        <td>Rider phrases with expert-labelled meanings</td>
+        <td>Agreement with the expert label</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p>The <strong>numeral check</strong> is the one to build first. It is a deterministic guard on a
+  non-deterministic component, it is trivial to write, and it catches the failure that would do the
+  most damage. It also has an open question attached &mdash; rounding, unit conversion and derived
+  quantities all produce numerals not literally present in the input, so it will need a tuning pass
+  to allow rounding of supplied values while still rejecting unsupplied ones.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><div>
+    <p class="eyebrow">Cost</p>
+    <h2>Cheaper than it feels</h2>
+  </div></div>
+
+  <div class="col">
+  <p>Claude Opus 5 at <span class="num">$5 / $25</span> per million tokens in/out. Every figure in
+  section 02 is computed from that, not estimated.</p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 830 200" role="img" aria-label="Bar chart of cost per call for six AI capabilities, from the vocabulary bridge at just over one cent to the design report at eight and a half cents.">
+      <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--body)">
+        <text x="0" y="14" font-family="Archivo, sans-serif" font-size="10" font-weight="600" letter-spacing="1" fill="var(--muted)">COST PER CALL</text>
+        <g>
+          <text x="0" y="42">vocabulary bridge</text>
+          <rect x="180" y="32" width="59" height="13" fill="var(--s1)"></rect>
+          <text x="247" y="42">$0.0112</text>
+        </g>
+        <g>
+          <text x="0" y="66">brief &#8594; intent</text>
+          <rect x="180" y="56" width="79" height="13" fill="var(--s1)"></rect>
+          <text x="267" y="66">$0.0150</text>
+        </g>
+        <g>
+          <text x="0" y="90">KB question</text>
+          <rect x="180" y="80" width="142" height="13" fill="var(--s2)"></rect>
+          <text x="330" y="90">$0.0270</text>
+        </g>
+        <g>
+          <text x="0" y="114">explain the design</text>
+          <rect x="180" y="104" width="250" height="13" fill="var(--s2)"></rect>
+          <text x="438" y="114">$0.0475</text>
+        </g>
+        <g>
+          <text x="0" y="138">diagnose a failure</text>
+          <rect x="180" y="128" width="326" height="13" fill="var(--s3)"></rect>
+          <text x="514" y="138">$0.0620</text>
+        </g>
+        <g>
+          <text x="0" y="162">design report</text>
+          <rect x="180" y="152" width="447" height="13" fill="var(--s4)"></rect>
+          <text x="635" y="162">$0.0850</text>
+        </g>
+      </g>
+      <line x1="180" y1="178" x2="700" y2="178" stroke="var(--rule)"></line>
+      <g font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--muted2)">
+        <text x="180" y="192">0&#162;</text><text x="443" y="192">5&#162;</text><text x="700" y="192" text-anchor="end">9&#162;</text>
+      </g>
+    </svg>
+    <figcaption>Computed from Opus 5 rates with the knowledge prefix cached. A heavy
+    <strong>74-interaction session costs about $2.57</strong>; a hundred such sessions is roughly
+    $257.</figcaption>
+  </figure>
+
+  <div class="col">
+  <div class="callout quiet">
+    <p><strong>Caching pays for itself after 1.4 calls.</strong> The 15k-token knowledge prefix costs
+    <span class="num">$0.075</span> fresh against <span class="num">$0.0075</span> on a cache read
+    &mdash; a 10&times; difference &mdash; against a one-time write of <span class="num">$0.094</span>.
+    Verify it is actually working by watching <code>Usage.CacheReadInputTokens</code>; if that is
+    zero across repeated calls, something in the prefix is varying and the saving is imaginary.</p>
+  </div>
+
+  <p><em>A note on model choice:</em> the bounded capabilities &mdash; vocabulary bridge, intent
+  extraction &mdash; might run acceptably on a cheaper model. That is a legitimate option and it is
+  <strong>your call, not mine</strong>. But it should be measured against the eval rather than
+  assumed, which is another reason to build the evals first.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><div>
+    <p class="eyebrow">The awkward part</p>
+    <h2>You cannot ship a key in the binary</h2>
+  </div></div>
+
+  <div class="col">
+  <p>You mentioned including a Claude API key in the solution. <strong>A key inside a desktop binary
+  is extractable</strong> &mdash; it has to be present at runtime, so it can be recovered, and
+  obfuscation only changes how long that takes. Three honest options:</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Approach</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td><strong>BYOK &mdash; you supply your own key</strong></td>
+        <td><span class="tag a">Right for this project</span> Non-commercial, single user, no
+        distribution problem. Key lives in the Windows credential store or an environment variable
+        &mdash; never in the repo, never in the binary</td></tr>
+      <tr><td>A proxy service holding the key server-side</td>
+        <td><span class="tag b">Only for distribution</span> The correct answer for shipped
+        commercial software. Adds infrastructure, auth and a bill</td></tr>
+      <tr><td>Key embedded in the app</td>
+        <td><span class="tag c">Not an option</span> It leaks, and the leak bills you</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <p>For a tool you run on your own machine, <strong>BYOK is not a compromise &mdash; it is the
+  correct design</strong>. It also makes the offline requirement fall out naturally: no key
+  configured, no AI features, everything else works exactly as before.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">07</span><div>
+    <p class="eyebrow">Integration</p>
+    <h2>What this looks like in C#</h2>
+  </div></div>
+
+  <div class="col">
+  <p>The official SDK is <code>Anthropic</code> on NuGet, which drops into a WPF application
+  directly. The pieces that matter for these capabilities:</p>
+  </div>
+
+  <pre><code><span class="cm">// Brief -> structured intent. The schema is the guarantee:</span>
+<span class="cm">// the model cannot return a malformed object, only a wrong value.</span>
+var response = await client.Messages.Create(new MessageCreateParams
+{
+    Model      = <span class="kw">"claude-opus-5"</span>,
+    MaxTokens  = 16000,
+    OutputConfig = new OutputConfig
+    {
+        Format = new JsonOutputFormat { Schema = designIntentSchema },
+    },
+    <span class="cm">// The knowledge prefix is stable -> cache it. 10x cheaper on reads.</span>
+    System = new List&lt;TextBlockParam&gt;
+    {
+        new() { Text = knowledgeBasePrefix,
+                CacheControl = new CacheControlEphemeral() },
+    },
+    Messages = [ new() { Role = Role.User, Content = brief } ],
+});
+
+<span class="cm">// Always verify the cache is real, not imagined:</span>
+<span class="cm">// response.Usage.CacheReadInputTokens == 0 across repeats means</span>
+<span class="cm">// something in the prefix is varying.</span></code></pre>
+
+  <div class="col">
+  <ul class="body-list">
+    <li><strong>Client:</strong> <code>AnthropicClient client = new();</code> reads
+    <code>ANTHROPIC_API_KEY</code>, or set <code>ApiKey</code> from the credential store.</li>
+    <li><strong>Thinking</strong> is on by default on Opus 5; <code>Effort</code> nests under
+    <code>OutputConfig</code>, not top level.</li>
+    <li><strong>Stream</strong> anything long-form &mdash; explain, report &mdash; so the UI shows
+    progress rather than a pause.</li>
+    <li><strong>Catch a most-specific-first exception chain</strong> from
+    <code>Anthropic.Exceptions</code>, so retryable (429, 5xx) and non-retryable (400, 404) are
+    distinguishable rather than collapsed.</li>
+    <li><strong>Assistant prefill is not supported</strong> on Opus 5 &mdash; structured outputs are
+    how you control format.</li>
+  </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">08</span><div>
+    <p class="eyebrow">Risks</p>
+    <h2>Five ways this goes wrong</h2>
+  </div></div>
+
+  <div class="col">
+  <ol class="body-list">
+    <li><strong>Fabricated numbers, presented with total confidence.</strong> The dominant risk.
+    Mitigated by the numeral check &mdash; and by rendering model-generated text
+    <em>visually distinctly</em> from computed values, so the eye can tell them apart.</li>
+    <li><strong>Authority laundering.</strong> An eloquent explanation makes a result <em>feel</em>
+    more validated than it is. A fluent paragraph about an estimator-tier number can read as an
+    engineering endorsement. <strong>Explanations must inherit and display the confidence of the tier
+    they describe</strong> &mdash; an explanation of a surrogate result should look less certain than
+    one of a CFD result.</li>
+    <li><strong>Prompt injection through solver logs and files.</strong> Diagnosis reads machine
+    output; import reads files. Neither is fully trusted. Keep model output confined to
+    <em>advice</em>; never let it trigger an action directly.</li>
+    <li><strong>Silent scope creep into computation.</strong> The pressure to let the model
+    &ldquo;just estimate&rdquo; something when a tier is slow will be constant and reasonable-sounding.
+    The rule in section 01 exists to be enforced, not admired.</li>
+    <li><strong>Non-reproducible explanations.</strong> The same design may be explained differently
+    on two runs. Fine for prose, unacceptable for numbers &mdash; which is precisely the line the
+    rule draws.</li>
+  </ol>
+
+  <div class="callout">
+    <p><strong>Where I'd start.</strong> Build capability B (explain) first, because it is your
+    highest-value idea and it forces the numeral check into existence. The check is the guard rail
+    everything else leans on, and building the feature that most needs it first means the guard rail
+    is real before the riskier capabilities arrive.</p>
+  </div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Evidence:</strong> <code>docs/knowledge/ai-in-the-product/</code> &mdash; capability
+  inventory, eval designs, the C# SDK surface, and the computed cost table. Model IDs, pricing,
+  structured outputs, caching and the C# bindings are from the bundled Claude API reference.</p>
+  <p><strong>Standing rule:</strong> the model reads and writes language; the solver reads and
+  writes numbers. Numbers flow in as context, never out as results.</p>
+</footer>
+
+</div>

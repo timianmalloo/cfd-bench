@@ -4,10 +4,11 @@ title: "Deferred Work and Spikes"
 type: doc
 status: accepted
 owner: "@timianmalloo"
-tags: [backlog, spikes, todo, deferred]
+tags: [backlog, spikes, todo, deferred, ai, evals]
 links:
   - { to: kb-cfd-hydrofoil-simulation, rel: depends-on }
   - { to: decision-0001-geometry-kernel, rel: depends-on }
+  - { to: kb-ai-in-the-product, rel: depends-on }
 review-by: 2026-12-06
 summary: >-
   Work that has been consciously deferred rather than forgotten — spikes with a stated question and
@@ -69,6 +70,22 @@ geometry range, or does each wing need hand-tuning?
 architecture needs a mesh-diagnostics UI rather than a hidden step. **This is the load-bearing
 assumption of `kb-cfd-orchestration`.**
 
+### SPIKE-04 · The numeral check
+**Status:** open · **Size:** ~half a day
+
+**Question.** Can a mechanical check reliably reject model-generated text containing numbers that
+were not supplied to the call, without false-positives on legitimate rounding and unit conversion?
+
+**Why it matters.** It is the deterministic guard on the one non-deterministic component that could
+do real damage — an explanation that invents "L/D is around 19" instead of reading 19.8 is
+fabricated engineering data with no visible tell.
+
+**Done when.** The check runs over a corpus of good and deliberately-poisoned explanations, catching
+every fabricated numeral and passing legitimate rounding of supplied values.
+
+**If it is wrong.** The explain feature ships with model output rendered as clearly-marked prose
+that never restates a figure — the numbers stay in the UI chrome beside it, not in the sentence.
+
 ## Standing commitments — decisions already made, to be honoured
 
 ### COMMIT-01 · Verification at a higher tier
@@ -96,6 +113,14 @@ fallbacks.
 arbitrary third-party geometry. Reconstructing stations from an arbitrary B-Rep is a *fitting*
 problem and is out of scope. This removes the last requirement that would have needed a geometry
 kernel.
+
+### COMMIT-04 · Language in, numbers out
+**Decided 2026-09-06** — see `kb-ai-in-the-product`.
+
+The model reads and writes **language**; the solver reads and writes **numbers**. Numbers flow into
+the model as context and never out of it as results. No LLM computes or estimates a physical
+quantity, chooses a design, generates geometry, or judges structural safety. Every AI capability
+ships with an eval or does not ship. The tool is fully usable with no API key and no network.
 
 ## Deferred decisions
 

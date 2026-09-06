@@ -262,7 +262,9 @@ window.DOCS_INDEX = {
         "backlog",
         "spikes",
         "todo",
-        "deferred"
+        "deferred",
+        "ai",
+        "evals"
       ],
       "links": [
         {
@@ -272,10 +274,14 @@ window.DOCS_INDEX = {
         {
           "to": "decision-0001-geometry-kernel",
           "rel": "depends-on"
+        },
+        {
+          "to": "kb-ai-in-the-product",
+          "rel": "depends-on"
         }
       ],
       "diagrams": [],
-      "sourceSha256": "80a96c90a9517ae374d0f53131c0cc1e31b30b31ee633c5425b20fcc3960809d"
+      "sourceSha256": "53f1aa87cda645497ad9d834f9888fa0f7099ff5a61f040f764e43d4974adb67"
     },
     {
       "id": "glossary-cfd-hydrofoil",
@@ -302,6 +308,43 @@ window.DOCS_INDEX = {
       ],
       "diagrams": [],
       "sourceSha256": "a1370d492bbe2485c564b0c58865371469bd855eb17105bcacd5422974a531da"
+    },
+    {
+      "id": "kb-ai-in-the-product",
+      "path": "docs/knowledge/ai-in-the-product/index.md",
+      "title": "LLMs Inside an Engineering Tool",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-06",
+      "reviewSuggested": [],
+      "summary": "Where a language model belongs in a deterministic engineering tool and where it must not go — the language/numbers boundary that keeps non-determinism out of the solver path, the capability inventory ranked by value over risk, the eval each capability needs before it ships, and the measured Claude API cost and C# integration surface.",
+      "tags": [
+        "llm",
+        "claude-api",
+        "ai-ux",
+        "evals",
+        "structured-outputs",
+        "prompt-caching",
+        "csharp"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-design-automation",
+          "rel": "refines"
+        },
+        {
+          "to": "knowledge-gap-register",
+          "rel": "refines"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "61d83202330b7215c8f6de25472f4d6c2776ad1670edcac087ed2ce2f5f6543f"
     },
     {
       "id": "kb-cad-ux-geometry",
@@ -988,6 +1031,13 @@ window.DOCS_INDEX = {
       "artifactId": "audit-log"
     },
     {
+      "id": "surface-proposals-ai-augmentation-experience",
+      "path": "docs/proposals/ai-augmentation-experience.html",
+      "title": "AI in the Foil Designer",
+      "kind": "knowledge-tool",
+      "description": "Open an interactive knowledge artifact."
+    },
+    {
       "id": "surface-proposals-cfd-bench-solver-strategy",
       "path": "docs/proposals/cfd-bench-solver-strategy.html",
       "title": "CFD-Bench Solver Strategy",
@@ -1016,5 +1066,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "1f00b3ae8e79e2dd8f697c30fe5a25e464efc43100746763673d527d53d0ccf6"
+  "graphSha256": "e81ddfbd1e503c7b06c713e039a7d4226d9f6890b0174f759fdccdf2dd4377fc"
 };
