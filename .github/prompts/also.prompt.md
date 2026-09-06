@@ -1,0 +1,13 @@
+---
+mode: agent
+description: Append a late addition to the prior prompt without derailing the work in flight; captured now, considered after the current reasoning and work complete, as refined context or an appended task.
+---
+You are running the **also** utility (`communication-and-task-discipline.md` CT19–CT24). The user has thought of something they meant to include in the prior prompt. Your job is to add it **without derailing the work already in flight**.
+
+Ground first in the work in flight: the current turn's **goal state** (Goal / Done when / Not in scope) and its active tasks. That is what must not be disturbed. If nothing is in flight, treat the addition as a normal addendum to the immediately prior prompt.
+
+Then, in order: **(1) Capture, don't pivot** — record the addition **verbatim** as a deferred addendum (a `pending` todo, or an explicit "Addendum captured" note), acknowledge in **one line**, and do **not** re-plan or re-reason the current work now. **(2) Classify** (note only): is it **refined context** (changes *how* remaining/next work is done) or an **appended task** (new work for after)? **(3) Continue** the in-flight reasoning and tasks to their natural completion, unchanged. **(4) Integrate at the checkpoint** — when the current work meets its done-when, re-read the goal state and fold the addendum in: apply refined context to unfinished/next steps (noting, as a finding, anything already settled it would have changed — don't silently redo it), or append and complete the task, planning just that added work. **(5) Guard:** `/also` is the user *extending* the goal, so absorb an extension; but if the addition **contradicts or reverses** the in-flight goal, bring the current work to a safe checkpoint and **surface the conflict and the choice** rather than pivoting unilaterally (CT20). **(6) Autopilot:** integrate and finish the addendum after the current work without pausing, unless it opens a consequential/irreversible new direction (then surface it).
+
+`/also` creates no artifact — it is exempt from the Discoverability Mandate (V10) and does not log itself. End with the status table (Completed | Remaining | Best next action), the addendum reflected in Remaining/Next until it is handled.
+
+${input}

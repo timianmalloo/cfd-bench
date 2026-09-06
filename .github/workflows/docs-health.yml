@@ -1,0 +1,44 @@
+# AI-Forward Pack — reference CI workflow (copy to .github/workflows/docs-health.yml).
+# Gates every PR on knowledge-graph health: schema-valid frontmatter, registry-conformant
+# typed links, no dangling edges, derived index in sync, and the freshness gate
+# (stale review-by, pending review-suggested flags, orphans).
+# Requires only Python 3.8+ (the script bundle is stdlib-only).
+name: docs-health
+on:
+  pull_request:
+    paths: ["docs/**", "**/*.md"]
+  workflow_dispatch:
+
+jobs:
+  graph-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.x" }
+
+      # Schema, links, rel registry, duplicates, index drift -> fail the PR
+      - name: Validate the knowledge graph
+        run: python3 docs/ai-forward-pack/scripts/docs-graph.py validate
+
+      # Time-based decay + pending V16 flags + orphans.
+      # Start with warn; flip to fail once the backlog is clean.
+      - name: Freshness gate (V13/V16)
+        run: python3 docs/ai-forward-pack/scripts/docs-graph.py freshness --gate warn
+
+      # Vendored-foundation drift (uncatalogued edits to the vendored base docs)
+      - name: Foundation drift check
+        run: |
+          if [ -f docs/ai-forward-pack/scripts/foundation-check.py ]; then
+            python3 docs/ai-forward-pack/scripts/foundation-check.py
+          fi
+
+  # Optional: pack-eval job for repos that vendor the pack source and edit skills/prompts.
+  # Uncomment and point --workspace at recorded eval workspaces (see evals/README.md).
+  # pack-evals:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with: { python-version: "3.x" }
+  #     - run: python3 evals/run-evals.py --cases evals/cases --workspace eval-workspaces/latest --check

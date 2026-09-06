@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "python3 docs/ai-forward-pack/hooks/reread-guard.py --host copilot",
+        "powershell": "python docs/ai-forward-pack/hooks/reread-guard.py --host copilot",
+        "timeoutSec": 10,
+        "matcher": "^view$"
+      }
+    ],
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "bash": "python3 docs/ai-forward-pack/hooks/reread-guard.py --host copilot",
+        "powershell": "python docs/ai-forward-pack/hooks/reread-guard.py --host copilot",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}
