@@ -1,108 +1,126 @@
 ---
 id: kb-cfd-hydrofoil-simulation
-title: "Small-Footprint CFD for Hydrofoils and Surfboards"
+title: "Small-Footprint CFD for Water-Sports Hydrofoils"
 type: knowledge
 status: draft
 owner: "@timianmalloo"
 phase: pre-specification
-tags: [cfd, hydrofoil, surfboard, lbm, gpu, cuda, marine-hydrodynamics]
+tags: [cfd, hydrofoil, lbm, gpu, cuda, marine-hydrodynamics, water-sports]
 links:
   - { to: kb-cfd-state-of-the-art, rel: refines }
   - { to: kb-cfd-comparables, rel: refines }
   - { to: kb-cfd-references, rel: refines }
   - { to: kb-cfd-data-and-constants, rel: refines }
+  - { to: kb-cfd-foil-sections, rel: refines }
+  - { to: kb-cfd-estimation-methods, rel: refines }
+  - { to: kb-cfd-watersports-practice, rel: refines }
+  - { to: kb-cfd-parametric-geometry, rel: refines }
   - { to: kb-cfd-open-questions, rel: refines }
   - { to: kb-cfd-sources, rel: refines }
   - { to: glossary-cfd-hydrofoil, rel: uses-term }
 review-by: 2026-12-04
 summary: >-
-  Evidence base for building a small, local CFD tool for hydrofoils and surfboards in salt and
-  fresh water on a single Windows/NVIDIA machine. Establishes that salt vs fresh is a parameter
-  change rather than a physics change, that the foiling Reynolds envelope is 5.5e5-1.6e6, that
-  this laptop's GPU is not the binding constraint, and that hydrofoils and surfboards are two
-  distinct physics problems requiring two different solver tiers.
+  Evidence base for a small, local design and simulation tool for water-sports hydrofoils — surf,
+  SUP/downwind, wing and windsurf foiling — on a single Windows/NVIDIA machine. Establishes the
+  closed-form estimation chain that answers most design questions in microseconds, the section and
+  geometry catalogs, a four-concept parametric grammar, and the narrow band where simulation is
+  actually required.
 ---
 
-# Small-footprint CFD for hydrofoils and surfboards — domain knowledge
+# Small-footprint CFD for water-sports hydrofoils — domain knowledge
 
-**Domain & problem.** Predicting hydrodynamic forces (lift, drag, moment) and running attitude for
-hydrofoils and surfboards operating in salt and fresh water, on a single Windows/NVIDIA machine,
-without deploying a general-purpose CFD package such as OpenFOAM or SU2.
+**Version 2** · compiled 2026-09-05 · Lead: Domain Researcher
 
-**Canonical framing.** The field does *not* treat this as one problem. Marine hydrodynamics splits
-it in two, and the split is the single most important structural fact in this base:
+**Domain & problem.** Predicting hydrodynamic forces, efficiency (L/D) and cavitation margin for
+water-sports hydrofoils — surf, SUP/downwind, wing and windsurf/race foiling — in salt and fresh
+water, on a single Windows/NVIDIA machine, without deploying a general-purpose CFD package.
 
-- A **fully submerged lifting foil** is an attached-flow, high-Reynolds problem. The canonical
-  cheap method is potential flow (lifting line / vortex lattice / panel) with a viscous correction
-  from 2D sectional data. This is what XFLR5 and Typhoon do.
-- A **planing surfboard** is a free-surface, partially-wetted, dynamically-trimming problem. Potential
-  flow methods do not apply. The canonical cheap method is the **Savitsky (1964) empirical planing
-  correlation**; the canonical expensive method is RANS + VOF with 6-DOF motion.
-
-The user's framing ("one simpler, smaller solution") is therefore *idiosyncratic in scope but sound
-in intent*: one **application** is reasonable, one **solver** is not. Divergence noted explicitly.
-
-**Compiled:** 2026-09-05 · **Lead:** Domain Researcher · **Status:** fresh
+> ### Scope change from v1 — recorded, not silent
+> **v1 covered hydrofoils *and* surfboards. v2 drops the surfboard/planing scenario entirely** at
+> the user's direction. Retired with it: the Savitsky empirical planing method, RANS+VOF with 6-DOF
+> trim and sinkage, and the whole free-surface-craft cost rung. Those passages remain in
+> `state-of-the-art.md` and `comparables.md` marked **RETIRED** rather than deleted, because the
+> reasoning that led to the two-tier architecture depended on them and a future reader needs to see
+> why the shape survived the scope cut.
+>
+> **This cut has a consequence that must not be glossed:** planing was one of the three gaps that
+> justified building anything at all. The case-against was re-tested on the narrower scope — see
+> `open-questions.md`. It still holds, but on **two** gaps rather than three, and the surviving
+> justification is narrower and more dependent on the free-surface argument.
 
 ## Headline findings
 
-1. **Salt vs fresh water is a parameter change, not a physics change.** At 15 degC, standard seawater
-   (S_A = 35.16504 g/kg) is **+2.69% denser** and **+4.44% more viscous kinematically** than fresh
-   water. Both fluids are Newtonian and incompressible in this regime. One code path, two constants.
-   — *(Verified, ITTC 7.5-02-01-03 Rev 02)*
-2. **The foiling envelope is Re 5.5e5 to 1.6e6** (chord-based, seawater at 15 degC). This is the
-   awkward band: too high to ignore turbulence, high enough that wall-resolved simulation is costly.
-   — *(Verified for the property values; Inferred for the speed/chord envelope, from community
-   sources rather than a standard)*
-3. **This laptop's GPU is not the binding constraint.** A hydrofoil box at 60 cells/chord is only
-   ~43 M cells; the estimated throughput is ~220 steps/s. The RTX 5090 Laptop GPU can hold ~396 M
-   cells at FP32/FP16 LBM density. The constraint is *physical fidelity and scope*, not hardware.
-   — *(Inferred — bandwidth-scaled from a published desktop benchmark; see the caveat below)*
-4. **Strong prior art already exists** and must be beaten, not ignored: XFLR5, Typhoon (Ghent
-   University), FoilBoard, and FluidX3D. Two of these are free, open source, and directly aimed at
-   hydrofoils. — *(Verified)*
-5. **FluidX3D is the performance ceiling to measure against, and it has three specific
-   disqualifiers** for this project: it is **OpenCL not CUDA**, it has **no adaptive mesh
-   refinement** (uniform cell size everywhere), and it is **free for non-commercial use only**.
-   — *(Verified)*
-6. **The pure-.NET GPU path carries real risk.** ILGPU's most recent release is **v1.5.3 (July
-   2024)**, which predates Blackwell. sm_120 support is unconfirmed. — *(Flagged — load-bearing;
-   see open-questions.md)*
-7. **CUDA Toolkit 12.8 is the hard floor** for native sm_120 codegen. This machine's driver
-   (591.91) advertises CUDA 13.1, so the driver side is satisfied; the toolkit is not installed.
-   — *(Verified)*
+1. **Most of the design question is answerable in closed form, in microseconds.** A chain of
+   published formulae — XFOIL section polars, Helmbold lift slope, lifting-line induced drag, ITTC
+   1957 skin friction with a Hoerner form factor, and the incipient-cavitation critical speed —
+   produces L/D, Cl/Cd, required angle of attack and cavitation margin with no simulation.
+   **It was executed against real water-sports geometry and the numbers are physically right.**
+   — *(Verified for each formula; the assembled chain is Inferred)*
+2. **Cavitation is not a water-sports problem except at race speed.** The cavitation number stays
+   above 3 until 22 kn and only reaches 1.0 at 28 kn. Below roughly 25 kn it does not bind, so it is
+   a **check**, not a design driver. — *(Inferred, from Verified formulae and constants)*
+3. **The induced/friction crossover is the whole story of discipline differences.** Induced drag is
+   **77%** of total for a surf foil at 7 kn and **3%** for a race foil at 28 kn. That is why aspect
+   ratio governs take-off and section drag governs top speed. — *(Inferred, computed)*
+4. **Take-off demands more of the section than the design point does.** A surf foil needs
+   `CL ≈ 0.78` at 7 kn, above the `0–0.6` band the International Hydrofoil Society quotes as typical.
+   This explains high-camber low-speed sections directly. — *(Verified band; Inferred comparison)*
+5. **A complete foil assembly needs exactly four concepts** — assembly, surface, station, loft rule.
+   A strut is a surface with a vertical span axis; decalage is a difference between station
+   incidences. No special cases. — *(Inferred, corroborated by OpenVSP's own structure)*
+6. **CST, PARSEC, NACA 4-digit and Bézier are the same object.** All are exactly equivalent to
+   Bézier curves, so the parameterisation question is a choice of clothing, not of system. CST's
+   class/shape split makes invalid airfoils unrepresentable. — *(Verified)*
+7. **Published aspect ratios are not comparable across manufacturers** — calculation conventions
+   differ. The tool must compute AR from its own geometry under a stated definition. — *(Verified)*
+8. **Span is nearly constant across the whole domain** (95–107 cm) while area varies 2.5× and aspect
+   ratio 3×. Area and AR are the real design variables; span is a consequence.
+   — *(Inferred, computed)*
+9. **The practitioner section ranking is explicit and citable:** NACA **66-series ahead of
+   16-series** for subcavitating hydrofoils, on separation grounds — the 16-series' convex pressure
+   recovery invites trailing-edge separation, and **separation is the trigger condition for
+   ventilation**. — *(Verified — IHS/Tom Speer)*
+10. **Salt vs fresh remains a two-parameter change, not a physics change** (+2.69% density, +4.44%
+    kinematic viscosity at 15 °C). — *(Verified — ITTC 7.5-02-01-03)*
+11. **The GPU is still not the constraint.** A 43 M-cell foil box runs at an estimated ~220 steps/s
+    on this laptop. — *(Inferred — bandwidth-scaled, never measured)*
 
 ## Confidence summary
 
-- **Verified: 12** · **Inferred: 5** · **Flagged: 3**
-- The **Flagged claims that are load-bearing**:
-  - *ILGPU Blackwell/sm_120 support* — decides whether a pure-.NET GPU path is viable at all.
-  - *LBM accuracy at Re > 1e6 for lift/drag on a foil* — most published LBM airfoil validation sits
-    **below** 1e6, which is beneath our operating envelope.
-  - *The ~9,570 MLUPs/s laptop throughput estimate* — bandwidth-scaled from the desktop RTX 5090
-    figure, never measured on this machine. It must be measured before any plan depends on it.
+- **Verified: 24** · **Inferred: 11** · **Flagged: 9**
+- **Load-bearing Flagged claims:**
+  - *Thickness-ratio guidance (10–12%)* — the only quantitative source is a retailer blog whose
+    adjacent tables were demonstrably garbled. **This is the largest evidence gap in the base** and
+    it is load-bearing for a design tool.
+  - *ILGPU Blackwell/sm_120 support* — v1.5.3 (July 2024) predates Blackwell.
+  - *LBM accuracy at Re > 10⁶* — published validation clusters below our envelope.
+  - *The ~9,570 MLUPs/s throughput estimate* — scaled from a desktop benchmark, never measured here.
+  - *Stabiliser sizing at 20–30% of front wing* — single secondary source.
+- **One source was found internally inconsistent and corrected:** the IHS gives
+  `V_crit = 14/sqrt(sigma_i)` and separately advises `pv = 17000 Pa`. Deriving the constant shows it
+  requires `pv ≈ 1671 Pa` — the ITTC value. The formula is right; the quoted vapour pressure is not
+  a physical property. Details in `estimation-methods.md`.
 
 ## Design implications
 
-- **Build two solver tiers, not one solver.** A fast potential-flow tier answers the hydrofoil
-  design question in milliseconds and is what the user will actually use daily. A GPU LBM tier
-  answers the questions the fast tier cannot (free surface, separation, planing) and is the
-  validation reference. Attempting one solver for both is the primary design failure mode here.
-- **Model salt vs fresh as a two-field fluid property record** (`density`, `kinematic_viscosity`),
-  sourced from the ITTC tables, never as a solver branch or a code path.
-- **Declare the grain early:** one row is exactly one *(geometry, speed, angle of attack, fluid,
-  depth)* evaluation. Forces are derived, never stored twice.
-- **The toolkit floor is CUDA 12.8+**; anything that compiles kernels must target `sm_120` or ship
-  PTX for JIT. Verify before committing to a GPU binding.
-- **Borrow the framing from XFLR5/Typhoon, not the code.** Their scope decisions are validated by
-  a real user community; their known weakness (linear methods, no stall, no free surface) is
-  precisely the gap a GPU tier would fill.
-- **Do not build a general CFD package.** The Simplifier's position is recorded in
-  open-questions.md and it is strong: if the answer is "a better XFLR5", that is a wrapper, not a
-  solver.
+- **The estimator is the product's inner loop, not a preliminary step.** It answers most of what a
+  foil designer asks, fast enough for a dragged slider. Simulation exists for the narrow band it
+  cannot reach: free-surface proximity, separation, ventilation onset, and 3D stall.
+- **Build the geometry model as two layers** — a small generative design vector that *emits*
+  explicit stations, with generation strictly one-way. Everything downstream reads stations only.
+- **Derive area, aspect ratio, span and chord from stations. Never store them.** The market's own
+  inconsistency is the argument.
+- **Model salt vs fresh as a two-field fluid property record** from the ITTC tables.
+- **Enforce the validity envelope in the tool, not the documentation.** Linear methods return
+  confident numbers at 30° angle of attack and they are meaningless. The surf-foil take-off case at
+  α_eff = 10.5° is already near the edge.
+- **Section polars must record `Ncrit` and `Cp_min`.** Without `Ncrit` a polar is not reproducible;
+  without `Cp_min` there is no cavitation check.
+- **Quote wing-only L/D as wing-only.** The strut is a large fraction of real drag; the estimate
+  overstates whole-craft L/D and must say so where it is displayed.
 
 ## How to use this base
 
-Personas and the design skills cite these files as evidence. The next step is `/adddomainexperts`
-(a marine-hydrodynamics and a GPU-computing lens), then `/specify`. Refresh when the domain moves —
-particularly the ILGPU and CUDA facts, which are dated and fast-moving.
+Personas and the design skills cite these files as evidence. Next step is `/adddomainexperts` (a
+marine-hydrodynamics lens and a GPU-computing lens), then `/specify`. Refresh the ILGPU and CUDA
+facts first — they are the most dated and fastest-moving claims here.

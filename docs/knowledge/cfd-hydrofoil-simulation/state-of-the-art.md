@@ -16,10 +16,14 @@ summary: >-
 
 # State of the art
 
+> **SCOPE NOTE (v2, 2026-09-05).** The project no longer covers surfboards or planing craft.
+> Section 1 (Savitsky) and the free-surface/6-DOF parts of section 4 are **RETIRED** — kept because
+> the two-tier architecture was reasoned from them, not deleted. Sections 2, 3 and 5 remain live.
+
 Methods are listed **cheapest first**. Cost spans roughly nine orders of magnitude from top to
 bottom, and that spread — not any single method's merit — is the design lever.
 
-## 1. Empirical correlations — Savitsky planing method
+## 1. Empirical correlations — Savitsky planing method  `[RETIRED — v2 scope cut]`
 
 **What it is.** Savitsky (1964) reduced systematic prismatic-hull towing-tank tests to algebraic
 equations for lift, drag, wetted area, centre of pressure and porpoising stability, as functions of
@@ -64,7 +68,7 @@ and stream-and-collide — which maps almost perfectly onto GPU memory bandwidth
   and pressure coefficients comparing favourably. Validation **at and above 1e6 is much thinner**.
   Our envelope is 5.5e5 to 1.6e6. *(Flagged — this is the gap)*
 
-## 4. RANS + VOF — the full package (OpenFOAM, SU2, commercial)
+## 4. RANS + VOF — the full package (OpenFOAM, SU2, commercial)  `[PARTLY RETIRED — planing/6-DOF only]`
 
 **What it is.** Reynolds-averaged Navier-Stokes on a body-fitted volume mesh, with volume-of-fluid
 interface capture and 6-DOF body motion for trim and sinkage.

@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T04:24:24Z",
+  "generated": "2026-09-06T04:55:36Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -71,6 +71,43 @@ window.AUDIT_DATA = {
         "branch": "main",
         "pushed": true
       }
+    },
+    {
+      "id": "al-01M1TH4AFVMR2WQKGV48BK84S3",
+      "shortname": "collectknowledge-hydrofoil-v2",
+      "datetime": "2026-09-06T04:55:19Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "prompt": "lets simplify / continue with /collectknowledge / lets just focus on the hydrofoil scenario and not the surfboard scenario / further analyze and refine your proposal and do a deeper dive on algorithms, approach, architecture / also on the following: a catalog of hydrofoil foil section data (partial to Eppler but comprehensive across foil families); the ability to estimate L/D Cl/Cd pre-simulation; best practices in hydrofoil design for water sports (surf, sup, windsurf, wing, downwind foiling); catalog of optimal geometries (aspect ratios, plan forms, thicknesses); parametric design and description of 3D foils with multi-surface parametric design and a simple grammar. collect knowledge on these and related aspects, update the proposal with a v2",
+      "summary": "v2 of the knowledge base: scope narrowed to hydrofoil only (surfboard/planing retired and marked RETIRED in place, not deleted). Four new docs: foil-sections (Eppler E817/818/836/837/838/874/904/908; NACA 66-series ranked ahead of 16-series by IHS on separation grounds; UIUC ~1650 sections; catalog grain and Cp_min/Ncrit requirements), estimation-methods (XFOIL + Helmbold + lifting line + ITTC 1957 + Hoerner form factor + cavitation critical speed, executed across four disciplines), watersports-design-practice (AR bands, area/AR per discipline, the low-speed-lift vs glide tradeoff, stabiliser sizing), parametric-geometry (CST/Kulfan sections; four-concept assembly/surface/station/loft grammar; two-layer generative-emits-explicit design). Key findings: most design questions are closed-form in microseconds; cavitation does not bind below ~25 kn; induced drag is 77% of drag at surf take-off and 3% at race speed; span is nearly fixed (95-107 cm) while area and AR vary widely; published aspect ratios are not comparable across manufacturers. Caught and corrected an internal inconsistency in the IHS source: V_crit=14/sqrt(sigma_i) derives from ITTC pv=1670.9 Pa, not the 17000 Pa the same document advises. Recommendation changed from v1: Option 2 (estimator + catalog + panel/VLM), sequenced so Option 1 ships first, GPU LBM gated on validation.",
+      "kind": "skill",
+      "skill": "collectknowledge",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/knowledge/cfd-hydrofoil-simulation/index.md",
+        "docs/knowledge/cfd-hydrofoil-simulation/estimation-methods.md",
+        "docs/knowledge/cfd-hydrofoil-simulation/parametric-geometry.md",
+        "docs/proposals/cfd-bench-solver-strategy.html"
+      ],
+      "tags": [
+        "cfd",
+        "hydrofoil",
+        "sections",
+        "estimation",
+        "parametric",
+        "v2"
+      ],
+      "outcome": "success",
+      "goal": "v2 proposal: hydrofoil only, deeper algorithms/architecture, plus section catalog, pre-simulation estimation, water-sports design practice, geometry catalog and a parametric multi-surface grammar",
+      "done_when": "New knowledge docs researched and confidence-labelled; existing base reconciled with surfboard scope explicitly retired; v2 proposal replaces v1 at the same artifact URL; graph, audit and change log updated",
+      "tier": "T2",
+      "fan_out": 0,
+      "git": {
+        "sha": "6e3dbdeda2156709800d31f7a0ec97345f4475ee",
+        "short": "6e3dbdeda",
+        "branch": "knowledge/cfd-hydrofoil-simulation",
+        "pushed": null
+      }
     }
   ],
   "changes": [
@@ -102,6 +139,37 @@ window.AUDIT_DATA = {
         "commits": []
       },
       "audit_ref": "al-01M1TFBA3YRHVQ1RQEFN9DG824"
+    },
+    {
+      "id": "cl-01M1TH4THK5HF9GKF468CJNJ0K",
+      "datetime": "2026-09-06T04:55:36Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "kind": "knowledge",
+      "skill": "collectknowledge",
+      "title": "Hydrofoil design is mostly a closed-form problem; simulation is reserved for the free surface",
+      "prompt": "lets simplify, focus on hydrofoil only, deeper dive on algorithms/approach/architecture, section catalog, pre-simulation L/D estimation, water-sports design best practices, geometry catalog, parametric multi-surface grammar, update the proposal to v2",
+      "summary": "Reverses the v1 framing. A chain of published closed forms (XFOIL section polars, Helmbold lift slope, lifting-line induced drag, ITTC 1957 friction with a Hoerner form factor, incipient-cavitation critical speed) answers most hydrofoil design questions in microseconds, and was executed against real water-sports geometry producing physically correct spans (95-107 cm), chords (8-19 cm) and the induced/friction crossover (77% induced at surf take-off, 3% at race speed). Cavitation does not bind below ~25 kn, so it is a check rather than a driver. Geometry is modelled as four concepts (assembly, surface, station, loft rule) in two layers, where a small generative design vector emits explicit stations one-way. Area, aspect ratio and span are derived from stations and never stored, because manufacturers' published aspect ratios use inconsistent area conventions. Scope narrowed to hydrofoil only; surfboard/planing material retired in place.",
+      "rationale": "v1 framed the decision as which solver to build, which was wrong for this scope: it would have led to building simulation infrastructure to answer questions that have closed-form answers, and to an interface built around batch runs rather than live response. The evidence also forced two corrections that would otherwise have propagated: the IHS source is internally inconsistent on vapour pressure (its own critical-speed constant requires ITTC's 1670.9 Pa, not the 17000 Pa it advises), and a widely-cited secondary source published physically impossible aspect ratios, so its thickness guidance is Flagged rather than adopted. The recommendation changed accordingly from a two-tier solver to a layered design tool whose GPU tier is gated on validation.",
+      "artifacts": [
+        "docs/knowledge/cfd-hydrofoil-simulation/index.md",
+        "docs/knowledge/cfd-hydrofoil-simulation/estimation-methods.md",
+        "docs/proposals/cfd-bench-solver-strategy.html"
+      ],
+      "tags": [
+        "cfd",
+        "hydrofoil",
+        "architecture",
+        "estimation",
+        "scope-change"
+      ],
+      "git": {
+        "before": "6e3dbde",
+        "after": "6e3dbdeda2156709800d31f7a0ec97345f4475ee",
+        "branch": "knowledge/cfd-hydrofoil-simulation",
+        "pushed": null,
+        "commits": []
+      },
+      "audit_ref": "al-01M1TH4AFVMR2WQKGV48BK84S3"
     }
   ]
 };

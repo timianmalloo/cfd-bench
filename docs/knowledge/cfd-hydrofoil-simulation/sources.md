@@ -50,3 +50,38 @@ Findings 1, 4 and 24 rest on **primary** sources (a standard, a vendor compatibi
 direct measurement) and are the most reliable in this base. The performance estimate depends on
 source 21, a **secondary vendor-spec aggregator**, which is why the throughput figure is labelled
 Inferred and carries an instruction to measure rather than trust it.
+
+---
+
+## v2 sources (accessed 2026-09-05)
+
+| # | Title / source | Type | URL | Used for |
+|---|---|---|---|---|
+| 25 | International Hydrofoil Society — Hydrofoil, Rudder, and Strut Design Issues | primary (practitioner compilation; Tom Speer, Martin Grimm, Nat Kobitz, Malin Dixon) | https://foils.org/wp-content/uploads/2017/09/Hydrofoil-Rudder-and-Strut-Design-Issues.pdf | The four key section-design problems; rooftop pressure criterion; 66-series preferred over 16-series; Eppler hydrofoil list E817/818/836/837/838/874/904/908; design Cl 0.3 in a 0-0.6 range; four necessary conditions for ventilation; cavitation number definition and worked example; sigma_i = -Cp_min; V_crit = 14/sqrt(sigma_i); strut fences. Text extracted from the PDF with pypdf. See the internal inconsistency recorded in estimation-methods.md |
+| 26 | UIUC Airfoil Data Site (M. Selig) | primary (academic database) | https://m-selig.ae.illinois.edu/ads/coord_database.html | ~1,650 sections; Selig coordinate format; families present (Eppler, Wortmann FX, Drela AG/DAE/DAI, Gottingen, Selig S, Althaus AH, NACA) |
+| 27 | NASA OpenVSP — Wings and Wing Section API | primary (agency documentation) | https://www.nasa.gov/reference/openvsp-wings/ | Wings built from stacked parallel sections; tails/fins/strakes/blends created from the same wing object; linear/spline/Bezier cross-section curves; AVL export with Sref/Cref/Bref |
+| 28 | OpenVSP Ground School — CST Airfoil | primary (agency training material) | https://vspu.larc.nasa.gov/training-content/chapter-1-vspfundamentals/cross-section-details/cst-airfoil/ | CST class function psi^N1(1-psi)^N2; N1=0.5, N2=1 gives round LE / sharp TE; Bernstein shape function and CST coefficients |
+| 29 | Creating Exact Bezier Representations of CST Shapes | secondary (peer-reviewed) | https://www.researchgate.net/publication/269047382 | NACA 4-series, CST and PARSEC are all exactly equivalent to Bezier curves; 4 of Kulfan's 7 shape classes have exact Bezier form |
+| 30 | Bezier-PARSEC: An optimized aerofoil parameterization for design | secondary (peer-reviewed) | https://www.sciencedirect.com/science/article/abs/pii/S0965997810000529 | PARSEC/Bezier parameterisation lineage |
+| 31 | ERAU — Lifting Line and Finite Wing Theory | secondary (open textbook) | https://eaglepubs.erau.edu/introductiontoaerospaceflightvehicles/chapter/lifting-line-theory/ | CD_i = CL^2/(pi e AR); lifting-line formulation; Helmbold (1942) low-AR lift-curve slope |
+| 32 | Oswald efficiency number | secondary (reference) | https://en.wikipedia.org/wiki/Oswald_efficiency_number | Oswald efficiency typically 0.7-0.85 for moderate aspect and sweep |
+| 33 | ITTC 1957 model-ship correlation line | standard (via secondary) | https://ittc.info/media/2031/75-02-03-011.pdf | Cf = 0.075/(log Re - 2)^2; form factor (1+k); Karman friction law with constant rounded 2.03 to 2.0 |
+| 34 | XFOIL: An Analysis and Design System for Low Reynolds Number Airfoils (Drela) | primary (seminal paper) | https://archive.aoe.vt.edu/mason/Mason_f/XFOILman.pdf | Inviscid linear-vorticity panel method; two-equation lagged dissipation integral BL; e^9 transition; suitability for transitional separation bubbles; e^N valid only where 2D Tollmien-Schlichting instability dominates |
+| 35 | SURF Magazin — High, Mid and Low Aspect | secondary (practitioner magazine) | https://www.surf-magazin.de/en/wingsurfing/foils/high-mid-and-low-aspect-what-the-aspect-ratio-means-for-foils-and-how-it-is-calculated/ | AR = span^2/area with worked example (90 cm, 1200 cm2 gives 6.75); bands low <=6 / mid 6-8.5 / high 8.5-10 / super-high >=10; manufacturers use varying calculation methods so ratios are not comparable |
+| 36 | Unifoil, Phantom and AFS foiling guides | secondary (manufacturer/practitioner) | https://uni-foil.com/blogs/knowledge-base/understanding-aspect-ratio | Low-AR early lift and forgiveness vs high-AR glide and long pump cycles; rider progression toward higher AR; high camber gives low-speed lift and pumping but a destabilising negative pitching moment |
+| 37 | Windance / MACkite / Sport in Tribe foil sizing guides | secondary (retailer) | https://www.windance.com/blogs/news/foil-aspect-ratio-everything-you-need-to-know | AR bands 3.5-6 / 6-8.5 / 8.5-14; beginner front wing >1500 cm2 at AR 5-6; high-AR wings 700-1400 cm2; stabiliser behaviour and fuselage length effects |
+| 38 | airfoiltools.com (Eppler E817/E818 pages) | secondary (derived database) | http://airfoiltools.com/airfoil/details?airfoil=e818-il | Intended for section geometry and polars. Connection refused during this research — recorded because the failure is itself an argument for vendoring coordinates rather than fetching them |
+| 39 | hydrofoiling.org — Hydrofoil Wing Design guide | secondary (blog) | https://www.hydrofoiling.org/hydrofoil-wing-design/ | Source of the 10-12% thickness, 20-30% stabiliser ratio and Re 280k-650k claims. QUALITY WARNING: its discipline table extracted as aspect ratios of 80-120, which are physically impossible. All numbers from this source are Flagged and none is load-bearing without corroboration |
+| 40 | Local computation (this session) | primary (direct derivation) | n/a — scratchpad scripts, 2026-09-05 | Verification that V_crit = 14/sqrt(sigma_i) derives from ITTC pv=1670.9 Pa and not the 17000 Pa the same source quotes; the full estimation chain executed across four disciplines; Reynolds envelope; GPU memory and throughput budget |
+
+## v2 source-quality note
+
+The v2 research leaned harder on practitioner sources than v1, because water-sports foil design
+practice is not published as a standard — it lives in manufacturer guides, magazines and forum
+compilations. That is a real limitation and it shapes the confidence labels: the **physics** here is
+Verified from primary sources (ITTC, IHS, Drela, Kulfan, NASA), the **design practice** is mostly
+Inferred from corroborating secondary sources, and the **quantitative geometry guidance** is Flagged
+wherever a single retailer source is all that exists.
+
+Source 39 was retained rather than dropped specifically so that the quality warning travels with the
+claims it produced.

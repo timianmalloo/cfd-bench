@@ -104,3 +104,80 @@ foils are a first-order gap in Band C specifically.
 The honest conclusion: **the defensible project is an integrated application over largely
 established methods, not a novel solver.** Any proposal claiming otherwise is arguing against this
 evidence base and owes a rebuttal.
+
+---
+
+# v2 additions (2026-09-05) — hydrofoil-only scope
+
+## The case-against, re-tested on the narrower scope
+
+The v1 counter-argument rested on three gaps. **The scope cut removes one of them** (planing), so
+the argument had to be re-run rather than carried forward.
+
+**The remaining gaps, and whether each still holds:**
+
+| Gap | Status after the cut |
+|---|---|
+| **Free surface** — no small tool models submergence effects or ventilation | **Holds, and is now the load-bearing justification.** Hydrofoils run shallow; lift falls with submergence and ventilation can collapse it. XFLR5 and Typhoon cannot see this at all |
+| ~~Planing~~ | **Retired with the scope cut** |
+| **Integration** — nothing joins section choice, parametric geometry, estimation and craft equilibrium in one interactive application | **Holds, and v2 strengthened it.** The estimation chain and the catalog are real, absent capabilities, not repackaging |
+
+**A gap v2 added that v1 did not see:** no tool in this domain couples a **section catalog with
+`Cp_min` retained** to a **cavitation check** and a **live L/D estimate over a parametric
+multi-surface assembly**. XFLR5 has the polars but no cavitation model and no hydrofoil framing;
+Typhoon has craft equilibrium but its numerical method is undocumented; the retail sizing guides
+have discipline knowledge but no physics.
+
+**Verdict: the case-against survives the cut, but with less margin.** The honest position is now:
+
+> The defensible project is a **design tool** whose core is closed-form estimation over a
+> parametric geometry model, with simulation reserved for free-surface and separation questions
+> no low-order method can reach. It is not a CFD package, and on the hydrofoil-only scope it is
+> **closer to a better XFLR5-for-hydrofoils than to a new solver.** That is a smaller claim than
+> v1 made, and it should be stated that way rather than dressed up.
+
+## New open questions from v2
+
+7. **What thickness ratio should a water-sports foil actually use?** *(Flagged, load-bearing —
+   the largest evidence gap in the base)*
+   The only quantitative source found (10–12% typical, 8–10% thin, 12–15% thick) is a retailer blog
+   **whose adjacent tables were demonstrably garbled** — it published aspect ratios of "80–120",
+   which are physically impossible. A source that mangles one table is not trustworthy on another.
+   **What would settle it:** measure it. Sweep `t/c` through the estimator with XFOIL polars at our
+   Reynolds numbers and find where the L/D penalty appears. This is a question the tool being
+   proposed can answer about itself.
+   **What breaks if wrong:** default sections and the catalog's recommendations mislead users.
+
+8. **Which coordinate revision of each Eppler section is authoritative?** *(Flagged)*
+   Coordinates in circulation differ in point count and trailing-edge treatment, and those
+   differences change XFOIL results. Eppler's own *Airfoil Design and Data* is out of print and was
+   not obtained. **Settle by** fixing a provenance policy per section and recording the revision,
+   rather than by finding one true file.
+
+9. **Do published aspect ratios use projected, developed or planform area?** *(Flagged)*
+   Sources confirm manufacturers differ but none states the conventions. Matters only for comparing
+   against published specs, not for the tool's own numbers — which is itself the mitigation.
+
+10. **How much drag does the strut actually contribute?** *(Unresolved)*
+    The estimator is wing-only, and the strut is a large fraction of real-world foil drag. No source
+    in this research quantified the split for water-sports foils. **Settle by** applying the same
+    estimation chain to the strut as a low-aspect surface-piercing surface, then validating the
+    total against a measured whole-craft L/D — which requires a measurement that does not yet exist.
+
+11. **Is spline lofting between sparse stations safe?** *(Inferred risk, not measured)*
+    Spline interpolation can introduce curvature reversals that are hydrodynamically real and
+    visually invisible. **Mitigate** with a curvature check surfaced in the UI rather than trusting
+    the interpolation.
+
+## New failure modes surfaced in v2
+
+- **Trusting a source that is internally inconsistent.** The IHS document gives both
+  `V_crit = 14/sqrt(sigma_i)` and `pv = 17000 Pa`; these contradict each other by a factor of ten in
+  vapour pressure. Deriving the constant caught it. **The general lesson: when a source gives both a
+  formula and its inputs, re-derive — the redundancy is a free consistency check.**
+- **Ingesting a manufacturer's aspect ratio as truth**, importing an unknown area convention.
+- **Storing area or aspect ratio alongside the geometry that implies it** — guaranteed drift, and no
+  way to say which is right.
+- **A polar without `Ncrit`** is not reproducible; a polar without `Cp_min` cannot support a
+  cavitation check. Both omissions are silent.
+- **Quoting wing-only L/D as whole-craft L/D** — flattering by an unquantified margin.

@@ -16,6 +16,10 @@ summary: >-
 
 # Comparable solutions & problem framings
 
+> **SCOPE NOTE (v2, 2026-09-05).** Surfboard/planing is out of scope. One of the three gaps that
+> justified building was planing; it is struck through below and the case-against was re-tested on
+> the remaining two. Band C now also includes the estimation-and-catalog gap surfaced in v2.
+
 ## Band A — full CFD packages (what the user wants to avoid)
 
 | Solution | How it frames the problem | Approach | Does well | Does badly | Confidence |
@@ -54,7 +58,7 @@ genuinely lack. From the evidence, the real gaps are:
 1. **Free surface.** None of Band C models the water surface. Hydrofoils run at shallow submergence
    where lift falls off with depth and ventilation can collapse it entirely. This is a first-order
    effect that Band C cannot see at all.
-2. **Planing.** No Band C tool handles a surfboard. That is Savitsky or RANS+VOF territory.
+2. ~~**Planing.** No Band C tool handles a surfboard.~~ `[RETIRED — v2 scope cut. This gap no longer counts toward the justification; see open-questions.md for the re-tested case.]`
 3. **Integration.** Nothing joins "design the foil" to "solve the craft equilibrium" to "watch the
    flow" in one interactive Windows application.
 

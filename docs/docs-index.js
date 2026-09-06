@@ -239,7 +239,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "89f18807b7ae9692766237fc7b486b700c5681d075e45bc1d299d70c76aee0db"
+      "sourceSha256": "a1370d492bbe2485c564b0c58865371469bd855eb17105bcacd5422974a531da"
     },
     {
       "id": "kb-cfd-comparables",
@@ -268,7 +268,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "fd99b44775a234aa93db0bf1838706bd85d7c4924c6e1fce60f7d76f359cf8d7"
+      "sourceSha256": "cb5b326465d026e32c137459983641d1cc594606e00a98cc99560e3b27bd1b3b"
     },
     {
       "id": "kb-cfd-data-and-constants",
@@ -299,24 +299,94 @@ window.DOCS_INDEX = {
       "sourceSha256": "ce6c7297737bf2fc2057a68cc646e104169bdc5b911fb1ab5805d3ac22132cd0"
     },
     {
+      "id": "kb-cfd-estimation-methods",
+      "path": "docs/knowledge/cfd-hydrofoil-simulation/estimation-methods.md",
+      "title": "Pre-Simulation Estimation Methods",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-04",
+      "reviewSuggested": [],
+      "summary": "The closed-form chain that estimates L/D, Cl/Cd and cavitation margin for a 3D hydrofoil before any simulation runs — section polars, Helmbold lift slope, lifting-line induced drag, ITTC skin friction with a Hoerner form factor, and the incipient-cavitation critical speed — with every formula sourced and the whole chain executed against real water-sports geometry.",
+      "tags": [
+        "estimation",
+        "lifting-line",
+        "helmbold",
+        "ittc",
+        "cavitation",
+        "xfoil",
+        "algorithms"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-foil-sections",
+          "rel": "depends-on"
+        },
+        {
+          "to": "glossary-cfd-hydrofoil",
+          "rel": "uses-term"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "2a9714b8139dcf7b87768e5afc3422880842c3ebe00eb165ddfc00d302a714e9"
+    },
+    {
+      "id": "kb-cfd-foil-sections",
+      "path": "docs/knowledge/cfd-hydrofoil-simulation/foil-sections.md",
+      "title": "Foil Section Catalog and Selection",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-04",
+      "reviewSuggested": [],
+      "summary": "The 2D section families relevant to water-sports hydrofoils — the Eppler hydrofoil series, the NACA 16- and 6-series, and the wider low-Reynolds catalog — with the design criteria that select between them, the sources the coordinates come from, and the data model a catalog needs.",
+      "tags": [
+        "sections",
+        "airfoil",
+        "eppler",
+        "naca",
+        "catalog",
+        "cavitation",
+        "selection"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        },
+        {
+          "to": "glossary-cfd-hydrofoil",
+          "rel": "uses-term"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "ee02b58206dc85ac3bd4d2fd792295fe8e633c8cb0be14cf9897d9c5a10ac95a"
+    },
+    {
       "id": "kb-cfd-hydrofoil-simulation",
       "path": "docs/knowledge/cfd-hydrofoil-simulation/index.md",
-      "title": "Small-Footprint CFD for Hydrofoils and Surfboards",
+      "title": "Small-Footprint CFD for Water-Sports Hydrofoils",
       "type": "knowledge",
       "status": "draft",
       "owner": "@timianmalloo",
       "phase": "pre-specification",
       "reviewBy": "2026-12-04",
       "reviewSuggested": [],
-      "summary": "Evidence base for building a small, local CFD tool for hydrofoils and surfboards in salt and fresh water on a single Windows/NVIDIA machine. Establishes that salt vs fresh is a parameter change rather than a physics change, that the foiling Reynolds envelope is 5.5e5-1.6e6, that this laptop's GPU is not the binding constraint, and that hydrofoils and surfboards are two distinct physics problems requiring two different solver tiers.",
+      "summary": "Evidence base for a small, local design and simulation tool for water-sports hydrofoils — surf, SUP/downwind, wing and windsurf foiling — on a single Windows/NVIDIA machine. Establishes the closed-form estimation chain that answers most design questions in microseconds, the section and geometry catalogs, a four-concept parametric grammar, and the narrow band where simulation is actually required.",
       "tags": [
         "cfd",
         "hydrofoil",
-        "surfboard",
         "lbm",
         "gpu",
         "cuda",
-        "marine-hydrodynamics"
+        "marine-hydrodynamics",
+        "water-sports"
       ],
       "links": [
         {
@@ -336,6 +406,22 @@ window.DOCS_INDEX = {
           "rel": "refines"
         },
         {
+          "to": "kb-cfd-foil-sections",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-estimation-methods",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-watersports-practice",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-parametric-geometry",
+          "rel": "refines"
+        },
+        {
           "to": "kb-cfd-open-questions",
           "rel": "refines"
         },
@@ -349,7 +435,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "63bbb5670e4b1297d109697ecc42c0e4bfeeb8d6df67fac0500952fa90cc33f4"
+      "sourceSha256": "02b6cdc7693c29ae2ea1f3657e24a40d4e8f150a39459139457ae32aca1e6d00"
     },
     {
       "id": "kb-cfd-open-questions",
@@ -375,7 +461,45 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "f9850672ab213a542431e5e1bc00764a855d3445bef3edf12e45d1fa332494c7"
+      "sourceSha256": "5553e89fa7fe7d15bade82b472c29a0d2603ea19073ec485fcb8894f50978832"
+    },
+    {
+      "id": "kb-cfd-parametric-geometry",
+      "path": "docs/knowledge/cfd-hydrofoil-simulation/parametric-geometry.md",
+      "title": "Parametric Multi-Surface Foil Geometry",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-04",
+      "reviewSuggested": [],
+      "summary": "How to describe a complete 3D hydrofoil assembly parametrically — CST section parameterisation, a four-concept station-and-loft grammar covering front wing, stabiliser and strut alike, and a two-layer split between a small generative design vector and explicit geometry.",
+      "tags": [
+        "parametric",
+        "cst",
+        "kulfan",
+        "geometry",
+        "grammar",
+        "loft",
+        "openvsp",
+        "avl"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-foil-sections",
+          "rel": "depends-on"
+        },
+        {
+          "to": "glossary-cfd-hydrofoil",
+          "rel": "uses-term"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "772913086e9dfb8817b2a7f6809936118b84bb35cea48e1beab944f51759b60b"
     },
     {
       "id": "kb-cfd-references",
@@ -428,7 +552,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "cf13cf055a062b86f5f97a4e08206b9370ccb025f16ce5b967766db1a7f7b938"
+      "sourceSha256": "b7ceef88b0d63698b566d811f3d274b6e184bc34160f2638184622cbb488dc2b"
     },
     {
       "id": "kb-cfd-state-of-the-art",
@@ -456,7 +580,44 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "cd4bfeca282d8b71d04069f5d091a927290562a20c0377ef5c63498bf6ad8cf4"
+      "sourceSha256": "c015eee7083db205d4a00b420b80e1e2838531438886683c3358fc741d1a7494"
+    },
+    {
+      "id": "kb-cfd-watersports-practice",
+      "path": "docs/knowledge/cfd-hydrofoil-simulation/watersports-design-practice.md",
+      "title": "Water-Sports Hydrofoil Design Practice and Geometry Catalog",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-04",
+      "reviewSuggested": [],
+      "summary": "Design practice and a geometry catalog for surf, SUP/downwind, wing and windsurf/race foiling — aspect-ratio bands with the formula and its measurement ambiguity, planform and thickness guidance, stabiliser sizing, and the low-speed-lift versus glide trade-off that separates the disciplines.",
+      "tags": [
+        "design-practice",
+        "aspect-ratio",
+        "geometry",
+        "surf-foil",
+        "downwind",
+        "wing-foil",
+        "windsurf"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-estimation-methods",
+          "rel": "depends-on"
+        },
+        {
+          "to": "glossary-cfd-hydrofoil",
+          "rel": "uses-term"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "007dac5f0e95e9ea2a7409705f5113b054e0919f7d3bc1d30c67eac285b71065"
     }
   ],
   "surfaces": [
@@ -467,7 +628,14 @@ window.DOCS_INDEX = {
       "kind": "audit",
       "description": "Browse the committed audit and change timeline.",
       "artifactId": "audit-log"
+    },
+    {
+      "id": "surface-proposals-cfd-bench-solver-strategy",
+      "path": "docs/proposals/cfd-bench-solver-strategy.html",
+      "title": "CFD-Bench Solver Strategy",
+      "kind": "knowledge-tool",
+      "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "f06610aa14b5a8b4c93fd6d8b626d334c3c80de61ba659d9f8062115b6e02d29"
+  "graphSha256": "124520bc2215182639f93d3c4abf10eafc8ded4a889057e122730a1199408293"
 };
