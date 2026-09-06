@@ -172,7 +172,7 @@
   <div><dt>Sessions registered</dt><dd class="bad">0</dd></div>
   <div><dt>Class registry</dt><dd class="bad">absent</dd></div>
   <div><dt>Merge drivers</dt><dd class="bad">none</dd></div>
-  <div><dt>Edit boundary</dt><dd class="good">enforcing</dd></div>
+  <div><dt>Hook installed</dt><dd class="bad">no</dd></div>
   <div><dt>Tracks proposed</dt><dd>5</dd></div>
 </dl>
 
@@ -200,8 +200,11 @@
         <td><span class="conf f">none declared</span></td>
         <td>308 tracked files scanned, no driver. Derived and append-only files will hard-conflict</td></tr>
       <tr><td><code>coord doctor</code> &rarr; harness boundary</td>
-        <td><span class="conf v">enforcing</span> (both)</td>
-        <td>The <em>enforcement</em> half is live for Claude Code and Copilot</td></tr>
+        <td><span class="conf i">"enforcing"</span> &mdash; <strong>read this carefully</strong></td>
+        <td><code>HARNESS_STATUS</code> is a <strong>static constant</strong>: a capability statement
+        about what each harness's hook mechanism <em>can</em> do, established by a spike. <strong>It
+        is not a measurement of this repo.</strong> No pre-commit hook is installed
+        (<code>.git/hooks/pre-commit</code> absent)</td></tr>
       <tr><td><code>coord collaborate summary</code></td>
         <td><span class="conf f">BLOCKER</span> COORD-COLLAB-NOT-CHECKED-EMPTY</td>
         <td>0 active sessions, contract missing, no collaboration state established</td></tr>
@@ -211,18 +214,37 @@
         exception</strong>, defensible for solo research, not for the build</td></tr>
       <tr><td><code>coord metrics</code></td>
         <td>0 decisions; 7 commits in one place</td>
-        <td>Nothing has been claimed or checked yet, because nothing needed to be</td></tr>
+        <td>Nothing claimed or checked &mdash; consistent with an uninstalled layer, not with a
+        working one that saw no traffic</td></tr>
+      <tr><td>Implementation completeness</td>
+        <td><span class="conf v">essentially complete</span></td>
+        <td>One declared-but-unimplemented class (<code>hotspot</code>). Everything else &mdash;
+        classify, claim, check, merge drivers, seam requests, worktree lifecycle &mdash; is present
+        and exercised by a 49-test suite per the pack changelog</td></tr>
     </tbody>
   </table>
   </div>
 
   <div class="col">
   <div class="callout">
-    <p><strong>The state is precise and slightly odd: the layer is half-live.</strong> Enforcement is
-    on &mdash; the harnesses will refuse edits outside a session's boundary. Classification, session
-    registration and the collaboration contract are all unconfigured. So today the layer can *stop*
-    you without being able to *route* you, which is the least useful of the four possible states and
-    the easiest to fix.</p>
+    <p><strong>The layer is inert, and that is a setup gap rather than a defect.</strong> Nothing is
+    enforcing, nothing is classified, no session is registered. This is not "we have not run a
+    coordinated session yet" &mdash; running one would not change it, because
+    <code>coord worktree new</code> registers a session and never classifies artifacts.</p>
+    <p style="margin-top:.8rem"><strong><code>.agents/artifacts.yml</code> is only ever read.</strong>
+    There is no code path that writes it; its own parser docstring says <em>"the first registry a
+    human writes that this rejects"</em>, and <code>doctor</code>'s remedy is <em>"create
+    .agents/artifacts.yml"</em>. It is repo-specific configuration, like a <code>.gitignore</code>
+    &mdash; the pack cannot know which of <em>your</em> files are generated, because that depends on
+    which generators you run.</p>
+    <p style="margin-top:.8rem">The missing merge driver is a <em>consequence</em>, not a second gap:
+    <code>coord install</code> writes the pre-commit hook <em>and</em> calls
+    <code>_install_merge_driver</code>, which declares the registry's patterns in
+    <code>.gitattributes</code>. No registry means nothing to declare &mdash; and
+    <code>coord install</code> has not been run here either, so <code>.gitattributes</code> does not
+    exist at all. <strong>The pack's deployment map contains no coord setup step</strong>, so
+    <code>addpacktorepo</code> deployed the scripts and correctly left the configuration to the repo.
+    <strong>The layer ships inert by design; someone has to turn it on.</strong></p>
   </div>
   </div>
 </section>
@@ -348,6 +370,11 @@ python docs/ai-forward-pack/scripts/coord-core.py doctor   <span class="cm"># ex
   <p><strong>Cost: about twenty lines and one command. Benefit: the four files this project touches
   on every commit stop being conflict sources entirely.</strong> Nothing else in this proposal comes
   close to that ratio, which is why it is section 03 and not an appendix.</p>
+
+  <p><strong>Note that <code>coord install</code> writes to <code>.git/config</code>, which is
+  per-clone and never committed</strong> &mdash; which is exactly why <code>coord doctor</code> reads
+  the value back rather than assuming it. Every fresh clone needs <code>install</code> run again; the
+  registry and <code>.gitattributes</code> are committed and travel with the repo.</p>
   </div>
 </section>
 
@@ -607,7 +634,7 @@ python docs/ai-forward-pack/scripts/coord-core.py doctor   <span class="cm"># ex
     <tbody>
       <tr><td class="n">1</td><td>Write <code>.agents/artifacts.yml</code>; verify the regen commands; run <code>coord install</code> and <code>coord doctor</code></td>
         <td class="n">~30 min</td>
-        <td><strong>Removes the four files that conflict on every commit.</strong> Best ratio in the plan, and it is needed even for one session</td></tr>
+        <td><strong>Turns the layer on and removes the four files that conflict on every commit.</strong> Best ratio in the plan, and it is needed even for one session</td></tr>
       <tr><td class="n">2</td><td>Author the spine in one session &mdash; units, conventions, geometry model, file format, interface signatures</td>
         <td class="n">P0 (2.5 wk)</td>
         <td>GO5(b): until interfaces are fixed, nothing is independent</td></tr>

@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T16:13:36Z",
+  "generated": "2026-09-06T16:36:49Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -361,6 +361,35 @@ window.AUDIT_DATA = {
       "git": {
         "sha": "b7121f796a2bfffa480f1a1598091675dd40dd50",
         "short": "b7121f796",
+        "branch": "main",
+        "pushed": false
+      }
+    },
+    {
+      "id": "al-01M1VS8S6K0EPDQ8KEXBFY2R38",
+      "shortname": "correct-coord-enforcement-claim",
+      "datetime": "2026-09-06T16:36:48Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "prompt": "i am confused about these findings: coord doctor registry NOT PRESENT / merge driver none declared — isnt that just because we have not run a coordinated session in this repo yet? or are you saying the coordination impl is incomplete",
+      "summary": "CORRECTION to the session-coordination proposal. The user's challenge surfaced an overclaim. HARNESS_STATUS in coord-core.py (line 911) is a STATIC CONSTANT — a capability statement about what each harness's hook mechanism can do, established by a spike — not a measurement of this repo. And .git/hooks/pre-commit does not exist. So the proposal's claims that 'the enforcement half is live' and 'the layer can stop you without routing you' were WRONG: nothing is enforcing; the layer is fully inert, not half-live. Corrected in the file. The substantive answer to the question: neither framing was right. It is not 'we have not run a coordinated session' — running one would not change it, because coord worktree new registers a session and never classifies artifacts. And the implementation is essentially complete (one declared-but-unimplemented class, hotspot; 49-test suite per the pack changelog). It is repo-specific CONFIGURATION nobody has written: .agents/artifacts.yml is only ever read, with no code path that writes it, and its own parser docstring says 'the first registry a human writes that this rejects'. The missing merge driver is a consequence rather than a second gap — coord install writes the hook AND calls _install_merge_driver to declare the registry's patterns in .gitattributes, so no registry means nothing to declare, and install was never run here either. The pack deployment map contains no coord setup step, so addpacktorepo correctly deployed the scripts and left the config: the layer ships inert by design. Also recorded that .git/config is per-clone and never committed, which is why doctor reads the value back and why every fresh clone needs install re-run.",
+      "kind": "manual",
+      "skill": "collectknowledge",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/proposals/session-coordination-plan.html"
+      ],
+      "tags": [
+        "correction",
+        "coordination",
+        "verification"
+      ],
+      "outcome": "success",
+      "tier": "T0",
+      "fan_out": 0,
+      "git": {
+        "sha": "c2acddc6978bb370cf0b837e9e7b4a0fb6416325",
+        "short": "c2acddc69",
         "branch": "main",
         "pushed": false
       }
