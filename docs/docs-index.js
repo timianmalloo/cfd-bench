@@ -366,7 +366,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "ee02b58206dc85ac3bd4d2fd792295fe8e633c8cb0be14cf9897d9c5a10ac95a"
+      "sourceSha256": "f9c74d828e322fa187c7eefd569216bf1afd558275a31c04689c70bfecd37683"
     },
     {
       "id": "kb-cfd-hydrofoil-simulation",
@@ -422,6 +422,14 @@ window.DOCS_INDEX = {
           "rel": "refines"
         },
         {
+          "to": "kb-cfd-phase-0-findings",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-section-manifest",
+          "rel": "refines"
+        },
+        {
           "to": "kb-cfd-open-questions",
           "rel": "refines"
         },
@@ -435,7 +443,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "02b6cdc7693c29ae2ea1f3657e24a40d4e8f150a39459139457ae32aca1e6d00"
+      "sourceSha256": "197c486ece566b08173c7e4bd7fb4038cf5f7855ea5bf6460d2edfad61c6926a"
     },
     {
       "id": "kb-cfd-open-questions",
@@ -461,7 +469,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "5553e89fa7fe7d15bade82b472c29a0d2603ea19073ec485fcb8894f50978832"
+      "sourceSha256": "5b721f6ee292e9ad7a234442232946974069680e7d91914c5f1c00001402de5e"
     },
     {
       "id": "kb-cfd-parametric-geometry",
@@ -502,6 +510,47 @@ window.DOCS_INDEX = {
       "sourceSha256": "772913086e9dfb8817b2a7f6809936118b84bb35cea48e1beab944f51759b60b"
     },
     {
+      "id": "kb-cfd-phase-0-findings",
+      "path": "docs/knowledge/cfd-hydrofoil-simulation/phase-0-findings.md",
+      "title": "Phase 0 Findings — Evidence Gaps Closed by Measurement",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-04",
+      "reviewSuggested": [],
+      "summary": "Results of the Phase 0 evidence pass — the thickness question answered by computed section polars, the Eppler hydrofoil set measured head-to-head against NACA baselines, Typhoon identified as Tornado VLM under GPL, and a working section-analysis toolchain established without XFOIL.",
+      "tags": [
+        "phase-0",
+        "measurement",
+        "thickness",
+        "sections",
+        "typhoon",
+        "neuralfoil",
+        "evidence"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-foil-sections",
+          "rel": "depends-on"
+        },
+        {
+          "to": "kb-cfd-estimation-methods",
+          "rel": "depends-on"
+        },
+        {
+          "to": "kb-cfd-section-manifest",
+          "rel": "depends-on"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "96dce42fabcd4374011c4d3574c14a257cba317afa2f62d9260c7a7a613ee97f"
+    },
+    {
       "id": "kb-cfd-references",
       "path": "docs/knowledge/cfd-hydrofoil-simulation/references.md",
       "title": "Reference Standards, Specifications and Seminal Works",
@@ -530,6 +579,33 @@ window.DOCS_INDEX = {
       "sourceSha256": "5e65c270cb85405cf4e99e87122aa4bd5cf6ad8c709f9e3fe0ad4ef90368ed1e"
     },
     {
+      "id": "kb-cfd-section-manifest",
+      "path": "docs/knowledge/cfd-hydrofoil-simulation/sections/manifest.md",
+      "title": "Vendored Section Coordinate Manifest",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-04",
+      "reviewSuggested": [],
+      "summary": "Provenance record for the section coordinate files vendored into this repo from the UIUC Airfoil Data Site, with geometry measured from the coordinates themselves and a parser verified against analytic NACA truth.",
+      "tags": [
+        "sections",
+        "coordinates",
+        "provenance",
+        "catalog",
+        "phase-0"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-foil-sections",
+          "rel": "refines"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "0ceeaeafcf5da133054c0cf909cfd2842a06f79c985c8062ac4abb75535dac50"
+    },
+    {
       "id": "kb-cfd-sources",
       "path": "docs/knowledge/cfd-hydrofoil-simulation/sources.md",
       "title": "Sources",
@@ -552,7 +628,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "b7ceef88b0d63698b566d811f3d274b6e184bc34160f2638184622cbb488dc2b"
+      "sourceSha256": "e57b89705e682e261a00a830b6a60c24c4a19e0495d261eeccbfa37a2c2e75ee"
     },
     {
       "id": "kb-cfd-state-of-the-art",
@@ -637,5 +713,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "124520bc2215182639f93d3c4abf10eafc8ded4a889057e122730a1199408293"
+  "graphSha256": "509a3debcda098d9436c0714c4589d13d82c4319e9db398592c03bd5a1fe3212"
 };

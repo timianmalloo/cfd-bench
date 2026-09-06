@@ -181,3 +181,71 @@ have discipline knowledge but no physics.
 - **A polar without `Ncrit`** is not reproducible; a polar without `Cp_min` cannot support a
   cavitation check. Both omissions are silent.
 - **Quoting wing-only L/D as whole-craft L/D** — flattering by an unquantified margin.
+
+---
+
+# Phase 0 resolutions (2026-09-05)
+
+Three of the questions above are now **CLOSED by measurement**. Full evidence in
+`phase-0-findings.md`.
+
+## CLOSED — Q7, thickness ratio (was the largest gap in the base)
+
+**Answer: the question was malformed.** There is no hydrodynamic optimum. Section L/D and cavitation
+margin both fall **monotonically** from 6% to 20% t/c, at both Re 6e5 and 1e6. Thickness is a
+**structural variable with a hydrodynamic price**, and the price is now quantified: 9%→12% costs
+~14% of section L/D and 3.8 kn of cavitation-free speed. The retail band of 10–12% was not wrong
+about the range, but wrong about the reason — and calling it an optimum would send a designer
+hunting a maximum that does not exist.
+
+Independently corroborated: the five *cambered* Eppler hydrofoil sections measure 7.90%–10.98% t/c,
+which is what "as thin as the structure allows" predicts.
+
+*Residual:* computed with a surrogate (NeuralFoil), so the trend is reliable and absolute drag is
+not. Re-run through XFOIL before anything structural depends on the magnitude.
+
+## CLOSED — Q8, Eppler coordinate provenance
+
+Eleven sections vendored from UIUC with SHA-256 hashes, source URL, retrieval date and measured
+geometry in `sections/manifest.md`. The provenance policy is now concrete: the `.dat` file in the
+repo is the record, and geometry is measured from it rather than transcribed.
+
+**A defect was caught in the process and is worth recording as a class.** The first parser read
+every file as Selig format and returned 6.00% thickness with 3.00% camber for NACA 0012 — impossible
+for a symmetric section. Six of the eight Eppler files are **Lednicer** format. It was caught only
+because analytic NACA sections were used as a regression test *before* the Eppler numbers were
+trusted. **Class: a file-format assumption that produces plausible-looking wrong numbers rather than
+an error.** Control: format detection in the parser, with the analytic NACA check as its test.
+
+## CLOSED — Q4, Typhoon's numerical method
+
+**Tornado vortex lattice method** — `fLattice_setup2.m` states verbatim *"This file is part of
+Tornado"*, Tomas Melin, 1999/2007, **GPL v2+**, MATLAB.
+
+Reclassified: Typhoon is **not** a possible answer to the hydrofoil half of the brief, because GPL
+copyleft and a MATLAB runtime rule out reuse. It is a **reference and a validation benchmark** — and
+it independently corroborates the Option 2 architecture, since the only open-source tool solving
+whole-craft hydrofoil equilibrium chose exactly the recommended method.
+
+## Partially addressed — Q9, aspect-ratio conventions
+
+Not resolved and probably not resolvable from public sources. The mitigation stands and is
+sufficient: compute AR from own geometry under a stated convention, and never ingest a published
+figure as truth.
+
+## STILL OPEN — the GPU questions
+
+Q1 (ILGPU on Blackwell), Q2 (LBM accuracy above Re 10⁶), Q3 (real throughput) and Q10 (strut drag
+share) all remain open. Q1–Q3 need a CUDA Toolkit install, which requires elevation and was out of
+scope for this pass. **None blocks Phase 1**, which is layers 1–3 and touches no GPU.
+
+## New question from Phase 0
+
+12. **Does the discrete-station `Cp_min` under-read sharp suction peaks enough to matter?**
+    *(Inferred risk, load-bearing for the cavitation check)*
+    `Cp_min` is recovered from 32 boundary-layer edge-velocity stations per surface. A suction peak
+    *between* stations is invisible, which biases `V_crit` **optimistically** — the reported
+    cavitation-free speed is a best case. For a safety-relevant check that is the wrong direction to
+    err. **Settle by** comparing against a true XFOIL pressure distribution on a section with a known
+    sharp peak (NACA 4412 at incidence is a good candidate). **Mitigate meanwhile** by applying an
+    explicit margin and labelling the number as optimistic in the UI.

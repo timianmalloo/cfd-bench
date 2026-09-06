@@ -85,3 +85,27 @@ wherever a single retailer source is all that exists.
 
 Source 39 was retained rather than dropped specifically so that the quality warning travels with the
 claims it produced.
+
+---
+
+## Phase 0 sources (measurement pass, 2026-09-05)
+
+| # | Title / source | Type | URL | Used for |
+|---|---|---|---|---|
+| 41 | UIUC Airfoil Data Site — coordinate files | primary (data) | https://m-selig.ae.illinois.edu/ads/coord/ | The 11 vendored section coordinate sets. Files stored verbatim in `sections/` with SHA-256 hashes and retrieval date; see `sections/manifest.md` |
+| 42 | Typhoon `fLattice_setup2.m` source header | primary (source code) | https://raw.githubusercontent.com/MaritiemUGent/Typhoon/master/fLattice_setup2.m | Verbatim: "This file is part of Tornado", Tomas Melin, copyright 1999/2007, GNU GPL v2 or later. Closes the Typhoon method question |
+| 43 | Typhoon repository file listing | primary (GitHub API) | https://api.github.com/repos/MaritiemUGent/Typhoon/git/trees/master | 61 files; `solver10.m`, `setboundary5.m`, `lgwt.m`, `visc_corr.m`, `aeropolar.m` — consistent with a Tornado-derived VLM plus viscous correction. README is effectively empty |
+| 44 | NeuralFoil 0.3.3 (Sharpe) | primary (software) | https://pypi.org/project/neuralfoil/ | Section polars. A neural surrogate trained on XFOIL; pure Python/NumPy, no native dependency. Returns CL/CD/CM/Xtr and 32 boundary-layer edge-velocity stations per surface, but **no Cp_min field** |
+| 45 | Local computation — Phase 0 (this session) | primary (direct measurement) | n/a — scratchpad `foil.py`, 2026-09-05 | Coordinate parser with Selig/Lednicer detection, validated against analytic NACA truth; measured geometry for all 11 sections; thickness sweep 6–20% t/c at Re 6e5 and 1e6; Eppler set solved head-to-head at CL 0.30; `Cp_min` derived as `1 − max(u_e/V∞)²` |
+
+## Phase 0 method note — and its two caveats
+
+The section results are **computed with a surrogate, not XFOIL**. NeuralFoil was validated against
+analytic truth before use (NACA 0012: CL exactly 0 at zero incidence, dCL/dα = 0.1066/deg against a
+theoretical 0.1097, CD 0.00551), and reports its own `analysis_confidence` (0.80–0.98 across these
+runs). **Trends and rankings are reliable; absolute drag carries surrogate error.**
+
+`Cp_min` is **derived**, not returned: `Cp = 1 − (u_e/V∞)²` over the 32 stations per surface. A
+suction peak *between* stations is invisible, so **the reported cavitation-free speed is
+optimistic** — the wrong direction to err for a safety-relevant check. Both caveats are recorded in
+`phase-0-findings.md` and carried in the proposal.

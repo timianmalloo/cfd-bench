@@ -15,6 +15,8 @@ links:
   - { to: kb-cfd-estimation-methods, rel: refines }
   - { to: kb-cfd-watersports-practice, rel: refines }
   - { to: kb-cfd-parametric-geometry, rel: refines }
+  - { to: kb-cfd-phase-0-findings, rel: refines }
+  - { to: kb-cfd-section-manifest, rel: refines }
   - { to: kb-cfd-open-questions, rel: refines }
   - { to: kb-cfd-sources, rel: refines }
   - { to: glossary-cfd-hydrofoil, rel: uses-term }
@@ -29,7 +31,7 @@ summary: >-
 
 # Small-footprint CFD for water-sports hydrofoils — domain knowledge
 
-**Version 2** · compiled 2026-09-05 · Lead: Domain Researcher
+**Version 2.1** (Phase 0 evidence folded in) · compiled 2026-09-05 · Lead: Domain Researcher
 
 **Domain & problem.** Predicting hydrodynamic forces, efficiency (L/D) and cavitation margin for
 water-sports hydrofoils — surf, SUP/downwind, wing and windsurf/race foiling — in salt and fresh
@@ -85,13 +87,44 @@ water, on a single Windows/NVIDIA machine, without deploying a general-purpose C
 11. **The GPU is still not the constraint.** A 43 M-cell foil box runs at an estimated ~220 steps/s
     on this laptop. — *(Inferred — bandwidth-scaled, never measured)*
 
+## Phase 0 findings (2026-09-05) — measured, not researched
+
+12. **Thickness has no hydrodynamic optimum.** Section L/D and cavitation margin fall
+    **monotonically** from 6% to 20% t/c. Thickness is a *structural* variable with a measured
+    price: 9%→12% costs ~14% of section L/D and 3.8 kn of cavitation-free speed. **This closes the
+    base's largest evidence gap and reframes it** — the tool should show thickness as a constraint
+    with a cost, never as an optimum to search. — *(Inferred, computed)*
+13. **The Eppler hydrofoil set splits in two, which no secondary source states.** Five *cambered*
+    lifting sections at 7.90–10.98% t/c, and three *symmetric* sections (E836/E837/E838) at
+    12.6–18.4% that are a **strut/mast family**. Treating them as one list is a category error.
+    — *(Verified — measured from vendored UIUC coordinates)*
+14. **The Eppler sections deliver on cavitation, not raw efficiency.** E818 reaches **42.1 kn**
+    cavitation-free against NACA 4412's **31.4 kn** at the same loading — the first quantitative
+    confirmation of the "minimum cavitation" characterisation found in this research. NACA 64A410
+    beats every Eppler on section L/D. — *(Inferred, computed)*
+15. **Tom Speer's 6-series recommendation is confirmed by measurement.** NACA 64A410 records the
+    best section L/D of the set with a solid 38.5 kn margin, while aircraft section NACA 4412 at
+    similar thickness manages 31.4 kn — its σᵢ of 0.744 against 64A410's 0.496 is exactly the suction
+    peak the IHS warns about. — *(Inferred, computed)*
+16. **Section ranking is Reynolds-dependent**, so the catalog cannot have a single "best". E874
+    leads at Re 6e5; E904 leads at Re 1e6 (63.4). **A ranked list with no Reynolds number attached is
+    misinformation.** — *(Inferred, computed)*
+17. **Typhoon is Tornado VLM under GPL v2+ in MATLAB.** Reclassified from "possible answer" to
+    "reference and validation benchmark" — copyleft and a MATLAB runtime rule out reuse. It
+    independently corroborates the VLM architecture. — *(Verified — source header)*
+18. **Section analysis needs no XFOIL binary.** NeuralFoil (pure Python) validated against analytic
+    NACA truth, and `Cp_min` — absent as an output — is recoverable from the edge-velocity
+    distribution as `1 − max(u_e/V∞)²`. **This is what makes the cavitation check computable.**
+    — *(Verified — validated against analytic sections)*
+
 ## Confidence summary
 
-- **Verified: 24** · **Inferred: 11** · **Flagged: 9**
+- **Verified: 27** · **Inferred: 16** · **Flagged: 6**  *(Phase 0 closed three Flagged claims and added one)*
 - **Load-bearing Flagged claims:**
-  - *Thickness-ratio guidance (10–12%)* — the only quantitative source is a retailer blog whose
-    adjacent tables were demonstrably garbled. **This is the largest evidence gap in the base** and
-    it is load-bearing for a design tool.
+  - ~~*Thickness-ratio guidance*~~ — **CLOSED by Phase 0 measurement.** No hydrodynamic optimum
+    exists; thickness is a structural variable with a quantified price.
+  - *Discrete-station `Cp_min` under-reads sharp suction peaks* — **new in Phase 0, load-bearing.**
+    It biases `V_crit` optimistically, which is the wrong direction for a safety-relevant check.
   - *ILGPU Blackwell/sm_120 support* — v1.5.3 (July 2024) predates Blackwell.
   - *LBM accuracy at Re > 10⁶* — published validation clusters below our envelope.
   - *The ~9,570 MLUPs/s throughput estimate* — scaled from a desktop benchmark, never measured here.
@@ -115,7 +148,14 @@ water, on a single Windows/NVIDIA machine, without deploying a general-purpose C
   confident numbers at 30° angle of attack and they are meaningless. The surf-foil take-off case at
   α_eff = 10.5° is already near the edge.
 - **Section polars must record `Ncrit` and `Cp_min`.** Without `Ncrit` a polar is not reproducible;
-  without `Cp_min` there is no cavitation check.
+  without `Cp_min` there is no cavitation check. `Cp_min` is derivable from edge velocities where a
+  library omits it.
+- **Rank sections per operating point, never globally.** The Reynolds dependence is large enough to
+  reorder the catalog.
+- **Present thickness as a structural constraint with a displayed hydrodynamic cost**, not as a
+  parameter with an optimum.
+- **Separate the lifting and strut section families in the catalog.** They are different design
+  problems and the Eppler set contains both.
 - **Quote wing-only L/D as wing-only.** The strut is a large fraction of real drag; the estimate
   overstates whole-craft L/D and must say so where it is displayed.
 

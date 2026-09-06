@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T04:55:36Z",
+  "generated": "2026-09-06T05:18:30Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -108,6 +108,46 @@ window.AUDIT_DATA = {
         "branch": "knowledge/cfd-hydrofoil-simulation",
         "pushed": null
       }
+    },
+    {
+      "id": "al-01M1TJE84RRX29SEDW48Y189Y7",
+      "shortname": "phase-0-evidence-pass",
+      "datetime": "2026-09-06T05:18:13Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "prompt": "merge now, then start phase-0 collecting evidence in knowledge and refining the proposal accordingly",
+      "summary": "Merged the knowledge branch to main, then executed Phase 0. Three of four gaps closed by measurement. (1) THICKNESS: swept t/c 6-20 percent on a NACA 24xx family at design CL 0.30, Re 6e5 and 1e6 — section L/D and cavitation margin both fall monotonically, so there is NO hydrodynamic optimum; thickness is a structural variable with a quantified price (9 to 12 percent costs ~14 percent of section L/D and 3.8 kn of cavitation-free speed). This closes and reframes the base's largest evidence gap. (2) SECTIONS: vendored 11 coordinate sets from UIUC with SHA-256 hashes and measured geometry; discovered the Eppler hydrofoil set splits into 5 cambered lifting sections (7.90-10.98 percent t/c) and 3 symmetric strut-family sections (E836/E837/E838, 12.6-18.4 percent) — a split no secondary source states. Measured head-to-head: E818 reaches 42.1 kn cavitation-free vs NACA 4412's 31.4 kn, the first quantitative confirmation of the minimum-cavitation claim; NACA 64A410 records the best section L/D, confirming Tom Speer's 6-series recommendation by measurement; ranking flips with Reynolds so the catalog cannot have a single best. (3) TYPHOON: identified as Tornado VLM (Tomas Melin 1999/2007), MATLAB, GPL v2+ — reclassified from possible answer to reference/benchmark, and independent corroboration of the Option 2 VLM architecture. (4) TOOLING: NeuralFoil validated against analytic NACA truth; Cp_min absent as a field but recoverable from edge velocities, so section analysis needs no XFOIL binary. Caught a parser defect that would have corrupted the catalog: 6 of 8 Eppler files are Lednicer format, and reading them as Selig returned plausible wrong geometry. GPU questions remain open pending a CUDA install; none blocks Phase 1.",
+      "kind": "skill",
+      "skill": "collectknowledge",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/knowledge/cfd-hydrofoil-simulation/phase-0-findings.md",
+        "docs/knowledge/cfd-hydrofoil-simulation/sections/manifest.md",
+        "docs/proposals/cfd-bench-solver-strategy.html"
+      ],
+      "tags": [
+        "phase-0",
+        "measurement",
+        "sections",
+        "thickness",
+        "typhoon"
+      ],
+      "outcome": "success",
+      "goal": "Merge to main, then execute Phase 0 — close evidence gaps by measurement, fold into the knowledge base, refine the proposal",
+      "done_when": "main contains v2; Phase 0 questions have evidence or a recorded reason they could not close; knowledge docs and proposal updated; graph, audit and change log current",
+      "tier": "T2",
+      "fan_out": 0,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true,
+        "acceptance_met": true
+      },
+      "git": {
+        "sha": "107e5ed817829d8b6156b64c3920eb2ba204f772",
+        "short": "107e5ed81",
+        "branch": "main",
+        "pushed": false
+      }
     }
   ],
   "changes": [
@@ -170,6 +210,36 @@ window.AUDIT_DATA = {
         "commits": []
       },
       "audit_ref": "al-01M1TH4AFVMR2WQKGV48BK84S3"
+    },
+    {
+      "id": "cl-01M1TJERDZ740404622K49HQ35",
+      "datetime": "2026-09-06T05:18:30Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "kind": "knowledge",
+      "skill": "collectknowledge",
+      "title": "Thickness has no hydrodynamic optimum; it is a structural variable with a measured price",
+      "prompt": "start phase-0 collecting evidence in knowledge and refining the proposal accordingly",
+      "summary": "Phase 0 measurement replaced the base's largest Flagged claim with a computed result and reframed it. Section L/D and cavitation margin fall monotonically from 6 to 20 percent t/c at both Re 6e5 and 1e6, so thickness has no optimum: it is set by structure and costs efficiency (9 to 12 percent costs ~14 percent of section L/D and 3.8 kn of cavitation-free speed). Eleven sections vendored from UIUC with hashes and measured geometry; the Eppler hydrofoil set splits into a cambered lifting family (7.90-10.98 percent t/c) and a symmetric strut family (E836/E837/E838). E818 measured 42.1 kn cavitation-free against NACA 4412's 31.4 kn; NACA 64A410 recorded the best section L/D, confirming the IHS 6-series recommendation; section ranking flips between Re 6e5 and 1e6 so the catalog must rank per operating point. Typhoon identified as Tornado VLM under GPL v2+ in MATLAB.",
+      "rationale": "The thickness guidance was previously a single retailer source whose adjacent tables published impossible aspect ratios, and it was load-bearing for a design tool's defaults. Measuring it did not just raise confidence, it changed the shape of the feature: presenting thickness as a parameter with an optimum would have sent designers hunting a maximum that does not exist, whereas presenting it as a structural constraint with a displayed cost matches the physics. The section measurements also produced a requirement the earlier drafts missed — ranking must be per operating point, because the ordering flips with Reynolds number. Typhoon's identification cuts both ways: it rules out reuse on licence and runtime grounds while independently corroborating the recommended VLM architecture. A parser defect caught during the pass (Lednicer files read as Selig, returning plausible wrong geometry) is recorded as a class with the analytic NACA check as its control.",
+      "artifacts": [
+        "docs/knowledge/cfd-hydrofoil-simulation/phase-0-findings.md",
+        "docs/knowledge/cfd-hydrofoil-simulation/sections/manifest.md",
+        "docs/proposals/cfd-bench-solver-strategy.html"
+      ],
+      "tags": [
+        "phase-0",
+        "thickness",
+        "sections",
+        "measurement"
+      ],
+      "git": {
+        "before": "107e5ed",
+        "after": "107e5ed817829d8b6156b64c3920eb2ba204f772",
+        "branch": "main",
+        "pushed": false,
+        "commits": []
+      },
+      "audit_ref": "al-01M1TJE84RRX29SEDW48Y189Y7"
     }
   ]
 };

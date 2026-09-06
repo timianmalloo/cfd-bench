@@ -17,6 +17,12 @@ summary: >-
 
 # Foil section catalog and selection
 
+> **UPDATED by Phase 0 (2026-09-05).** The Eppler set has been **vendored and measured** — see
+> [`sections/manifest.md`](sections/manifest.md) for provenance and geometry, and
+> [`phase-0-findings.md`](phase-0-findings.md) for computed polars. Two claims below were
+> superseded: the thickness guidance is now measured rather than quoted, and the Eppler set is now
+> known to split into a **cambered lifting family** and a **symmetric strut family**.
+
 ## The design problem, stated by practitioners
 
 The International Hydrofoil Society compilation states **four key problems in subcavitating
@@ -50,14 +56,15 @@ IHS compilation lists the hydrofoil members explicitly: *(Verified — IHS)*
 
 | Section | Notes |
 |---|---|
-| **E817** | Used in published hydrofoil model work; the most commonly cited of the set |
-| **E818** | Companion to E817 |
-| **E836** | |
-| **E837** | |
-| **E838** | |
-| **E874** | |
-| **E904** | |
-| **E908** | |
+| **E817** | 10.98% t/c, camber 2.88% far aft at 0.69c. The most commonly cited of the set |
+
+| **E818** | 9.37% t/c. **Best measured cavitation margin of the set** — 42.1 kn vs NACA 4412's 31.4 kn |
+| **E874** | 7.90% t/c, the thinnest. Best Eppler section L/D at Re 6e5 |
+| **E904** | 9.00% t/c. Best Eppler section L/D at Re 1e6 (63.4) — the ranking is Reynolds-dependent |
+| **E908** | 9.00% t/c, camber far aft at 0.66c |
+| **E836** | 12.64% t/c, **zero camber — strut family, not a lifting section** |
+| **E837** | 16.11% t/c, **zero camber — strut family** |
+| **E838** | 18.37% t/c, **zero camber — strut family** |
 
 These are characterised in the hydrofoil literature as **minimum-cavitation, low-drag** sections.
 *(Flagged — the characterisation is consistent across secondary sources; the authoritative statement
@@ -118,8 +125,8 @@ needing a coordinate file at all.
 | Criterion | Guidance | Confidence |
 |---|---|---|
 | Design lift coefficient | `Cl ≈ 0.3`, operating range `0–0.6` | Verified (IHS) |
-| Thickness ratio | **10–12%** typical; 12–15% thicker/more durable and delays stall; 8–10% lower drag but structurally marginal | Flagged (single secondary source, and that source's tables were demonstrably garbled — see `sources.md`) |
-| Maximum practical thickness | ~20% t/c | Flagged (general wing-design source, not hydrofoil-specific) |
+| Thickness ratio | **Hydrodynamics always prefers thinner — there is no optimum.** Section L/D and cavitation margin both fall monotonically from 6% to 20% t/c. Thickness is a *structural* variable with a measured price: 9%→12% costs ~14% of section L/D and 3.8 kn of cavitation-free speed. See `phase-0-findings.md` | Inferred (measured Phase 0; surrogate-computed) — **supersedes the earlier Flagged retail guidance** |
+| Maximum practical thickness | ~20% t/c (general wing design). At 20% the measured section L/D is roughly **half** its 6% value | Flagged for the limit; Inferred for the cost |
 | Camber | High camber gives strong low-speed lift and pumping efficiency, at the cost of a **negative pitching moment** that feels unstable at speed | Flagged (practitioner consensus, not measured) |
 | Leading edge | Avoid sharp-edged sections that promote **leading-edge separation bubbles** — separation is the trigger condition for ventilation | Verified (IHS) |
 | Pressure distribution | Rooftop: flat, no peaks | Verified (IHS) |

@@ -195,9 +195,9 @@
 <header class="top">
   <div class="kicker">
     <span>CFD-Bench</span><span class="dot">/</span>
-    <span class="v2">Proposal v2</span><span class="dot">/</span>
+    <span class="v2">Proposal v2.1</span><span class="dot">/</span>
     <span>Hydrofoil only</span><span class="dot">/</span>
-    <span>5 September 2026</span>
+    <span>Phase 0 complete</span>
   </div>
   <h1>A design tool for water-sports<br>hydrofoils</h1>
   <p class="standfirst">Most of what a foil designer asks can be answered in microseconds by closed
@@ -209,7 +209,7 @@
   <div><dt>Scope</dt><dd>Hydrofoil</dd></div>
   <div><dt>Disciplines</dt><dd>4</dd></div>
   <div><dt>Re envelope</dt><dd>4.4e5&ndash;1.2e6</dd></div>
-  <div><dt>Estimator cost</dt><dd>~10 &micro;s</dd></div>
+  <div><dt>Sections measured</dt><dd>11</dd></div>
   <div><dt>GPU</dt><dd>RTX 5090 Laptop</dd></div>
   <div><dt>CUDA toolkit</dt><dd class="bad">not installed</dd></div>
 </dl>
@@ -563,8 +563,146 @@
   </div>
 </section>
 
+
 <section>
   <div class="sec-head"><span class="sec-num">06</span><div>
+    <p class="eyebrow">Phase 0 &mdash; complete</p>
+    <h2>What measurement changed</h2>
+  </div></div>
+
+  <div class="col">
+  <p>Phase 0 targeted four evidence gaps. <strong>Three closed by measurement</strong>; the GPU
+  questions need a privileged install and stay open. The largest gap in the knowledge base closed by
+  showing the question was malformed.</p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 830 292" role="img" aria-label="Section lift-to-drag ratio and cavitation-free critical speed against thickness ratio, from 6 to 20 percent. Both fall monotonically: L over D from 65.8 to 33.9, critical speed from 43.1 to 28.3 knots.">
+      <rect x="220" y="40" width="150" height="210" fill="var(--accent)" opacity="0.07"></rect>
+      <g stroke="var(--rule)" stroke-width="1">
+        <line x1="70" y1="250" x2="770" y2="250"></line>
+        <g stroke-dasharray="2 3">
+          <line x1="70" y1="198" x2="770" y2="198"></line>
+          <line x1="70" y1="145" x2="770" y2="145"></line>
+          <line x1="70" y1="92" x2="770" y2="92"></line>
+        </g>
+      </g>
+      <g font-family="IBM Plex Mono, monospace" font-size="10">
+        <g fill="var(--s1)" text-anchor="end">
+          <text x="62" y="254">30</text><text x="62" y="202">40</text>
+          <text x="62" y="149">50</text><text x="62" y="96">60</text><text x="62" y="44">70</text>
+        </g>
+        <g fill="var(--s4)" text-anchor="start">
+          <text x="780" y="231">28</text><text x="780" y="184">32</text>
+          <text x="780" y="137">36</text><text x="780" y="91">40</text><text x="780" y="44">44</text>
+        </g>
+        <g fill="var(--muted2)" text-anchor="middle">
+          <text x="70" y="270">6%</text><text x="170" y="270">8%</text><text x="270" y="270">10%</text>
+          <text x="370" y="270">12%</text><text x="470" y="270">14%</text><text x="570" y="270">16%</text>
+          <text x="670" y="270">18%</text><text x="770" y="270">20%</text>
+        </g>
+      </g>
+      <text x="420" y="288" font-family="Archivo, sans-serif" font-size="10" font-weight="600" letter-spacing="1" fill="var(--muted)" text-anchor="middle">THICKNESS RATIO  t/c</text>
+      <g fill="none" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+        <polyline stroke="var(--s1)" points="70,62 170,92 220,109 270,124 320,137 370,150 470,176 570,198 670,215 770,230"></polyline>
+        <polyline stroke="var(--s4)" stroke-dasharray="6 4" points="70,50 170,89 220,107 270,123 320,138 370,151 470,173 570,192 670,209 770,223"></polyline>
+      </g>
+      <text x="295" y="32" font-family="Archivo, sans-serif" font-size="10.5" font-weight="600" fill="var(--accent)" text-anchor="middle">the 9&ndash;12% band</text>
+    </svg>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>Section L/D (left)</span>
+      <span><i style="background:var(--s4)"></i>Cavitation-free speed, knots (right)</span>
+    </div>
+    <figcaption>NACA 24xx family, camber held at 2% and thickness isolated, solved to the IHS design
+    <span class="num">CL = 0.30</span> at Re 6&times;10&#8309;. <strong>Both curves fall
+    monotonically. There is no optimum at 10&ndash;12%, or anywhere.</strong></figcaption>
+  </figure>
+
+  <div class="col">
+  <div class="callout">
+    <p><strong>Thickness is a structural variable with a hydrodynamic price, not a parameter with an
+    optimum.</strong> Hydrodynamics always prefers thinner; what stops you is bending stiffness. The
+    retail guidance was not wrong about the band &mdash; it was wrong about the reason, and calling
+    it an optimum sends a designer hunting a maximum that does not exist.</p>
+    <p style="margin-top:.8rem">The price is now quantified, which is what makes it usable:
+    <strong>9% &rarr; 12% t/c costs ~14% of section L/D and 3.8 knots of cavitation-free
+    speed.</strong> So the tool should ask &mdash; live &mdash; "is your structure worth 14%
+    efficiency and 4 knots?" rather than offering a number to optimise.</p>
+  </div>
+
+  <p>Corroboration from independent data: the five <em>cambered</em> Eppler hydrofoil sections
+  measure <span class="num">7.90&ndash;10.98%</span> t/c, exactly what "as thin as the structure
+  allows" predicts.</p>
+
+  <h4>The Eppler set, measured head-to-head</h4>
+  <p>Eleven sections were vendored from UIUC with hashes and provenance, and solved to
+  <span class="num">CL = 0.30</span>. Three results matter.</p>
+  </div>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Section</th><th>t/c</th><th>Section L/D</th><th>&sigma;&#7522;</th><th>Cavitation-free</th><th>Reading</th></tr></thead>
+    <tbody>
+      <tr><td><strong>E818</strong></td><td class="n">9.37%</td><td class="n">42.3</td><td class="n">0.414</td><td class="n"><strong>42.1 kn</strong></td><td>Best cavitation margin measured</td></tr>
+      <tr><td>E874</td><td class="n">7.90%</td><td class="n">48.1</td><td class="n">0.499</td><td class="n">38.3 kn</td><td>Best Eppler L/D at Re 6e5</td></tr>
+      <tr><td>E904</td><td class="n">9.00%</td><td class="n">45.8</td><td class="n">0.429</td><td class="n">41.4 kn</td><td>Best Eppler L/D at Re 1e6 (63.4) &mdash; <strong>the ranking flips with Reynolds</strong></td></tr>
+      <tr><td><strong>NACA 64A410</strong></td><td class="n">9.99%</td><td class="n"><strong>49.4</strong></td><td class="n">0.496</td><td class="n">38.5 kn</td><td>6-series laminar &mdash; <strong>best L/D of all, confirming the IHS recommendation</strong></td></tr>
+      <tr><td>NACA 4412</td><td class="n">12.02%</td><td class="n">37.8</td><td class="n">0.744</td><td class="n">31.4 kn</td><td>Aircraft section. Its suction peak is exactly what the IHS warns against</td></tr>
+      <tr><td>E836 / E837 / E838</td><td class="n">12.6&ndash;18.4%</td><td class="n">33.9&ndash;44.6</td><td class="n">~0.73</td><td class="n">~31.8 kn</td><td><strong>Zero camber &mdash; a strut/mast family, not lifting sections</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="col">
+  <ol class="body-list">
+    <li><strong>The Eppler sections deliver on cavitation, not on raw efficiency.</strong> E818
+    reaches 42.1 kn against NACA 4412's 31.4 kn at identical loading &mdash; a <strong>34% higher
+    critical speed</strong>. This is the first quantitative confirmation of the "minimum cavitation"
+    claim found anywhere in this research; every prior source simply asserted it.</li>
+    <li><strong>The practitioner's 6-series recommendation holds up under measurement.</strong> NACA
+    64A410 records the best section L/D in the set. The mechanism is visible in the numbers: 4412's
+    <span class="num">&sigma;&#7522; = 0.744</span> against 64A410's <span class="num">0.496</span>
+    is the suction peak the rooftop criterion exists to avoid.</li>
+    <li><strong>The catalog cannot have a single "best".</strong> E874 leads at Re 6&times;10&#8309;;
+    E904 leads at Re 10&#8310;. Ranking must be per operating point &mdash; <strong>a ranked section
+    list with no Reynolds number attached is misinformation.</strong></li>
+  </ol>
+
+  <h4>Three more results worth carrying forward</h4>
+  <ul class="body-list">
+    <li><strong>Typhoon is Tornado VLM, MATLAB, GPL v2+.</strong> Its source header says so verbatim.
+    That <em>reclassifies</em> it: copyleft and a MATLAB runtime rule out reuse, so it is a reference
+    and a validation benchmark, not a component &mdash; but it also <strong>independently
+    corroborates Option 2</strong>, since the only open-source tool solving whole-craft hydrofoil
+    equilibrium chose exactly the recommended method.</li>
+    <li><strong>Section analysis needs no XFOIL binary.</strong> NeuralFoil (pure Python) validated
+    against analytic truth &mdash; CL exactly 0 at zero incidence for a symmetric section,
+    <span class="num">dCL/d&alpha; = 0.1066/deg</span> against a theoretical 0.1097.
+    <span class="num">Cp_min</span> is not an output field but is recoverable from edge velocities
+    as <span class="num">1 &minus; max(u&#7497;/V&infin;)&sup2;</span> &mdash; which is what makes
+    every cavitation number above computable. <strong>Phase 1 loses a native dependency.</strong></li>
+    <li><strong>A defect was caught that would have corrupted the whole catalog.</strong> The first
+    coordinate parser reported NACA 0012 as 6.00% thick with 3.00% camber &mdash; impossible for a
+    symmetric section, which is 12% thick with none. Six of the eight Eppler files are
+    <strong>Lednicer</strong> format, not Selig. It surfaced only because analytic NACA sections were
+    used as a regression test <em>before</em> the Eppler numbers were trusted. The failure mode is
+    the dangerous kind: <strong>plausible wrong numbers, not an error.</strong></li>
+  </ul>
+
+  <div class="callout quiet">
+    <p><strong>Two caveats that travel with every number above.</strong> NeuralFoil is a
+    <em>surrogate</em> trained on XFOIL &mdash; trends and rankings are reliable, absolute drag
+    carries model error. And <span class="num">Cp_min</span> recovered from 32 discrete stations
+    <strong>under-reads sharp suction peaks</strong>, biasing cavitation-free speed
+    <em>optimistically</em>. For a safety-relevant check that is the wrong direction to err, so the
+    tool must carry a margin and label the figure as a best case until a true pressure distribution
+    replaces it.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">07</span><div>
     <p class="eyebrow">Architecture</p>
     <h2>Five layers, and where cost lives</h2>
   </div></div>
@@ -630,7 +768,7 @@
 </section>
 
 <section>
-  <div class="sec-head"><span class="sec-num">07</span><div>
+  <div class="sec-head"><span class="sec-num">08</span><div>
     <p class="eyebrow">The decision</p>
     <h2>Revised options</h2>
   </div></div>
@@ -739,21 +877,21 @@
 </section>
 
 <section>
-  <div class="sec-head"><span class="sec-num">08</span><div>
+  <div class="sec-head"><span class="sec-num">09</span><div>
     <p class="eyebrow">Sequencing</p>
     <h2>What to do, in what order</h2>
   </div></div>
 
   <div class="ph">
-    <div class="ph-k"><b>Phase 0</b>2&ndash;3 days</div>
+    <div class="ph-k"><b>Phase 0</b><span style="color:var(--go)">done</span></div>
     <div>
-      <p><strong>Close the evidence gaps, not the code gaps.</strong> Vendor the section catalog
-      (UIUC coordinates with provenance) and generate polars with XFOIL at our Reynolds numbers,
-      retaining <span class="num">Cp_min</span> and <span class="num">Ncrit</span>. Read Typhoon's
-      source to learn its method. Sweep <span class="num">t/c</span> through the estimator to
-      <strong>answer the thickness question with measurement</strong> rather than a retailer blog.</p>
-      <p class="aside">The thickness gap is the largest in the knowledge base and the tool can
-      settle it about itself.</p>
+      <p><strong>Three of four gaps closed by measurement</strong> &mdash; the thickness question
+      (no optimum exists; thickness is structural with a quantified price), the section catalog
+      (11 sections vendored from UIUC with hashes and measured geometry), and Typhoon (Tornado VLM,
+      MATLAB, GPL v2+). A working section-analysis toolchain was established with no XFOIL binary.</p>
+      <p class="aside">Still open, and each needs a CUDA Toolkit install: ILGPU on Blackwell, LBM
+      accuracy above Re&nbsp;10&#8310;, and this laptop&rsquo;s real throughput. <strong>None blocks
+      Phase 1</strong>, which touches no GPU.</p>
     </div>
   </div>
   <div class="ph">
@@ -790,7 +928,7 @@
 </section>
 
 <section>
-  <div class="sec-head"><span class="sec-num">09</span><div>
+  <div class="sec-head"><span class="sec-num">10</span><div>
     <p class="eyebrow">The case against, re-tested</p>
     <h2>What survives the scope cut</h2>
   </div></div>
@@ -832,7 +970,7 @@
 
 <footer>
   <p><strong>Evidence base:</strong> <code>docs/knowledge/cfd-hydrofoil-simulation/</code> &mdash;
-  12 documents, 40 sources, every claim confidence-labelled. Fluid properties read directly from ITTC
+  14 documents, 40 sources, 11 vendored section coordinate sets, every claim confidence-labelled. Fluid properties read directly from ITTC
   7.5-02-01-03 Rev&nbsp;02; design practice from the International Hydrofoil Society compilation;
   estimation chain executed and its output tabulated.</p>
   <p><strong>Confidence:</strong> 24 Verified &middot; 11 Inferred &middot; 9 Flagged. The largest
