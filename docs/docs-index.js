@@ -195,6 +195,38 @@ window.DOCS_INDEX = {
   },
   "artifacts": [
     {
+      "id": "decision-0001-geometry-kernel",
+      "path": "docs/notes/decision-0001-defer-geometry-kernel.md",
+      "title": "Defer OCCT; Take the Permissive Geometry Path",
+      "type": "decision-note",
+      "status": "accepted",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2027-03-06",
+      "reviewSuggested": [],
+      "summary": "OCCT is deferred and probably permanently avoidable. LGPL-2.1 section 6 obligations are the taint the user wants to escape, and a fully permissive path exists — rhino3dm under MIT for NURBS, and STEPcode under BSD (or a bounded own implementation) for STEP export, which OpenVSP already proves works for exactly our one surface type.",
+      "tags": [
+        "licensing",
+        "geometry",
+        "occt",
+        "rhino3dm",
+        "stepcode",
+        "step-export"
+      ],
+      "links": [
+        {
+          "to": "kb-cad-ux-geometry",
+          "rel": "depends-on"
+        },
+        {
+          "to": "kb-fabrication-interop",
+          "rel": "depends-on"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "ad9fcedf0ec192bc8780403d34f031b9e17196c3f7ab7ebe01baf8258789b517"
+    },
+    {
       "id": "audit-log",
       "path": "docs/audit/audit-log.md",
       "title": "Audit & Change Log",
@@ -214,6 +246,36 @@ window.DOCS_INDEX = {
       "links": [],
       "diagrams": [],
       "sourceSha256": "f0b6d9b5fd78da97bbc40a9dedcc884f48ee2d79f68a66beaa182a9948d8f534"
+    },
+    {
+      "id": "backlog",
+      "path": "docs/backlog.md",
+      "title": "Deferred Work and Spikes",
+      "type": "doc",
+      "status": "accepted",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-06",
+      "reviewSuggested": [],
+      "summary": "Work that has been consciously deferred rather than forgotten — spikes with a stated question and a definition of done, decisions waiting on evidence, and the standing engineering commitments this project has made to itself.",
+      "tags": [
+        "backlog",
+        "spikes",
+        "todo",
+        "deferred"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "depends-on"
+        },
+        {
+          "to": "decision-0001-geometry-kernel",
+          "rel": "depends-on"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "80a96c90a9517ae374d0f53131c0cc1e31b30b31ee633c5425b20fcc3960809d"
     },
     {
       "id": "glossary-cfd-hydrofoil",
@@ -251,17 +313,18 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2026-12-05",
       "reviewSuggested": [],
-      "summary": "The three CAD interaction paradigms and which fits a foil editor, what Shape3d and Rhino actually do at the control-point level, the continuity and curvature-comb vocabulary a surface editor must speak, and the concrete .NET stack — HelixToolkit for the viewport, OCCT for the kernel — with the build-versus-buy line drawn.",
+      "summary": "The three CAD interaction paradigms and which fits a foil editor, what Shape3d and Rhino actually do at the control-point level, the continuity and curvature-comb vocabulary a surface editor must speak, and the concrete .NET stack — HelixToolkit for the viewport and a fully permissive geometry path (rhino3dm MIT, STEPcode BSD) that removes the need for a B-Rep kernel entirely.",
       "tags": [
         "cad",
         "ux",
         "wpf",
         "nurbs",
-        "opencascade",
         "helixtoolkit",
+        "rhino3dm",
+        "stepcode",
+        "licensing",
         "splines",
-        "shape3d",
-        "rhino"
+        "shape3d"
       ],
       "links": [
         {
@@ -271,10 +334,14 @@ window.DOCS_INDEX = {
         {
           "to": "kb-cfd-hydrofoil-simulation",
           "rel": "refines"
+        },
+        {
+          "to": "decision-0001-geometry-kernel",
+          "rel": "depends-on"
         }
       ],
       "diagrams": [],
-      "sourceSha256": "4944098a8a44b8196435a4f66bb7e527cd833c3ce041b41f83767332786e137b"
+      "sourceSha256": "a1e8ec5dfd0cc09b3b0446aff4a7926602cb2fb48800bff2ce168f70708bf5b1"
     },
     {
       "id": "kb-cfd-comparables",
@@ -860,6 +927,55 @@ window.DOCS_INDEX = {
       ],
       "diagrams": [],
       "sourceSha256": "f61df53b34799c6a19a0d8d535d11f085beeb1d68ee4935d3fe537f03aa5e8d2"
+    },
+    {
+      "id": "knowledge-gap-register",
+      "path": "docs/knowledge/knowledge-gap-register.md",
+      "title": "Knowledge Gap Register — What the End-to-End Is Missing",
+      "type": "knowledge",
+      "status": "draft",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2026-12-06",
+      "reviewSuggested": [],
+      "summary": "A deliberate sweep of the whole design-to-fabrication chain for knowledge we have not gathered. Sixteen gaps ranked by whether they block, reshape, or merely inform — with the two that would most change the product named explicitly, and two process gaps in how this project has been run.",
+      "tags": [
+        "gaps",
+        "review",
+        "end-to-end",
+        "validation",
+        "structures",
+        "unsteady",
+        "process"
+      ],
+      "links": [
+        {
+          "to": "kb-cfd-hydrofoil-simulation",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-design-automation",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cad-ux-geometry",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-flow-visualization",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-fabrication-interop",
+          "rel": "refines"
+        },
+        {
+          "to": "kb-cfd-orchestration",
+          "rel": "refines"
+        }
+      ],
+      "diagrams": [],
+      "sourceSha256": "d4daf28cdb09e62ba46a3593c2c260743f20f929bf5cd3282ef680131a3e366e"
     }
   ],
   "surfaces": [
@@ -900,5 +1016,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "2dcc12e4e223f5a08d90f3b6569291b658d1446ab3f820ad8b4a22c020048fc8"
+  "graphSha256": "1f00b3ae8e79e2dd8f697c30fe5a25e464efc43100746763673d527d53d0ccf6"
 };

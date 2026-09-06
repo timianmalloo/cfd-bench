@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T15:13:45Z",
+  "generated": "2026-09-06T15:34:15Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -193,6 +193,41 @@ window.AUDIT_DATA = {
         "branch": "main",
         "pushed": false
       }
+    },
+    {
+      "id": "al-01M1VNN7EV3YWHTNRQJVJP5PCB",
+      "shortname": "gap-review-and-licensing-decision",
+      "datetime": "2026-09-06T15:33:42Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "prompt": "defer occt, avoid LGPL, is there an MIT/Apache alternative or should we implement our own; maintain verification-at-a-higher-tier; create a todo to spike HelixToolkit but defer; file import can be our own saved format; review all proposals end-to-end and identify what knowledge we have not accumulated",
+      "summary": "LICENSING RESOLVED: OCCT deferred indefinitely. LGPL-2.1 section 6 obliges shipping OCCT sources and allowing relink against a modified OCCT — the taint to avoid. Fully permissive path found: rhino3dm is MIT (NURBS curves/surfaces/BReps/meshes, .NET via NuGet, 3DM only, no STEP) and STEPcode is BSD; decisively, OpenVSP already writes AP203 files containing only B_SPLINE_SURFACE_WITH_KNOTS via STEPcode, which is exactly our one surface type. Concluded no B-Rep kernel is needed at all: the only two requirements that would need one (mold-block booleans, arbitrary B-Rep import) are already out of scope, and the user's decision that import means our own saved format removes the last one. Recorded as decision-0001. Created docs/backlog.md with SPIKE-01 HelixToolkit control-point manipulation (deferred, with fallback), SPIKE-02 STEP writer round-trip, SPIKE-03 snappyHexMesh auto-generation, plus COMMIT-01 verification-at-a-higher-tier, COMMIT-02 no LGPL, COMMIT-03 own-format import. GAP REVIEW: 16 knowledge gaps plus 2 process gaps. Tier 1: validation data (partially closed — found DTIC ADA032272 DTNSRDC towing-tank data for NACA 16-309 vs 64A309 which independently confirms 6-series over 16-series, a third agreeing line after IHS prose and our NeuralFoil measurement); structural analysis (the largest hole — thickness is set by structure and nothing models it; beam+lifting-line hydroelastic methods exist at our fidelity tier); who the user is (three UX proposals written with zero user research, UX veto never convened); units and coordinate conventions (flagged as a defect class in v1, never settled). Tier 2: unsteady/pumping (Strouhal ~0.4, downwind IS pumping); multi-fidelity reconciliation; manufacturing constraints feeding back (our measured sections have physically unbuildable trailing edges); data/provenance model; how the app itself is tested. Process gaps: /adddomainexperts never run, and zero ADRs recorded.",
+      "kind": "skill",
+      "skill": "collectknowledge",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/notes/decision-0001-defer-geometry-kernel.md",
+        "docs/backlog.md",
+        "docs/knowledge/knowledge-gap-register.md"
+      ],
+      "tags": [
+        "licensing",
+        "gaps",
+        "review",
+        "structures",
+        "validation"
+      ],
+      "outcome": "success",
+      "goal": "Answer the licensing question, record deferred spikes, apply the import scope decision, and identify end-to-end knowledge gaps",
+      "done_when": "Kernel decision recorded with evidence; backlog created; CAD proposal and knowledge updated; gap register written and ranked; graph/audit/change log current",
+      "tier": "T2",
+      "fan_out": 0,
+      "git": {
+        "sha": "4f381d032382c7093e9e18e810fcc28bf7e19f8b",
+        "short": "4f381d032",
+        "branch": "main",
+        "pushed": false
+      }
     }
   ],
   "changes": [
@@ -317,6 +352,36 @@ window.AUDIT_DATA = {
         "commits": []
       },
       "audit_ref": "al-01M1VMG1WKK82JD7KTDQGQSYJM"
+    },
+    {
+      "id": "cl-01M1VNP7E4DHJ2TKYX1VCVA0MG",
+      "datetime": "2026-09-06T15:34:15Z",
+      "session": "session_01XPJgQ4SAUcpSmsd3oJbfuj",
+      "kind": "decision",
+      "skill": "collectknowledge",
+      "title": "No B-Rep kernel required; permissive-only dependencies; sixteen knowledge gaps identified",
+      "prompt": "defer occt, avoid LGPL where possible, MIT/Apache alternative or implement our own; import can be our own format; review the proposals end to end for missing knowledge",
+      "summary": "Three decisions and one review. (1) OCCT deferred indefinitely: LGPL-2.1 section 6 requires shipping the OCCT sources used and ensuring users can relink against a modified OCCT, which is the entanglement to avoid regardless of commercial intent. rhino3dm (MIT) covers NURBS if needed; STEPcode (BSD) or a bounded own writer covers STEP, with OpenVSP as proof that a lofted parametric surface reaches AP203 using only B_SPLINE_SURFACE_WITH_KNOTS. (2) No B-Rep kernel is needed at all — the only requirements that would need one are mold-block booleans (already scoped out; molds belong in CAM) and arbitrary B-Rep import (now scoped out by the decision that import reads our own saved format). (3) Verification-at-a-higher-tier confirmed as a standing commitment. The end-to-end review found 16 knowledge gaps and 2 process gaps, with structures, the user, units conventions and validation data as Tier 1.",
+      "rationale": "The licensing question turned out to change the architecture rather than just the dependency list: asking whether a permissive alternative existed forced an audit of what a kernel was actually for, and the audit showed that on this scope it is for two things we had already scoped out. That is a materially simpler system, not a compromise. The gap review was run because four proposals now exist and the next step is /specify, which would otherwise bake in assumptions — two of which turned out to be load-bearing: nothing in the stack models structure, yet Phase 0 established that thickness is set by structure, so the tool has a variable decided entirely by physics it cannot see; and three UX proposals have been written with no user research at all, while the pack's UX Researcher lens holding the specification veto has never been convened. The validation gap partially closed during the review itself, and the data found independently corroborates the Phase 0 section ranking from a third direction.",
+      "artifacts": [
+        "docs/notes/decision-0001-defer-geometry-kernel.md",
+        "docs/knowledge/knowledge-gap-register.md",
+        "docs/backlog.md"
+      ],
+      "tags": [
+        "licensing",
+        "architecture",
+        "gaps",
+        "scope-change"
+      ],
+      "git": {
+        "before": "4f381d0",
+        "after": "4f381d032382c7093e9e18e810fcc28bf7e19f8b",
+        "branch": "main",
+        "pushed": false,
+        "commits": []
+      },
+      "audit_ref": "al-01M1VNN7EV3YWHTNRQJVJP5PCB"
     }
   ]
 };

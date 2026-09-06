@@ -4,16 +4,17 @@ title: "CAD UX Paradigms and the .NET Geometry Stack"
 type: knowledge
 status: draft
 owner: "@timianmalloo"
-tags: [cad, ux, wpf, nurbs, opencascade, helixtoolkit, splines, shape3d, rhino]
+tags: [cad, ux, wpf, nurbs, helixtoolkit, rhino3dm, stepcode, licensing, splines, shape3d]
 links:
   - { to: kb-cfd-parametric-geometry, rel: refines }
   - { to: kb-cfd-hydrofoil-simulation, rel: refines }
+  - { to: decision-0001-geometry-kernel, rel: depends-on }
 review-by: 2026-12-05
 summary: >-
   The three CAD interaction paradigms and which fits a foil editor, what Shape3d and Rhino actually
   do at the control-point level, the continuity and curvature-comb vocabulary a surface editor must
-  speak, and the concrete .NET stack — HelixToolkit for the viewport, OCCT for the kernel — with
-  the build-versus-buy line drawn.
+  speak, and the concrete .NET stack — HelixToolkit for the viewport and a fully permissive
+  geometry path (rhino3dm MIT, STEPcode BSD) that removes the need for a B-Rep kernel entirely.
 ---
 
 # CAD UX paradigms and the .NET geometry stack
@@ -99,7 +100,30 @@ repository, and `ManipulationBinding` maps manipulation gestures, with the bindi
 **Assessment: use it.** It is the only mature open-source WPF 3D viewport with a gizmo story. The
 plain `HelixToolkit.Wpf` (WPF 3D) package exists but SharpDX is the performant path.
 
-### Geometry kernel: Open CASCADE (OCCT)
+### Geometry kernel: NOT REQUIRED — see `decision-0001-geometry-kernel`
+
+> **DECIDED 2026-09-06.** OCCT is **deferred indefinitely** on licensing grounds, and the review that
+> produced that decision found we do not need a B-Rep kernel at all on this scope. The permissive
+> stack below replaces it. The OCCT assessment is retained for the record.
+
+**The permissive alternatives:**
+
+| Need | Library | Licence | Notes |
+|---|---|---|---|
+| NURBS curves/surfaces, B-Reps, meshes, extrusions, SubDs | **rhino3dm** (`mcneel/rhino3dm`) | **MIT** | .NET bindings via NuGet, Windows/macOS/Linux. openNURBS grant is MIT verbatim; McNeel state commercial use is encouraged. **Reads/writes 3DM only — no STEP or IGES** *(Verified)* |
+| STEP AP203/AP242 read and write | **STEPcode** | **BSD** | EXPRESS parser, SDAI classes, Part 21 I/O. Used by BRL-CAD, SCView and **OpenVSP** *(Verified)* |
+
+**The decisive precedent:** *OpenVSP uses STEPcode to write AP203 files that currently contain only
+`B_SPLINE_SURFACE_WITH_KNOTS` entities.* *(Verified)* That is exactly our case — a lofted B-spline
+surface reaching STEP with no B-Rep kernel involved.
+
+**Why no kernel is needed.** A kernel earns its keep on booleans, filleting and topological repair.
+Lofting, evaluation, meshing and single-entity STEP export need none of those. The two requirements
+that would have needed one — subtracting the wing from a mold block, and importing arbitrary
+third-party B-Rep — are both out of scope on independent grounds (molds belong in CAM; import reads
+our own format).
+
+### The OCCT assessment, retained for the record
 
 **OCC C# Wrapper** wraps OCCT C++ classes for .NET; the C# interface reuses the C++ DLLs and calls
 C++ methods through C# calls, on Windows and Linux. Official C# samples exist
@@ -110,9 +134,13 @@ filleting, and **STEP/IGES import and export**. Since STEP is the required outpu
 (`kb-fabrication-interop`), OCCT is close to unavoidable if we want proper B-Rep export rather than
 a mesh.
 
-**The cost:** a large native dependency with a C++/CLI or wrapper build step, and a real learning
-curve. **LGPL-with-exception licensing** needs checking against commercial intent — flagged, not
-verified here.
+**The cost, now verified:** OCCT 6.7.0+ is **LGPL-2.1 with the Open CASCADE Exception 1.0**. The
+exception permits object code to incorporate material from Library *header files* under terms of
+your choice — it does **not** lift the linking obligations. Under **LGPL section 6** an application
+must carry the LGPL notice, **make the OCCT sources it used available to its users**, and **ensure
+the user can run the application against a modified OCCT**. *(Verified)* That third obligation
+shapes how the application is built and shipped, applies regardless of commercial intent, and is
+the reason this dependency was declined.
 
 ### The build-versus-buy line
 
@@ -122,7 +150,9 @@ verified here.
 | Section curves (CST, NACA, catalog) | **Build** | Already specified; a few hundred lines |
 | Spline evaluation, curvature combs | **Build** | Standard maths, and we need exact control |
 | 3D viewport, camera, picking, gizmos | **Buy — HelixToolkit** | Months of work, solved |
-| NURBS surface lofting, B-Rep, STEP export | **Buy — OCCT** | Years of work. Do not attempt |
+| NURBS surface maths, if it gets hard | **Buy — rhino3dm (MIT)** | Permissive, .NET-native, drop-in |
+| STEP AP203 export | **Build, or STEPcode (BSD)** | One entity type; OpenVSP proves the approach |
+| B-Rep kernel | **Not required** | Deferred indefinitely — see `decision-0001-geometry-kernel` |
 | Mesh/STL generation | **Either** | Trivial from our own loft; OCCT does it too |
 | 2D charts | **Buy — ScottPlot** | See `kb-flow-visualization` |
 
@@ -149,16 +179,20 @@ patent implications not assessed.)*
 
 ## 6. Open questions
 
-1. **OCCT licensing for commercial use.** *(Flagged, load-bearing.)* LGPL-family with exceptions;
-   needs reading before commitment.
+1. ~~OCCT licensing.~~ **CLOSED 2026-09-06** — LGPL-2.1 §6 obligations verified, dependency
+   declined, permissive path adopted. See `decision-0001-geometry-kernel`.
 2. **Does HelixToolkit's gizmo generalise to control-point dragging on a curve?** The demos show
    object transforms. Dragging one control point in a 3D view against a plane is a different
    interaction. **Settle by spike.**
 3. **Do we need OCCT at all for v1?** If v1 exports STL and defers STEP, the whole kernel dependency
    is deferrable. Depends on whether CAM is a v1 requirement.
-4. **How is the CST/section curve reconciled with an imported file?** Importing an arbitrary STEP
-   wing and back-fitting it to stations is a *fitting* problem, not a parsing problem, and it is
-   substantially harder than export. Unscoped.
+4. ~~How is an imported arbitrary file reconciled to stations?~~ **CLOSED by scope decision
+   2026-09-06** — import reads **our own format only**, so it is deserialisation rather than surface
+   fitting. Arbitrary third-party B-Rep import is out of scope, which is also what removes the last
+   requirement for a geometry kernel.
+5. **Is our own STEP writer correct?** Unverified until a CAM system opens the output. The
+   acceptance test is not "it writes a file" but "Fusion or Mastercam opens it and the surface is
+   smooth". Tracked as `SPIKE-02`.
 
 ## Sources
 
@@ -168,6 +202,11 @@ patent implications not assessed.)*
 | HelixToolkit.Wpf.SharpDX 3.1.2 | primary | https://www.nuget.org/packages/HelixToolkit.Wpf.SharpDX/ |
 | HelixToolkit ManipulatorDemo | primary | https://github.com/helix-toolkit/helix-toolkit/blob/main-v2/Source/Examples/WPF.SharpDX/ManipulatorDemo/MainViewModel.cs |
 | OCC C# Wrapper | primary | https://occt3d.com/components/occ-csharp-wrapper/ |
+| OCCT licensing (LGPL-2.1 + exception, §6 obligations) | primary (vendor) | https://dev.opencascade.org/resources/licensing |
+| Open CASCADE Exception 1.0 (SPDX) | standard | https://spdx.org/licenses/OCCT-exception-1.0.html |
+| rhino3dm (MIT) | primary | https://github.com/mcneel/rhino3dm |
+| What is Rhino3dm? | primary (vendor) | https://developer.rhino3d.com/en/guides/opennurbs/what-is-rhino3dmio/ |
+| STEPcode (BSD); OpenVSP writes AP203 B_SPLINE_SURFACE_WITH_KNOTS | primary | https://stepcode.github.io/docs/home/ |
 | OCCT C# samples | primary | https://github.com/Open-Cascade-SAS/OCCT-samples-csharp |
 | Shape3d user manual v8 | primary | https://www.shape3d.com/Manuals/User_Manual_V8.pdf |
 | Shape3d X — what's new | primary | https://www.shape3d.com/products/FromV8toVX.aspx |

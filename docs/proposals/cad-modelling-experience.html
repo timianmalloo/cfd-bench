@@ -169,11 +169,11 @@
 
 <dl class="rig">
   <div><dt>Viewport</dt><dd>HelixToolkit</dd></div>
-  <div><dt>Kernel</dt><dd>OCCT</dd></div>
+  <div><dt>Kernel</dt><dd class="good">none needed</dd></div>
   <div><dt>Paradigm</dt><dd>Direct + constrained</dd></div>
   <div><dt>Editable curves</dt><dd>5</dd></div>
   <div><dt>Spline degree</dt><dd>5</dd></div>
-  <div><dt>Build from scratch</dt><dd class="good">3 of 7 layers</dd></div>
+  <div><dt>Licences</dt><dd class="good">MIT / BSD only</dd></div>
 </dl>
 
 <section style="border-top:0">
@@ -416,10 +416,19 @@
         <td><strong>HelixToolkit.Wpf.SharpDX 3.1.2</strong></td>
         <td>The only mature open-source WPF 3D viewport with a manipulator story. DirectX 11 via
         SharpDX, XAML/MVVM, <code>Viewport3DX</code>. Months of work, already solved</td></tr>
-      <tr><td>NURBS surfaces, B-Rep, booleans, STEP</td><td><span class="tag b">Buy</span></td>
-        <td><strong>OCCT + OCC C# Wrapper</strong></td>
-        <td>Years of work. <strong>Do not attempt.</strong> And STEP export is what makes the tool
-        manufacturable &mdash; see below</td></tr>
+      <tr><td>NURBS surface maths (optional)</td><td><span class="tag b">Buy if needed</span></td>
+        <td><strong>rhino3dm</strong> &mdash; <strong>MIT</strong></td>
+        <td>NURBS curves and surfaces, B-Reps, meshes, SubDs, .NET via NuGet on all three platforms.
+        Permissive, and McNeel state commercial use is encouraged. Only reads/writes 3DM &mdash; no STEP</td></tr>
+      <tr><td>STEP AP203 export</td><td><span class="tag a">Build</span></td>
+        <td>own writer, or <strong>STEPcode</strong> &mdash; <strong>BSD</strong></td>
+        <td>One entity type &mdash; <code>B_SPLINE_SURFACE_WITH_KNOTS</code>. <strong>OpenVSP already
+        does exactly this with STEPcode</strong>, which proves a lofted parametric surface reaches
+        STEP without a B-Rep kernel</td></tr>
+      <tr><td>B-Rep kernel (OCCT)</td><td><span class="tag c">Not required</span></td>
+        <td>&mdash;</td>
+        <td><strong>Deferred indefinitely.</strong> LGPL-2.1 &sect;6 obliges us to ship OCCT sources
+        and let users relink against a modified OCCT. Every remaining requirement is met without it</td></tr>
       <tr><td>2D charts</td><td><span class="tag b">Buy</span></td><td>ScottPlot</td>
         <td>Best .NET performance on large scientific datasets</td></tr>
       <tr><td>Mesh / STL output</td><td><span class="tag b">Either</span></td><td>&mdash;</td>
@@ -430,16 +439,22 @@
 
   <div class="col">
   <div class="callout">
-    <p><strong>The OCCT decision deserves to be made explicitly rather than drifted into.</strong>
-    It is a large native dependency with a wrapper build step and a real learning curve. It earns its
-    place for exactly one reason: <strong>STEP export.</strong> STL is not appropriate for CNC
-    &mdash; tessellation discards tolerance and produces facets on the surface whose curvature is the
-    entire point of the design. STEP needs a B-Rep kernel, and writing one is not a reasonable
-    undertaking.</p>
-    <p style="margin-top:.8rem"><strong>So the honest sequencing is:</strong> if v1 exports STL for
-    meshing and visualisation only, <strong>OCCT is deferrable</strong>. It becomes required the
-    moment someone wants to machine a mold. Decide by asking whether CAM is a v1 requirement, not by
-    asking whether a kernel would be nice.</p>
+    <p><strong>The kernel question is now decided, and the answer is that we do not need
+    one.</strong> A geometry kernel earns its keep on booleans, filleting and topological repair.
+    Walk the actual requirements and none of ours needs it: lofting is our own maths over our own
+    curves; meshing and area come from the same model; STEP export is a single entity type with a
+    published schema and a working precedent. The two requirements that <em>would</em> have needed a
+    kernel &mdash; subtracting the wing from a mold block, and importing arbitrary third-party B-Rep
+    &mdash; are both out of scope on independent grounds.</p>
+    <p style="margin-top:.8rem"><strong>And the licensing cost was real.</strong> OCCT is LGPL-2.1
+    with an exception that covers only header material in object code. <strong>Section 6 still
+    obliges us to make the OCCT sources available and to ensure a user can relink the application
+    against a modified OCCT</strong> &mdash; an obligation that shapes how the thing is built and
+    shipped, and one that applies whether or not it is ever sold.</p>
+    <p style="margin-top:.8rem">The permissive path is not a compromise: <strong>rhino3dm under MIT
+    </strong> for NURBS maths if it gets hard, <strong>STEPcode under BSD</strong> or a few hundred
+    lines of our own for STEP. Recorded as
+    <code>docs/notes/decision-0001-defer-geometry-kernel.md</code>.</p>
   </div>
   </div>
 </section>
@@ -466,17 +481,20 @@
     </div>
     <div class="layer">
       <div class="layer-k">From a file</div>
-      <p>Opening an existing wing. <strong>This is the hard one and should be scoped honestly:</strong>
-      importing an arbitrary STEP surface and back-fitting it to stations is a <em>fitting</em>
-      problem, not a parsing problem, and it is substantially harder than export.</p>
-      <div class="cost">defer</div>
+      <p>Opening a wing <strong>this tool wrote</strong>. Our own format, so import is
+      deserialisation rather than surface reconstruction &mdash; the stations are already there.
+      Reading an arbitrary third-party B-Rep and back-fitting stations to it is a <em>fitting</em>
+      problem and is <strong>out of scope</strong>.</p>
+      <div class="cost">easy</div>
     </div>
   </div>
 
   <div class="col">
-  <p>A realistic middle path for import: accept <strong>section coordinates plus a planform table
-  </strong> &mdash; formats we already read &mdash; rather than arbitrary B-Rep. That covers
-  &ldquo;open a wing someone described&rdquo; without solving surface reconstruction.</p>
+  <p><strong>Scoping import to our own format removes the last requirement that would have needed a
+  geometry kernel</strong>, which is what makes the permissive stack above sufficient rather than
+  merely preferable. As a bonus, we can also read <strong>section coordinates plus a planform
+  table</strong> &mdash; formats already in the catalog &mdash; which covers &ldquo;open a wing
+  someone described&rdquo; without solving surface reconstruction.</p>
   </div>
 </section>
 
@@ -488,12 +506,15 @@
 
   <div class="col">
   <ul class="body-list">
-    <li><strong>OCCT licensing.</strong> LGPL-family with exceptions. <em>Load-bearing and
-    unverified</em> &mdash; it must be read before commitment, because it gates the STEP path and
-    therefore the whole fabrication story.</li>
+    <li><s>OCCT licensing.</s> <strong>Resolved &mdash; and the answer was to avoid it.</strong>
+    LGPL-2.1 &sect;6 obligations confirmed; the permissive path (rhino3dm MIT, STEPcode BSD) is
+    sufficient. No longer a risk.</li>
     <li><strong>Does HelixToolkit's gizmo generalise to control-point dragging?</strong> The demos
     show object transforms. Dragging one control point in a 3D view, constrained to a plane, is a
-    different interaction. <strong>Worth a spike before committing.</strong></li>
+    different interaction. <strong>Spiked and deferred by decision</strong> &mdash; tracked as
+    <code>SPIKE-01</code> in <code>docs/backlog.md</code>. The fallback if it fails is control-point
+    editing in the 2D curve views only, which the design already favours, so this is safe to
+    defer.</li>
     <li><strong>Spline lofting can produce invisible defects.</strong> Interpolation through sparse
     stations can introduce curvature reversals that are real and unseen &mdash; which is why the comb
     is always on rather than a menu item.</li>
@@ -508,7 +529,9 @@
   <p><strong>Evidence:</strong> <code>docs/knowledge/cad-ux-and-geometry/</code> &mdash; Shape3d
   interaction detail, Rhino/Grasshopper/MultiSurf paradigm comparison, Autodesk Alias continuity
   vocabulary, HelixToolkit and OCCT capability. Export-format reasoning in
-  <code>docs/knowledge/fabrication-and-interop/</code>.</p>
+  <code>docs/knowledge/fabrication-and-interop/</code>. Kernel decision:
+  <code>docs/notes/decision-0001-defer-geometry-kernel.md</code>. Deferred spikes:
+  <code>docs/backlog.md</code>.</p>
   <p><strong>Scope:</strong> the design object is a <strong>single wing</strong>, front or rear. The
   editor never edits an assembly &mdash; other surfaces appear only as context.</p>
 </footer>
