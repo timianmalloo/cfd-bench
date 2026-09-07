@@ -1,0 +1,8 @@
+# Append-only REGISTER files: two sessions appending distinct lines never conflict, but a plain
+# merge treats their appends as competing edits. Git's BUILT-IN `union` driver keeps both sides'
+# lines - no custom driver, no .git/config entry, no install step. Classification lives in
+# .agents/artifacts.yml (AI-Forward session-coordination plan). The `derived` files there are
+# regenerated rather than merged; their driver is registered by `coord install` (rev-62 pack).
+docs/audit/audit-log.jsonl    merge=union
+docs/audit/change-log.jsonl   merge=union
+docs/health-history.jsonl     merge=union
