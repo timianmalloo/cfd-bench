@@ -97,6 +97,25 @@ FIXES = collections.OrderedDict([
     ("F-12", {"title": "Ask each host for its richest reasoning summary, and treat summary-derived judgements as Inferred",
               "where": "INSTALL.md 1.6; adapters/hooks/claude-code.settings.hooks.json (showThinkingSummaries); pack-doctor `claude settings`",
               "control": "SP-17 reports visible-reasoning share per family; a family under 10% marks every text-derived drift finding Inferred"}),
+    ("F-17", {"title": "A node declares whether it needs reasoning, or is deterministic mechanics",
+              "where": "knowledge/execution-graph-optimization.md GO19 (per-node Capability); "
+                       "commands/optimize-graph (the node table)",
+              "control": "SP-22 flags a mechanical-close turn that ran at high effort and real "
+                         "cost; the node table has to carry a Capability before a plan is admitted"}),
+    ("F-16", {"title": "Resolve the model from usage events, never from the recorded setting",
+              "where": "scripts/session-profile.py (effective_model / model_attribution); any pack "
+                       "guidance keyed to a model",
+              "control": "SP-21 flags a session whose recorded setting is not its effective model; "
+                         "a test pins that family attribution is built from the per-request model"}),
+    ("F-15", {"title": "`/also` establishes a bound rather than inheriting one that is absent",
+              "where": "commands/also/SKILL.md + adapters/copilot/prompts/also.prompt.md",
+              "control": "SP-20 flags an `/also` turn with no goal state, or a fan-out on one "
+                         "that declared no tier; the `also` eval asserts both rules are written"}),
+    ("F-14", {"title": "A budget on the MAIN line, not only on the delegates",
+              "where": "knowledge/communication-and-task-discipline.md CT19 (`Main-line budget:`); "
+                       "scripts/audit-log.py --main-budget; selfcheck",
+              "control": "selfcheck reports a substantive turn with no main-line budget as a gap "
+                         "and an over-run as a finding; SP-19 measures the real split from the store"}),
     ("F-13", {"title": "Externalize reasoning by construction: a one-line intent on every shell call",
               "where": "knowledge/communication-and-task-discipline.md CT26; the managed block; agent cards",
               "control": "SP-18 intent-trace coverage per family; below 90% is a finding; the hook and the profiler read the same field"}),
@@ -122,6 +141,10 @@ FINDINGS = collections.OrderedDict([
     ("SP-16", ("Knowledge at hand re-fetched: the main agent viewed an instruction file that is already in its prefix", "Minor", ["F-08", "F-02"])),
     ("SP-17", ("Reasoning visibility: the share of billed reasoning that came back as readable text", "Nit", ["F-12"])),
     ("SP-18", ("Intent-trace coverage: shell calls that carry a one-line description (the reasoning trace a profiler can read)", "Minor", ["F-13"])),
+    ("SP-19", ("Main-line dominance: the turn's own loop, not its delegates, is where the cost is", "Major", ["F-14"])),
+    ("SP-20", ("Late addition on an unbounded turn: an `/also` that inherited no goal state or fanned out above no tier", "Major", ["F-15"])),
+    ("SP-21", ("Model attribution: the recorded setting is not the model that ran", "Major", ["F-16"])),
+    ("SP-22", ("Mechanical work at reasoning prices: a closing turn billed as though it needed novelty", "Major", ["F-17"])),
 ])
 
 INTENT_TOOLS = {"copilot": {"powershell", "bash", "shell"}, "claude": {"Bash", "PowerShell"}}
@@ -129,7 +152,20 @@ INTENT_TOOLS = {"copilot": {"powershell", "bash", "shell"}, "claude": {"Bash", "
 ORIENTATION_DOCS = ("agents.md", "claude.md", "agent-persona-catalog", "persona-cards", "persona-audit",
                     "agent-body-of-knowledge")
 CONVERGE_RX = re.compile(r"\b(converge now|stop (further )?investigat|stop investigating|wrap up now)\b", re.I)
-GOAL_RX = re.compile(r"\bGoal\s*[:\uff1a]", re.I)
+# CTX-J: the detector must see every spelling the standard prescribes. This required a colon
+# for two revisions while CT19 and every worked example write `**Goal** —` or `**Goal** ·`,
+# so it was blind to its own mandated form -- and it degraded AS COMPLIANCE IMPROVED, because
+# every newly conformant turn was written in the shape it could not see. Measured 2026-09-06:
+# 10 of 346 substantive Claude-Code turns detected, 15 present.
+#
+# The delimiter requirement stays: it is the guard that keeps prose ("the goal of this change
+# is ... we are done when ...") from being credited as a declared goal state. Pinned by
+# GoalStateSpellingTests, which is the control -- the pattern is only the fix.
+GOAL_RX = re.compile(
+    r"(?:\*\*\s*Goal\s*\*\*\s*[:\uff1a\u2014\u2013\u00b7\-]"      # **Goal** — / · / - / :
+    r"|^\s*#{1,6}\s*Goal\b\s*[:\uff1a\u2014\u2013\u00b7\-]"        # ## Goal —
+    r"|\bGoal\s*[:\uff1a])",                    # Goal: / **Goal:**
+    re.I | re.M)
 DONE_RX = re.compile(r"\bDone[\s-]*when\b", re.I)
 TIER_RX = re.compile(r"\bTier\s*[:\uff1a]?\s*\**\s*T[0-3]\b", re.I)
 NUDGE_RX = re.compile(r"not yet marked the task as complete|you have not finished|haven't finished|Keep working autonomously", re.I)
@@ -140,6 +176,186 @@ SEVERITY_RANK = {"Blocker": 0, "Major": 1, "Minor": 2, "Nit": 3}
 
 
 # --------------------------------------------------------------------------- helpers
+
+
+
+ALSO_RX = re.compile(r"(^|\s)/also\b|<command-(?:message|name)>\s*also\s*</", re.I)
+
+
+def late_addition_findings(turns):
+    """`/also` turns that acquired no bound (F-15, class CTX-N).
+
+    `/also` guards DIRECTION - "an extension is absorbed; a reversal is raised" - and had no
+    guard on SIZE. Measured in sp-0004: both `/also` turns were the only substantive turns on
+    that model carrying neither a goal state nor a tier, and one became 81 main requests, 6
+    sub-agents, 83 minutes and 13,411 AIU - the most expensive turn in the session.
+
+    Deliberately narrower than SP-09, which already owns the generic missing-goal-state case.
+    This one is about the *late addition* specifically, because the mechanism is different: an
+    addition to an unbounded turn INHERITS unboundedness rather than acquiring a bound, and
+    the skill's own flow assumed a goal state was there to re-read.
+    """
+    rows = []
+    for t in turns or []:
+        if not ALSO_RX.search(t.get("prompt") or ""):
+            continue
+        subs = len(t.get("sub_agents") or [])
+        if not t.get("goal_state"):
+            rows.append({"turn": t.get("turn"),
+                         "reason": "no goal state to inherit, so the addition acquired no bound"})
+        elif subs and not t.get("tier"):
+            rows.append({"turn": t.get("turn"),
+                         "reason": "{0} sub-agent(s) on a turn that declared no tier".format(subs)})
+    return rows
+
+
+
+
+
+# The SHAPE of a mechanical close. Deliberately narrow and deliberately dumb about intent:
+# it matches how the work was asked for, never whether it was right to ask.
+MECHANICAL_RX = re.compile(
+    r"^\s*(?:/updatepack|/document\b)"
+    r"|\b(?:commit and push|push and merge|commit,\s*push|merge (?:the )?pr\b|"
+    r"rebase(?:d)? then commit|regenerate the (?:index|docs)|"
+    r"commit and (?:push/)?merge|push/merge)\b", re.I)
+
+MECHANICAL_MIN_AIU = 500.0
+
+
+def mechanical_cost_findings(turns, min_aiu=MECHANICAL_MIN_AIU):
+    """Closing work billed as though it needed novelty (F-17).
+
+    Measured: `/updatepack` ran twice in one session - 1,179 AIU on claude-opus-4.8 and
+    8,890 on gpt-6-astra. Same skill, same repo, 7.5x. "yes commit and push/merge all" cost
+    5,173 AIU across 21 requests. None of that is novel work; all of it is a script with a
+    reviewer, and GO19's per-phase tier does not reach it because the phase boundary is
+    inside the turn.
+
+    The finding is the PRICE, not the mechanics - closing work is legitimate and has to
+    happen. A cheap mechanical turn is exactly right and is not reported. A turn with no
+    recorded cost is not guessed at (IO8).
+    """
+    rows = []
+    for t in turns or []:
+        if not MECHANICAL_RX.search(t.get("prompt") or ""):
+            continue
+        cost = t.get("cost_aiu")
+        if cost is None or cost < min_aiu:
+            continue
+        if (t.get("effort") or "").lower() not in ("high", "medium"):
+            continue
+        rows.append({"turn": t.get("turn"), "cost_aiu": cost,
+                     "effort": t.get("effort"), "requests": t.get("main_requests")})
+    return rows
+
+
+def _settings_note(facts):
+    """The settings line, with the EFFECTIVE model beside it when they disagree (SP-21).
+
+    A reader scanning the header takes `settings {'model': ...}` as what ran. On the measured
+    session it was not, and the difference decided 95% of the cost.
+    """
+    if not facts.get("settings"):
+        return ""
+    note = " \u00b7 settings {0}".format(facts["settings"])
+    ma = facts.get("model_attribution") or {}
+    if ma.get("mismatch"):
+        note += " \u00b7 EFFECTIVE model {0} ({1}% of main-line cost, {2} distinct)".format(
+            ma["effective"], ma.get("share"), ma.get("distinct"))
+    return note
+
+
+def effective_model(models):
+    """The model a session actually WAS, by cost. `models` is {model: {requests, cost}}.
+
+    By cost rather than request count on purpose: in the measured session `gpt-6-astra` and
+    the delegate models had comparable request counts and wildly different prices, and it is
+    the expensive one that determines what the session cost and how it behaved.
+
+    Returns None for a corpus it cannot read - an unknown model is not a guess (IO8).
+    """
+    if not models:
+        return {"model": None, "share": None, "distinct": 0, "cost": 0.0}
+    total = sum(v.get("cost", 0.0) for v in models.values())
+    top = max(models.items(), key=lambda kv: kv[1].get("cost", 0.0))
+    return {"model": top[0], "cost": round(top[1].get("cost", 0.0), 1),
+            "distinct": len(models),
+            "share": round(100.0 * top[1].get("cost", 0.0) / total, 1) if total else None}
+
+
+def model_attribution(settings, models):
+    """Reconcile the RECORDED model against the EFFECTIVE one (class CTX-O).
+
+    The setting is a true statement about what was configured and is simply not a statement
+    about what executed: measured, one session recorded `claude-opus-4.8` while `gpt-6-astra`
+    ran 1,022 requests for 95% of the spend, across eleven model/effort combinations. Both
+    values are plausible, which is why the error is invisible.
+
+    Note what counts as a mismatch: the recorded model having RUN is not enough. In that
+    session it ran - on 5% of the requests. Presence is not attribution.
+
+    An absent setting is not a mismatch. Claude Code records no model setting, and absent
+    must not read as wrong.
+    """
+    recorded = (settings or {}).get("model")
+    eff = effective_model(models)
+    return {"recorded": recorded, "effective": eff["model"], "share": eff["share"],
+            "distinct": eff["distinct"],
+            "mismatch": bool(recorded and eff["model"] and recorded != eff["model"])}
+
+
+def main_line_share(buckets):
+    """Split a session's requests and cost between the main line and its delegates.
+
+    `buckets` is {initiator: {"requests": n, "cost": aiu}}. The main line is `agent`, `user`
+    and `compaction` - a compaction request and the request that opens a user turn are both
+    paid on the main conversation, and both were substantial: in sp-0003 the 24 bare
+    user-initiated requests alone cost 12,853 AIU, MORE THAN THE ENTIRE DELEGATE FLEET.
+
+    This is the measured half of CT19's `Main-line budget:`, which is only a declaration - an
+    agent cannot count its own model requests, and this can. Reconciled, never conflated.
+
+    Returns None for a share or a ratio it cannot establish: a percentage over an empty
+    corpus is not a measurement (R4), and no delegates means there is no ratio to report
+    rather than a ratio of infinity.
+    """
+    MAIN = ("agent", "user", "compaction")
+    m_req = sum(v.get("requests", 0) for k, v in (buckets or {}).items() if k in MAIN)
+    m_cost = sum(v.get("cost", 0.0) for k, v in (buckets or {}).items() if k in MAIN)
+    s_req = sum(v.get("requests", 0) for k, v in (buckets or {}).items() if k not in MAIN)
+    s_cost = sum(v.get("cost", 0.0) for k, v in (buckets or {}).items() if k not in MAIN)
+    total = m_cost + s_cost
+    per_main = (m_cost / m_req) if m_req else None
+    per_sub = (s_cost / s_req) if s_req else None
+    return {"main_requests": m_req, "sub_requests": s_req,
+            "main_cost": round(m_cost, 1), "sub_cost": round(s_cost, 1),
+            "main_pct": round(100.0 * m_cost / total, 1) if total else None,
+            "cost_per_main_request": round(per_main, 1) if per_main is not None else None,
+            "cost_per_sub_request": round(per_sub, 1) if per_sub is not None else None,
+            "cost_ratio": round(per_main / per_sub, 1)
+                          if (per_main is not None and per_sub) else None}
+
+
+def _basename(path):
+    """Last path segment, splitting on BOTH separators regardless of this platform.
+
+    `os.path.basename` is per-platform, and the paths here are not: they come out of a
+    harness store that was recorded on whatever machine ran the session. Profiling a
+    Windows-captured Copilot store from Linux or WSL - which `--copilot-home` exists to
+    allow - made `os.path.basename("C:\\repo\\AGENTS.md")` return the whole string, so
+    every evidence line printed a full path and the orientation-read detector compared
+    against a basename that was never going to match.
+
+    Observed red in CI run 34061643244 (ubuntu-latest); green on Windows, which is exactly
+    why it survived. Class PACK-C's sibling: a platform assumption that is invisible on the
+    author's platform.
+    """
+    if not path:
+        return path
+    return re.split(r"[\\/]", str(path))[-1]
+
+
 def parse_ts(s):
     if not s:
         return None
@@ -432,7 +648,7 @@ def profile_copilot(sess, settings):
                 t["sub_tools"] += 1
                 name = sub_names.get(e.get("agentId") or se.get("agentId"), "sub-agent")
                 if tn == "view" and path and any(k in path.lower() for k in ORIENTATION_DOCS):
-                    t["sub_orientation_reads"].append("{0}: {1}".format(name or "sub-agent", os.path.basename(path)))
+                    t["sub_orientation_reads"].append("{0}: {1}".format(name or "sub-agent", _basename(path)))
         elif et == "assistant.message" and not e.get("agentId") and d.get("interactionId") in main_iids:
             t["asst_msgs"] += 1
             c = d.get("content") or ""
@@ -465,10 +681,27 @@ def profile_copilot(sess, settings):
         w = window(parse_ts(created))
         if w is None:
             continue
-        U[w].append({"main": agent_id is None, "model": model, "in": inp or 0, "out": out or 0,
+        U[w].append({"main": agent_id is None, "initiator": initiator, "model": model,
+                     "in": inp or 0, "out": out or 0,
                      "cr": cr or 0, "cw": cw or 0, "rsn": rsn or 0, "aiu": (aiu or 0) / 1e9,
                      "dur": (dur or 0) / 1000.0, "ttft": (ttft / 1000.0) if ttft else None,
                      "created": parse_ts(created), "finish": finish, "effort": effort})
+    # F-14 / SP-19: the main-line vs delegate split, by initiator. Claude Code's transcript
+    # carries no initiator, so for that reader this stays absent rather than fabricated (IO8).
+    initiators = collections.defaultdict(lambda: {"requests": 0, "cost": 0.0})
+    # F-16 / SP-21: per-model totals on the MAIN line, so the session's effective model is
+    # resolved from what executed rather than from what was configured (class CTX-O).
+    main_models = collections.defaultdict(lambda: {"requests": 0, "cost": 0.0})
+    for w_rows in U.values():
+        for r in w_rows:
+            b = initiators[r.get("initiator") or ("agent" if r["main"] else "sub-agent")]
+            b["requests"] += 1
+            b["cost"] += r["aiu"]
+            if r["main"] and r.get("model"):
+                m = main_models[r["model"]]
+                m["requests"] += 1
+                m["cost"] += r["aiu"]
+
     turns = []
     for i in sorted(T):
         t = T[i]
@@ -512,6 +745,11 @@ def profile_copilot(sess, settings):
              "settings": {k: settings.get(k) for k in ("model", "contextTier", "effortLevel")},
              "prefix_chars": prefix["chars"], "prefix_tokens_est": est_tokens(prefix["chars"]) if prefix["chars"] else None,
              "prefix_first_chars": prefix["first_chars"], "prefix_blocks": prefix["blocks"], "prefix_note": prefix["note"],
+             "main_line": main_line_share(dict(initiators)),
+             "main_models": {k: {"requests": v["requests"], "cost": round(v["cost"], 1)}
+                             for k, v in main_models.items()},
+             "model_attribution": model_attribution(
+                 {k: settings.get(k) for k in ("model",)}, dict(main_models)),
              "compactions": sum(1 for e in events if str(e.get("type", "")).startswith("session.compact")),
              "events": len(events), "usage_rows": len(usage)}
     return facts, turns
@@ -532,7 +770,7 @@ def claude_sessions(identity, since, home):
         if name.lower() not in wanted:
             continue
         for path in sorted(glob.glob(os.path.join(projects, name, "*.jsonl"))):
-            sid = os.path.splitext(os.path.basename(path))[0]
+            sid = os.path.splitext(_basename(path))[0]
             mtime = _dt.datetime.fromtimestamp(os.path.getmtime(path), _dt.timezone.utc)
             if since and mtime < since:
                 continue
@@ -654,7 +892,7 @@ def profile_claude(sess):
                         t["sub_agents"].setdefault(aid, {"name": "sub-agent", "tool_calls": 0, "tokens": 0})
                         t["sub_agents"][aid]["tool_calls"] += 1
                         if name == "Read" and path and any(k in path.lower() for k in ORIENTATION_DOCS):
-                            t["sub_orientation_reads"].append(os.path.basename(path))
+                            t["sub_orientation_reads"].append(_basename(path))
                         continue
                     t["tools"][name] += 1
                     if name in INTENT_TOOLS["claude"]:
@@ -744,7 +982,7 @@ def detect(session):
     ev = []
     for t in turns:
         for p, n in sorted(t["rereads"].items(), key=lambda kv: -kv[1])[:4]:
-            ev.append(_ev(t["turn"], "{0} viewed {1}x".format(os.path.basename(p), n)))
+            ev.append(_ev(t["turn"], "{0} viewed {1}x".format(_basename(p), n)))
         if t["paged_full_views"]:
             ev.append(_ev(t["turn"], "{0} paged tool output(s) viewed whole".format(t["paged_full_views"])))
     if ev:
@@ -794,9 +1032,30 @@ def detect(session):
         share = sum(h for h, _ in hw) / max(1, sum(w for _, w in hw))
         if share > 0.05:
             add("SP-13", [_ev(None, "hooks {0:.0f}s of {1:.0f}s wall ({2:.0f}%)".format(sum(h for h, _ in hw), sum(w for _, w in hw), 100 * share))], {"share": round(share, 3)})
-    ev = [_ev(t["turn"], os.path.basename(p)) for t in turns for p in t["instruction_views"]]
+    ev = [_ev(t["turn"], _basename(p)) for t in turns for p in t["instruction_views"]]
     if ev:
         add("SP-16", ev[:8], {"reads": len(ev)})
+    # SP-19: where the money actually is. Fires when the main line both dominates the spend and
+    # costs materially more per request than the delegates it convened - the shape every budget
+    # the pack carries was pointed away from (class CTX-M).
+    mech = mechanical_cost_findings(turns)
+    if mech:
+        add("SP-22", [_ev(r["turn"], "mechanical close at effort={0}: {1:,.0f} AIU over {2} main request(s)".format(
+            r["effort"], r["cost_aiu"], r["requests"])) for r in mech][:6],
+            {"count": len(mech), "aiu": round(sum(r["cost_aiu"] for r in mech), 1)})
+    la = late_addition_findings(turns)
+    if la:
+        add("SP-20", [_ev(r["turn"], r["reason"]) for r in la][:6], {"count": len(la)})
+    ma = facts.get("model_attribution") or {}
+    if ma.get("mismatch"):
+        add("SP-21", [_ev(None, "recorded setting {0!r}; effective model {1!r} at {2}% of main-line cost across {3} distinct model(s)".format(
+            ma["recorded"], ma["effective"], ma.get("share"), ma.get("distinct")))],
+            {k: ma.get(k) for k in ("recorded", "effective", "share", "distinct")})
+    ml = facts.get("main_line") or {}
+    if ml.get("main_pct") is not None and ml.get("cost_ratio") is not None             and ml["main_pct"] >= 80 and ml["cost_ratio"] >= 3:
+        add("SP-19", [_ev(None, "main line {0:,} requests / {1:,.0f} AIU ({2}% of the session) vs delegates {3:,} / {4:,.0f}; {5}x the cost per request".format(
+            ml["main_requests"], ml["main_cost"], ml["main_pct"], ml["sub_requests"], ml["sub_cost"], ml["cost_ratio"]))],
+            {k: ml[k] for k in ("main_pct", "cost_ratio", "main_requests", "sub_requests")})
     # SP-17: how much of the billed reasoning came back as text. Informational: it decides how much
     # weight any text-derived judgement can carry (below 10% visible, drift read from text is Inferred).
     rsn = sum(t["reasoning_main"] for t in turns)
@@ -989,7 +1248,7 @@ def render_markdown(profile):
                   "started {0} \u00b7 updated {1} \u00b7 cwd `{2}` \u00b7 prefix {3} \u00b7 compactions {4}{5}".format(
                       f.get("started"), f.get("updated"), f.get("cwd"),
                       ("~{0:,} est. tokens / {1:,} chars".format(f["prefix_tokens_est"], f["prefix_chars"]) if f.get("prefix_chars") else NOT_RECORDED),
-                      f.get("compactions"), (" \u00b7 settings {0}".format(f["settings"]) if f.get("settings") else "")), ""]
+                      f.get("compactions"), _settings_note(f)), ""]
         rows = []
         for t in s["turns"]:
             rows.append([t["turn"], t["prompt"][:48].replace("|", "/"), "+".join(t["families"]) or "\u2014", t["main_requests"], _fmt(t["ctx_start"]), _fmt(t["ctx_end"]),

@@ -571,6 +571,11 @@ def _build_parser():
     # --- Phase 3 ---
     cls = sub.add_parser("class", help="what class is this artifact?")
     cls.add_argument("path"); cls.add_argument("--json", action="store_true")
+    ci = sub.add_parser("classify", help="write the artifact registry from what this repo has")
+    ci.add_argument("action", choices=["init"])
+    ci.add_argument("--force", action="store_true",
+                    help="replace an existing registry (it is repo configuration)")
+    ci.add_argument("--timeout", type=float, default=180)
     md = sub.add_parser("merge-derived", help="the .gitattributes merge driver (always 0)")
     md.add_argument("result"); md.add_argument("base")
     md.add_argument("theirs"); md.add_argument("realpath")
@@ -733,7 +738,20 @@ def cmd_merge_register(result_path, base_path, theirs_path, real_path):
 # The class decides the MECHANISM entirely (ADR-0009). Measured: the six busiest files in
 # the reference repo are all generated, so a uniform lease aims at 13/60 and misses 58/60.
 
-CLASSES = ("authored", "derived", "register", "hotspot")
+# Pattern: Strategy, keyed by artifact class. The class decides the MECHANISM entirely
+# (ADR-0009) -- derived artifacts are resolved and regenerated afterwards; registers are
+# unioned under a conservation assertion. ONE SOURCE OF TRUTH: `_install_merge_driver`
+# builds its driver table from this map, so a class cannot be declared without one.
+#
+# CTX-H: `hotspot` was declared here for two revisions with no mechanism anywhere in the
+# file. The parser accepted `x: hotspot`, `classify()` returned it, and the file then merged
+# exactly like `authored` while the tool reported it was handled -- a success-shaped
+# classification. It is removed until the commit that implements its merge behaviour puts it
+# back, in MERGE_MECHANISMS, where the control can see it.
+MERGE_MECHANISMS = {"derived": MERGE_DRIVER_NAME, "register": REGISTER_DRIVER_NAME}
+# `authored` is the one legitimate mechanism-free class: the Null Object, the safe default,
+# whose mechanism IS conventional conflict markers resolved by a human.
+CLASSES = ("authored",) + tuple(sorted(MERGE_MECHANISMS))
 REGISTRY_NAME = "artifacts.yml"
 REGEN_OWED = "regen-owed.txt"
 
@@ -830,6 +848,251 @@ def regen_command(root, path):
     return best[1] if best else None
 
 
+
+# --- the registry is derivable, not authored (CTX-H, proposal P1) -------------------
+#
+# These artifacts are the SAME obligation in every repo the pack is installed into: the
+# pack generates them, so the pack knows how they merge. Asking each repo to hand-author
+# them is asking each repo to repeat the same near-miss -- the cfd-bench coordination plan
+# first wrote `audit-log.py regen` from inference, and there is no such subcommand.
+#
+# A WRONG regenerate command is worse than a missing entry. `load_registry` already refuses
+# a `derived` entry with NO command; it cannot refuse one with the wrong command, and the
+# failure is silent: the driver resolves the merge, records a regeneration owed, and the
+# artifact is permanently stale while every tool reports it handled. So `classify init`
+# RUNS each command before it writes it, and refuses the entry if the command fails or
+# touches anything but its own target.
+
+def _canonical_project(repo):
+    """The project name, derived from git -- never `basename(cwd)` (PACK-P).
+
+    Run from a worktree, `basename` stamps the WORKTREE folder into a committed generated
+    file. The remote is the canonical answer; the primary worktree is the fallback.
+    """
+    url, _err = _git(repo, "config", "--get", "remote.origin.url")
+    name = (url or "").strip().rstrip("/")
+    if name:
+        name = name.rsplit("/", 1)[-1]
+        if name.endswith(".git"):
+            name = name[:-4]
+        if name:
+            return name
+    out, _err = _git(repo, "worktree", "list", "--porcelain")
+    for line in (out or "").splitlines():
+        if line.startswith("worktree "):
+            tail = line[len("worktree "):].strip().replace("\\", "/").rstrip("/")
+            base = tail.rsplit("/", 1)[-1]
+            if base:
+                return base
+    base = str(repo).replace("\\", "/").rstrip("/").rsplit("/", 1)[-1]
+    return base or "repo"
+
+
+def pack_defaults(repo):
+    """The pack's own artifacts, as classify-init candidates.
+
+    `requires` keeps the registry honest about THIS repo: a pattern naming a path that does
+    not exist is a claim nothing checks, and it would start matching the day someone creates
+    the file. Everything not listed stays `authored` -- the safe default. Do not enumerate it.
+    """
+    scripts = "docs/ai-forward-pack/scripts"
+    py = '"{0}"'.format(sys.executable)
+    project = _canonical_project(repo)
+    return [
+        {"patterns": ["docs/docs-index.js"], "class": "derived",
+         "command": "{0} {1}/docs-graph.py derive".format(py, scripts),
+         "requires": ["docs/docs-index.js", scripts + "/docs-graph.py"]},
+        {"patterns": ["docs/audit/audit-data.js", "docs/audit/index.html"],
+         "class": "derived",
+         # ONE generator, TWO artifacts: `render` rebuilds the data projection AND ensures
+         # the viewer exists. Found by verify_regen_command refusing the single-path form,
+         # which is the check doing its job -- a generator owns a SET, and classifying only
+         # half of it leaves the other half to conflict by hand forever.
+         #
+         # --root and --project are NOT optional: the default project name is the repo
+         # DIRECTORY name, which stamps a worktree folder into a committed file (PACK-P).
+         "command": "{0} {1}/audit-log.py --root docs --project {2} render".format(
+             py, scripts, project),
+         "requires": ["docs/audit/audit-data.js", scripts + "/audit-log.py"]},
+        {"patterns": ["docs/audit/audit-log.jsonl"], "class": "register",
+         "command": "", "requires": ["docs/audit/audit-log.jsonl"]},
+        {"patterns": ["docs/audit/change-log.jsonl"], "class": "register",
+         "command": "", "requires": ["docs/audit/change-log.jsonl"]},
+        {"patterns": ["docs/health-history.jsonl"], "class": "register",
+         "command": "", "requires": ["docs/health-history.jsonl"]},
+    ]
+
+
+def _dirty_paths(repo):
+    """The set of paths git currently reports as changed. Compared as a DELTA.
+
+    Absolute state would never pass: the tree is usually already dirty when someone runs
+    this. What must be empty is what the command ADDED.
+    """
+    out, err = _git(repo, "status", "--porcelain", "--untracked-files=all")
+    if err and not out:
+        return None                       # R4: unreadable is not the same as clean
+    paths = set()
+    for line in (out or "").splitlines():
+        raw = line[3:].strip() if len(line) > 3 else ""
+        if " -> " in raw:                 # a rename reports both sides
+            raw = raw.split(" -> ", 1)[1]
+        if raw:
+            paths.add(_norm(raw.strip('"')))
+    return paths
+
+
+def verify_regen_command(repo, patterns, command, timeout=180):
+    """Run it. Return (ok, reason). The near-miss control.
+
+    `patterns` is the set the generator OWNS, not one path: `audit-log.py render` rebuilds
+    the data projection and ensures the viewer exists, and both are derived. Declaring half
+    a generator's output leaves the other half conflicting by hand forever.
+
+    Two ways to fail, and the second is the subtle one: a command that exits 0 while
+    rewriting something outside that set is not a regenerate command, it is a side effect,
+    and classifying its target `derived` would licence the driver to resolve a file that
+    command will then clobber.
+    """
+    before = _dirty_paths(repo)
+    if before is None:
+        return False, "git status is unreadable, so nothing was established"
+    try:
+        # DEVIATION (Rules of the Road 4): shell=True mirrors cmd_regen, and for the same
+        # reason -- a regenerate command may use shell operators and must run identically on
+        # POSIX and Windows. The string is pack-derived or repo-local config, never input.
+        proc = subprocess.run(command, cwd=str(repo), shell=True, capture_output=True,
+                              text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return False, "exceeded {0}s".format(timeout)
+    except OSError as exc:
+        return False, "{0}: {1}".format(exc.__class__.__name__, exc)
+    if proc.returncode != 0:
+        detail = _safe(((proc.stderr or "") + (proc.stdout or "")).strip(), 160)
+        return False, "exited {0}{1}".format(
+            proc.returncode, " - " + detail if detail else "")
+    after = _dirty_paths(repo)
+    if after is None:
+        return False, "git status is unreadable after the run"
+    # fnmatch, not set membership: a generator may own a GLOB (`docs/api/*.md`), and that is
+    # how `classify` matches too - a stray check stricter than the classifier would refuse
+    # every directory-emitting generator.
+    owned = [_norm(p) for p in patterns]
+    stray = sorted(c for c in (after - before)
+                   if not any(fnmatch.fnmatch(c, o) for o in owned))
+    if stray:
+        return False, "it also changed {0}".format(", ".join(stray[:4]))
+    return True, ""
+
+
+# The registry is TWO things in one file: the pack's own generated artifacts, which are
+# derivable and identical in every install, and this repo's own, which only a human knows.
+# `--force` regenerates the first half ONLY, between these markers - the same managed-block
+# idiom the pack uses for AGENTS.md. Without them, the header's own advice ("re-verify with
+# --force after changing a generator") destroyed every hand-added entry, silently, on a
+# command the file itself recommends. Same shape as CTX-K: a documented remedy that undoes
+# something.
+MANAGED_BEGIN = "# >>> coord classify init - managed block. --force regenerates BETWEEN these"
+MANAGED_END = "# <<< coord classify init - end managed block. Add your own entries BELOW."
+
+REGISTRY_HEADER = """# .agents/{name} - what each artifact IS decides how it merges.
+# Format: pattern: class [regenerate command]. Longest matching pattern wins.
+# Everything not listed stays `authored` - the safe default, resolved by a human through
+# conventional conflict markers. Do not enumerate it.
+#
+# Every `derived` command in the managed block was RUN before it was written: a wrong
+# command resolves the merge silently and leaves the artifact permanently stale while
+# reporting as handled. Re-verify with `coord classify init --force` after changing a
+# generator - it rewrites the managed block and leaves everything else alone.
+#
+# Add THIS repo's own generated and append-only artifacts below the end marker, under the
+# same rule: run the command first.
+"""
+
+
+def cmd_classify_init(root, repo, candidates=None, force=False, timeout=180):
+    """Write `.agents/artifacts.yml` from what this repo actually has. Verified, not guessed."""
+    target = Path(root) / REGISTRY_NAME
+    existing = target.read_text(encoding="utf-8") if target.exists() else None
+    if existing is not None and not force:
+        print("COORD-REGISTRY-EXISTS  {0} already exists - not overwritten.".format(target))
+        print("  because     a hand-tuned registry is repo configuration, like .gitignore")
+        print("  remedy      re-run with --force to regenerate the managed block, or edit"
+              " it by hand")
+        return 2
+    if existing is not None and (MANAGED_BEGIN not in existing or MANAGED_END not in existing):
+        # G11/B6, the same stance `coord install` takes on a foreign pre-commit hook: this
+        # file predates the markers or was written by hand, and guessing which lines are ours
+        # is how you delete the half nobody can regenerate.
+        print("COORD-REGISTRY-UNMANAGED  {0} carries no managed block - not touched.".format(
+            target))
+        print("  because     without the markers there is no way to tell the pack's entries")
+        print("              from yours, and --force would rewrite the whole file")
+        print("  remedy      move it aside, run `classify init`, then paste your own entries")
+        print("              below the end marker")
+        return 2
+
+    candidates = pack_defaults(repo) if candidates is None else candidates
+    lines, skipped, absent = [], [], []
+    for cand in candidates:
+        missing = [r for r in cand.get("requires", []) if not (Path(repo) / r).exists()]
+        if missing:
+            absent.append((", ".join(cand.get("patterns") or [cand["pattern"]]), missing[0]))
+            continue
+        patterns = cand.get("patterns") or [cand["pattern"]]
+        if cand["class"] == "derived":
+            ok, reason = verify_regen_command(repo, patterns, cand["command"], timeout)
+            if not ok:
+                skipped.append((", ".join(patterns), reason))
+                continue
+            for pattern in patterns:
+                lines.append("{0}: derived {1}".format(pattern, cand["command"]))
+        else:
+            for pattern in patterns:
+                lines.append("{0}: {1}".format(pattern, cand["class"]))
+
+    Path(root).mkdir(parents=True, exist_ok=True)
+    block = "\n".join([MANAGED_BEGIN] + lines + [MANAGED_END])
+    if existing is None:
+        body = REGISTRY_HEADER.format(name=REGISTRY_NAME) + "\n" + block + "\n"
+    else:
+        head, _old, tail = existing.partition(MANAGED_BEGIN)
+        _managed, _end, tail = tail.partition(MANAGED_END)
+        body = head + block + tail
+        if not body.endswith("\n"):
+            body += "\n"
+    target.write_text(body, encoding="utf-8", newline="\n")
+
+    try:
+        entries = load_registry(root)
+    except CoordError as exc:
+        # A registry this tool writes that its own parser rejects is the worst outcome.
+        print("COORD-REGISTRY-UNPARSEABLE  wrote {0} and could not read it back: {1}".format(
+            target, exc.code))
+        return 2
+
+    print("{0} {1} - {2} pattern(s) total, {3} in the managed block.".format(
+        "Rewrote the managed block of" if existing is not None else "Wrote",
+        target, len(entries or []), len(lines)))
+    for line in lines:
+        print("  {0}".format(line if len(line) <= 110 else line[:107] + "..."))
+    for pattern, why in absent:
+        print("  not present   {0}  ({1} does not exist here)".format(pattern, why))
+    for pattern, why in skipped:
+        print("  REFUSED       {0}  its regenerate command {1}".format(pattern, why))
+    if skipped:
+        print("")
+        print("A refused entry is NOT a missing feature - it is the control working. A wrong")
+        print("regenerate command resolves every merge and leaves the artifact permanently")
+        print("stale while reporting as handled. Fix the command, then re-run with --force.")
+        return 3
+    print("")
+    print("Next: `coord install` declares the drivers in .gitattributes and writes the")
+    print("pre-commit floor. .git/config is per-clone, so every fresh clone and every new")
+    print("worktree needs `coord install` again - `coord doctor` is how you find out.")
+    return 0
+
+
 # --- the deferred-regeneration debt -----------------------------------------
 #
 # The driver RESOLVES during the merge and regenerates AFTERWARDS. It cannot regenerate in
@@ -908,23 +1171,65 @@ _WRITE_TOOLS = {"edit", "create", "write", "apply_patch", "str_replace", "multie
                 "notebookedit"}
 _PATH_KEYS = ("file_path", "path", "filePath", "notebook_path")
 
+# CAPABILITY, NOT MEASUREMENT (class CTX-H, proposal P3).
+#
+# These are spike results about what a HARNESS can do. They are identical in every repo, for
+# ever, and they are not a statement about the repo `coord doctor` is running in. Printed
+# under the same heading as the six measured lines, a reader takes them as measured state --
+# IO5 pointed at the pack's own instrument. `render_harness_capability` gives them their own
+# heading, and is the ONLY place either surface formats them.
+#
+# `established` and `harness_version` are load-bearing: a capability claim with no version has
+# no expiry. Copilot's deny was proven against CLI 1.0.80 and the runtime has moved since.
+# Where a spike did not pin a version the field says so -- "not recorded" is the honest
+# degradation, never a plausible number (IO8). Both dates recovered from git history
+# (50b849a, e1ec9d0), not recalled.
 HARNESS_STATUS = {
     "claude": {
         "edit_boundary": "enforcing",
+        "established": "2026-08-24",
+        "harness_version": "not recorded (spike S5 pinned no version)",
         "why": "PreToolUse contract established by execution and the deny response is "
                "honoured (spike S5, five cases incl. both fail-safe paths).",
     },
     "copilot": {
-        # The architecture's condition 2, CLOSED by a live session on 2026-08-24 rather
-        # than assumed either way.
+        # The architecture's condition 2, CLOSED by a live session rather than assumed
+        # either way.
         "edit_boundary": "enforcing",
-        "why": "A live Copilot CLI 1.0.80 session honoured a deny: a read of an unleased "
-               "file succeeded, a write to a leased one was refused with our reason "
-               "rendered verbatim into the transcript, and the file was unmodified. "
-               "RESIDUAL, unchanged: Copilot fails OPEN on a 30s hook timeout, so a hung "
-               "hook allows. Our measured check is 63ms p95, and the commit floor backs it.",
+        "established": "2026-08-24",
+        "harness_version": "Copilot CLI 1.0.80",
+        "why": "A live session honoured a deny: a read of an unleased file succeeded, a "
+               "write to a leased one was refused with our reason rendered verbatim into "
+               "the transcript, and the file was unmodified. RESIDUAL, unchanged: Copilot "
+               "fails OPEN on a 30s hook timeout, so a hung hook allows. Our measured check "
+               "is 63ms p95, and the commit floor backs it.",
     },
 }
+
+
+def render_harness_capability():
+    """The harness capability block, as lines. ONE renderer, both surfaces.
+
+    The two surfaces disagreed for two revisions because each carried its own literal:
+    `plugin emit` called Copilot's edit boundary advisory-pending-proof, beside the constant
+    recording that the proof had arrived, and the comment above the doctor loop said the same
+    superseded thing a third time. Prose restating a verdict is REC-A; a single renderer makes
+    the disagreement structurally impossible. The superseded sentences are deliberately not
+    reproduced here -- a file that still contains them cannot be grepped clean, and the next
+    reader could copy one back out.
+
+    The commit-floor sentence is UNCONDITIONAL. It used to sit behind `if edit_boundary !=
+    "enforcing"`, which became unreachable the moment both entries said enforcing -- so the
+    one sentence that is true in every state printed in none of them. It is not a consolation
+    for a weak harness; it is the floor that holds regardless of what the hook does.
+    """
+    lines = ["harness capability (from spikes - NOT measured here; re-qualify per version)"]
+    for name, status in sorted(HARNESS_STATUS.items()):
+        lines.append("  {0:<8} edit boundary: {1}   established {2}, against {3}".format(
+            name, status["edit_boundary"], status["established"], status["harness_version"]))
+        lines.append("    because   {0}".format(_safe(status["why"], 400)))
+        lines.append("    floor     the commit floor enforces regardless of the hook")
+    return lines
 
 
 def _relativise(path, repo, cwd=None):
@@ -1584,7 +1889,9 @@ def cmd_worktree(root, repo, action, cwd, now, session=None, agent=None,
             print("COORD-WORKTREE-ADD-FAILED: {}".format(_safe(err, 300)))
             return 4
         if session:
-            append_event(root, {"kind": "session-start", "session": session,
+            # `worktree new` is the OTHER session-start emitter. Both carry the field or
+            # the rate is wrong in the direction that flatters us.
+            append_event(root, {"kind": "session-start", "session": session, "tree": "worktree",
                                 "agent": agent or session, "wi": "WI-0", "path": "-",
                                 "at": now, "worktree": _worktree_key(target)})
         print("worktree ready\n  branch    {}\n  path      {}\n  next      cd {}"
@@ -1663,7 +1970,56 @@ def cmd_worktree(root, repo, action, cwd, now, session=None, agent=None,
     return 4 if failed else 0
 
 
-def cmd_session(root, action, session, agent, cwd, now):
+
+# --- WT4's exception, made countable (class CTX-I, proposal P5) ----------------------
+#
+# Measured across 48 sessions in three repos: 16 worktrees existed and NOT ONE profiled
+# session ran inside one, including three pairs that overlapped in time in a primary
+# checkout. WT4 permits the primary as a RECORDED exception -- and an exception with no
+# counter becomes the default, which is exactly what that measurement shows happened.
+#
+# Deliberately not a refusal. There is no baseline for how often the exception is correct,
+# and a refusal built on no baseline is tuning from a feeling -- the thing this whole loop
+# exists to prevent. Record the fact; argue about enforcement once there is a rate.
+
+def session_tree_kind(repo, cwd):
+    """"primary" | "worktree", or None when it cannot be established.
+
+    None is a real answer and must not collapse to either value: a session whose tree could
+    not be resolved is not evidence of discipline (IO8).
+    """
+    if not repo:
+        return None
+    try:
+        records, err = worktree_inventory(repo)
+    except Exception:
+        return None
+    if err or not records:
+        return None                       # R4: unresolved is not evidence of discipline
+    return ("primary" if _worktree_key(cwd) == _worktree_key(records[0]["path"])
+            else "worktree")
+
+
+def wt4_exception_rate(root):
+    """How often did a session start in the primary checkout?
+
+    Sessions recorded before this field existed carry no `tree` and are counted as
+    `not_recorded` -- never as `worktree`, which would invent a number in the direction
+    that flatters us.
+    """
+    events, _errors, _files = read_events(root)
+    starts = [e for e in events if e.get("kind") == "session-start"]
+    recorded = [e for e in starts if e.get("tree") in ("primary", "worktree")]
+    in_primary = sum(1 for e in recorded if e.get("tree") == "primary")
+    return {"sessions": len(starts),
+            "sessions_recorded": len(recorded),
+            "not_recorded": len(starts) - len(recorded),
+            "in_primary": in_primary,
+            # R4 again: a rate over an empty corpus is not a measurement.
+            "pct": round(100.0 * in_primary / len(recorded), 1) if recorded else None}
+
+
+def cmd_session(root, action, session, agent, cwd, now, repo=None):
     # simplify: occupancy is the newest session-start with no matching session-end,
     #   inside a staleness window.
     #   ceiling: a session killed without `session end` holds the tree until it elapses.
@@ -1693,7 +2049,9 @@ def cmd_session(root, action, session, agent, cwd, now):
                   .format(_safe(key, 300), _safe(holder)))
             return 3
         append_event(root, {"kind": "session-start", "session": session, "agent": agent,
-                            "wi": "WI-0", "path": "-", "at": now, "worktree": key})
+                            "wi": "WI-0", "path": "-", "at": now, "worktree": key,
+                            # WT4's exception, recorded where `coord metrics` can count it.
+                            "tree": session_tree_kind(repo, cwd)})
         print("session {} registered in {}".format(session, key))
         return 0
 
@@ -1712,9 +2070,11 @@ def cmd_metrics(root, repo, as_json):
     # G15 / R4: a rate over an empty corpus is not a measurement. Report the absence.
     pct = round(100.0 * allowed / total, 1) if total else None
     unique, unique_reason = unique_commits(repo)
+    wt4 = wt4_exception_rate(root)
     payload = {"decisions": len(decisions), "allowed": allowed, "refused": refused,
                "not_checked": unchecked, "edits_under_lease_pct": pct,
                "unique_commits": unique, "unique_commits_reason": unique_reason,
+               "wt4": wt4,
                "reason": "" if total else "no decisions recorded - nothing to rate"}
     if as_json:
         print(json.dumps(payload))
@@ -1727,6 +2087,17 @@ def cmd_metrics(root, repo, as_json):
         "{}%".format(pct) if pct is not None else "no decisions recorded - nothing to rate"))
     print("commits existing in one place   {}".format(
         unique if unique is not None else unique_reason))
+    if wt4["pct"] is None:
+        print("sessions started in the primary   no session carries the tree it started in"
+              + (" ({} predate the field)".format(wt4["not_recorded"])
+                 if wt4["not_recorded"] else ""))
+    else:
+        print("sessions started in the primary   {}% ({} of {}){}".format(
+            wt4["pct"], wt4["in_primary"], wt4["sessions_recorded"],
+            "; {} predate the field".format(wt4["not_recorded"])
+            if wt4["not_recorded"] else ""))
+        print("  meaning        WT4 allows the primary as a RECORDED exception. A rate that"
+              " does not fall is the finding.")
     return 0
 
 
@@ -1751,7 +2122,14 @@ def cmd_install(repo, root):
                   .format(target))
             return 2
         if existing == body:
+            # The hook is only ONE of install's two jobs. `.git/hooks` is shared by every
+            # worktree of a repository (this command says so when it writes the hook), so in
+            # every worktree after the first the hook already exists -- and returning here
+            # took the merge-driver declaration with it. The command printed success and
+            # never touched .gitattributes, which made it a no-op in exactly the case
+            # `pack-doctor`'s WARN sends people to run it. Fall through instead.
             print("pre-commit hook already installed (unchanged)")
+            _install_merge_driver(repo, root)
             _print_settings_entry(repo)
             return 0
     target.write_text(body, encoding="utf-8", newline="\n")
@@ -1788,16 +2166,16 @@ def _install_merge_driver(repo, root):
     if not entries:
         return
     me = str(Path(__file__).resolve()).replace("\\", "/")
-    # Pattern: Strategy, keyed by artifact class. The class decides the MECHANISM entirely
-    # (ADR-0009) -- derived artifacts are resolved and regenerated afterwards; registers are
-    # unioned under a conservation assertion. One driver each, selected by .gitattributes.
+    # Built from MERGE_MECHANISMS, never from a second literal -- a driver table that can
+    # drift from CLASSES is how a class comes to exist with no mechanism (CTX-H).
+    labels = {
+        "derived": "coord: resolve derived artifacts, regenerate after the merge",
+        "register": "coord: union append-only registers, conserving every entry",
+    }
     drivers = {
-        MERGE_DRIVER_NAME: ("derived",
-                            "coord: resolve derived artifacts, regenerate after the merge",
-                            '"{}" "{}" merge-derived %A %O %B %P'.format(sys.executable, me)),
-        REGISTER_DRIVER_NAME: ("register",
-                               "coord: union append-only registers, conserving every entry",
-                               '"{}" "{}" merge-register %A %O %B %P'.format(sys.executable, me)),
+        name: (klass, labels[klass],
+               '"{}" "{}" merge-{} %A %O %B %P'.format(sys.executable, me, klass))
+        for klass, name in MERGE_MECHANISMS.items()
     }
     declared = {}
     for name, (klass, label, command) in drivers.items():
@@ -1999,13 +2377,13 @@ def cmd_doctor(root, repo):
         print("regeneration     {} artifact(s) OWED - run `coord regen`".format(len(owed)))
         problems += 1
 
-    # NFR-S2: state the limit of our own control rather than implying enforcement we have
-    # not established. Copilot's deny contract is unverified, so it is reported advisory.
-    for name, status in sorted(HARNESS_STATUS.items()):
-        print("harness {:<8} edit boundary: {}".format(name, status["edit_boundary"]))
-        if status["edit_boundary"] != "enforcing":
-            print("  because     {}".format(_safe(status["why"], 400)))
-            print("  effect      the commit floor is the real enforcement for this harness")
+    # NFR-S2: state the limit of our own control rather than implying enforcement we have not
+    # established. Everything above this point is MEASURED in this repo; everything below it
+    # is a spike result about a harness and is the same in every repo (CTX-H / P3). The blank
+    # line and the heading are the separation.
+    print("")
+    for line in render_harness_capability():
+        print(line)
 
     return 1 if problems else 0
 
@@ -2092,10 +2470,8 @@ def cmd_plugin_emit(out_dir):
     print("  Copilot CLI   copilot --plugin-dir \"{}\"".format(out))
     print("  Claude Code   add the entry `coord install` prints, or install as a plugin")
     print("")
-    for name, status in sorted(HARNESS_STATUS.items()):
-        print("  {:<8} edit boundary: {}".format(name, status["edit_boundary"]))
-    print("  Copilot is advisory at the edit boundary until a live session proves a deny is")
-    print("  honoured. The commit floor enforces there regardless.")
+    for line in render_harness_capability():
+        print(line)
     return 0
 
 
@@ -2147,6 +2523,9 @@ def main(argv=None):
 
     if args.cmd == "install":
         return cmd_install(repo, root)
+
+    if args.cmd == "classify":
+        return cmd_classify_init(root, repo, force=args.force, timeout=args.timeout)
 
     if args.cmd == "class":
         klass, reason = classify(root, args.path)
@@ -2282,7 +2661,7 @@ def main(argv=None):
         return 0
 
     if args.cmd == "session":
-        return cmd_session(root, args.action, session, agent, os.getcwd(), now)
+        return cmd_session(root, args.action, session, agent, os.getcwd(), now, repo=repo)
 
     if args.cmd == "tail":
         # tail is the HUMAN stream, so it reads BOTH stores. `check` is the machine

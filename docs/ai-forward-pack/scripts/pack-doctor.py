@@ -242,6 +242,91 @@ def check_graph(root):
                        "run docs-graph.py validate manually")
 
 
+
+def check_coordination(root):
+    """Is the coordination layer switched ON in this repo? (CTX-H)
+
+    The layer ships inert: `coord-core.py` is deployed and nothing writes the one file the
+    whole mechanism keys on. An uninstalled layer reports "0 decisions, nothing claimed",
+    which is indistinguishable from a working layer that saw no traffic -- so the absence
+    has to be checked here or it is not checked anywhere.
+
+    Three states, three verdicts:
+      no script         the check does not apply
+      no/broken registry FAIL - every path is `authored`, nothing is ever regenerated
+      declared-not-registered WARN - .git/config is per-clone, so a fresh clone or a new
+                            worktree lands here every time
+    """
+    name = "coordination"
+    script = os.path.join(root, "docs", "ai-forward-pack", "scripts", "coord-core.py")
+    if not os.path.exists(script):
+        return _result(name, PASS, "coord-core.py not installed - check does not apply")
+
+    registry = os.path.join(root, ".agents", "artifacts.yml")
+    if not os.path.exists(registry):
+        return _result(name, FAIL,
+                       "coord-core.py is installed and .agents/artifacts.yml is absent - "
+                       "every path is treated as `authored` and nothing is regenerated",
+                       "python docs/ai-forward-pack/scripts/coord-core.py classify init")
+
+    entries, bad = 0, ""
+    try:
+        for lineno, raw in enumerate(
+                open(registry, encoding="utf-8").read().splitlines(), start=1):
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if ":" not in line:
+                bad = "line {0}: expected `pattern: class [command]`".format(lineno)
+                break
+            klass = line.split(":", 1)[1].strip().split(None, 1)
+            klass = klass[0] if klass else ""
+            if klass not in ("authored", "derived", "register"):
+                bad = "line {0}: unknown class {1!r}".format(lineno, klass)
+                break
+            entries += 1
+    except OSError as e:
+        return _result(name, FAIL, f"registry unreadable ({e})",
+                       "check .agents/artifacts.yml permissions")
+    if bad:
+        # `classify` degrades to `authored` on a broken registry - safe, and invisible.
+        return _result(name, FAIL, f"registry does not parse - {bad}",
+                       "fix .agents/artifacts.yml, or regenerate with `coord classify init --force`")
+
+    declared = set()
+    ga = os.path.join(root, ".gitattributes")
+    if os.path.exists(ga):
+        try:
+            for line in open(ga, encoding="utf-8").read().splitlines():
+                if "merge=" in line:
+                    value = line.rsplit("merge=", 1)[1].strip()
+                    if value.startswith("coord-"):
+                        declared.add(value)
+        except OSError:
+            pass
+    if declared:
+        registered = set()
+        try:
+            result = run_bounded(["git", "config", "--get-regexp", r"^merge\..*\.driver"],
+                                 cwd=root, timeout_seconds=10)
+            for line in (getattr(result, "stdout", "") or "").splitlines():
+                parts = line.split(".", 2)
+                if len(parts) >= 3:
+                    registered.add(parts[1])
+        except Exception:
+            registered = set()
+        missing = sorted(declared - registered)
+        if missing:
+            return _result(name, WARN,
+                           "{0} pattern(s) registered; .gitattributes declares {1} which "
+                           "this clone does not register".format(entries, ", ".join(missing)),
+                           "python docs/ai-forward-pack/scripts/coord-core.py install  "
+                           "(.git/config is per-clone: every clone and worktree needs it)")
+
+    return _result(name, PASS, "{0} pattern(s) classified{1}".format(
+        entries, "; drivers registered" if declared else "; no driver declared yet"))
+
+
 def check_node_runner():
     """Report whether `npm run …` can actually resolve node on THIS machine.
 
@@ -366,6 +451,7 @@ def run(root):
         check_claude_settings(root),
         check_copilot_settings(),
         check_graph(root),
+        check_coordination(root),
     ]
     return checks
 

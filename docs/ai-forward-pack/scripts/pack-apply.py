@@ -62,7 +62,13 @@ MANIFEST = "FOUNDATION.md"
 BEGIN = "<!-- AI-FORWARD-PACK:BEGIN"
 END = "<!-- AI-FORWARD-PACK:END -->"
 IMPORT_LINE = "@AGENTS.md"
-GITIGNORE_LINES = ["*.jsonl.lock", "spikes/", "docs/audit/.run-starts.json", "docs/audit/.run-starts.json.tmp"]
+# `.agents/*` then `!.agents/artifacts.yml`, in that order and never a bare `.agents/`:
+# git does not descend into an excluded DIRECTORY, so the negation would never fire and
+# the artifact registry -- the one file in there that must travel with the repo -- would
+# be written where git can never see it. Everything else under .agents/ is per-run state.
+GITIGNORE_LINES = ["*.jsonl.lock", "spikes/", "docs/audit/.run-starts.json",
+                   "docs/audit/.run-starts.json.tmp",
+                   ".agents/*", "!.agents/artifacts.yml"]
 PROTECTED = {"docs/docs-index.js"}
 PATH_NORMALISERS = [
     (re.compile(r"\.github/instructions/([\w.-]+?)\.instructions\.md"), r"<doc:\1>"),

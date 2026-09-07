@@ -61,7 +61,7 @@ Produce the optimized graph with, for each node, its id, goal, inputs, exit cond
 Execute the plan. Then record **planned vs actual** — nodes, wall-clock, tokens where the runner exposes them, **rework passes** (repetitions the plan should have prevented), and whether the completeness and rigor floors were met. Where a plan change is validated red→green or by explicit human validation, capture a **mitigation record** (`dream.py capture-mitigation`, ADR-0003) so `/dream` can mine it. **This is the loop that makes the optimizer improvable rather than merely opinionated.**
 
 ## Output artifact
-For a T1/T2 run, `docs/plans/<slug>.md` — the optimized graph with its node table, a **Mermaid** DAG, the before/after metrics, the loop and fan-out contracts, the floor nodes marked immovable, the budget and degradation path, the re-plan checkpoints, and (after execution) the cost-vs-delivery ledger. For a T0 run the plan is a short in-response table and no file is written (GO16, CT13).
+For a T1/T2 run, `docs/plans/<slug>.md` — the optimized graph with its node table (**every node carries a `Capability`: Reasoning · Independent review · Deterministic mechanics** — a node with none is not admitted, and a `Deterministic mechanics` node is *executed, not prompted*, GO19), a **Mermaid** DAG, the before/after metrics, the loop and fan-out contracts, the floor nodes marked immovable, the budget and degradation path, the re-plan checkpoints, and (after execution) the cost-vs-delivery ledger. For a T0 run the plan is a short in-response table and no file is written (GO16, CT13).
 
 ## Definition of done (exit gate)
 - [ ] Triage answered — either planning was skipped with a reason, or the graph was built (GO16).

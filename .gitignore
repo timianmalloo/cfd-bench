@@ -8,3 +8,7 @@ docs/audit/.run-starts.json.tmp
 # Repo-local: Python build artifacts (tools/, and the pack scripts when run)
 __pycache__/
 *.pyc
+
+# AI-Forward Pack (INSTALL 2): local coordination and per-run state, never committed
+.agents/*
+!.agents/artifacts.yml

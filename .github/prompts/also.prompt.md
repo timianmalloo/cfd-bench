@@ -10,4 +10,6 @@ Then, in order: **(1) Capture, don't pivot** — record the addition **verbatim*
 
 `/also` creates no artifact — it is exempt from the Discoverability Mandate (V10) and does not log itself. End with the status table (Completed | Remaining | Best next action), the addendum reflected in Remaining/Next until it is handled.
 
+**Bound the addition (F-15 / class CTX-N).** Three cases at grounding: a goal state is in flight and the addition inherits its bounds; nothing is in flight, so write the goal state as any turn would; or **work is in flight with no goal state** — then there is nothing to inherit, and an addition to an unbounded turn inherits unboundedness, so **write the CT19 block for the combined remaining work before integrating**. Then size the addition against the turn's Tier, Fan-out cap and Main-line budget: if its plan exceeds any of them, **raise the tier explicitly and say so in one line** rather than absorbing silently. Measured: two `/also` turns in one session were the only substantive turns with neither a goal state nor a tier, and one became 81 main requests, 6 sub-agents and 13,411 AIU — the session's most expensive turn.
+
 ${input}

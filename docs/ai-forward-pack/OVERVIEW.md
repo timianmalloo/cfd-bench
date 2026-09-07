@@ -57,7 +57,7 @@ The reasoning behind every seat — and the seats deliberately *not* added — i
 ai-forward-pack/
 ├─ README.md · research-synthesis.md · OVERVIEW.md
 ├─ knowledge/   38 docs (+FOUNDATION manifest) — 30 reasoning + 7 vendored Agent-Knowledge-Pack foundation (BoK, Rules of the Road, Persona Catalog, LOA, Governance, Testing Strategy, C# Style)
-├─ commands/    (the 25 skills, SKILL.md + reference/ each)
+├─ commands/    (the 27 skills, SKILL.md + reference/ each)
 ├─ templates/   (the 28 artifact templates)
 ├─ adapters/    (INSTALL.md, claude-code/agents, copilot/agents, copilot/prompts)
 └─ examples/    (finance-repo — a worked /adddomainexperts result)
@@ -67,7 +67,7 @@ ai-forward-pack/
 
 ## 3. How to use the skills
 
-There are **25 skills** — six that carry a piece of work from idea to shipped code (`/specify`, `/define-architecture`, `/design-slice`, `/ui-design`, `/implement`, `/investigate`), eight that support them (knowledge collection, persona tailoring, execution-graph planning, documentation, brownfield **adoption**, whole-repo **forensic review**, characterization-first **migration**, and **code-hygiene** review/fix), three **pack-lifecycle** skills that manage the pack installation itself (**/addpacktorepo**, **/updatepack**, and **/extendaibundle**), two **utility** skills (**/auditlog** and **/also**), and two **prompt-log utilities** (**/prompts** and **/searchprompts**). The workflow/support skills form the engineering surface below; lifecycle and utility skills sit outside it.
+There are **27 skills** — six that carry a piece of work from idea to shipped code (`/specify`, `/define-architecture`, `/design-slice`, `/ui-design`, `/implement`, `/investigate`), eight that support them (knowledge collection, persona tailoring, execution-graph planning, documentation, brownfield **adoption**, whole-repo **forensic review**, characterization-first **migration**, and **code-hygiene** review/fix), three **pack-lifecycle** skills that manage the pack installation itself (**/addpacktorepo**, **/updatepack**, and **/extendaibundle**), two **utility** skills (**/auditlog** and **/also**), and two **prompt-log utilities** (**/prompts** and **/searchprompts**). The workflow/support skills form the engineering surface below; lifecycle and utility skills sit outside it.
 
 **Built-in delivery discipline.** `/define-architecture` *defines completely but phases vertically*: the whole architecture is specified, then delivery is partitioned into end-to-end vertical slices (Phase 1 a walking skeleton; mocks at unbuilt edges as contract seams) so serial implementation always yields a deployable, human-validatable increment. `/design-slice` performs a mandatory **failure-mode analysis** (each mode → an explicit disposition: prevent/detect/mitigate/recover/accept) and `/implement` carries every mode into code + a negative test. And `/define-architecture`, `/design-slice`, and `/implement` each **end with a status table** — completed / remaining / best next action — so you always know where the build stands.
 

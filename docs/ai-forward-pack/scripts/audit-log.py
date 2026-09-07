@@ -95,24 +95,85 @@ def duration_fields(started, ended_iso):
 # work actually occupied, and speedup = summed / union. Idle gaps between waves are excluded
 # from the union, so a long quiet period cannot understate the parallelism that did happen.
 
+def _parse_budget(field):
+    """'<calls>/<budget>' -> (calls, budget), or (None, None) when unusable.
+
+    A budget of zero or below is a typo, and reading it as "unlimited" is the
+    success-shaped reading -- refuse it rather than record a branch as forever in budget.
+    """
+    if not field or "/" not in field:
+        return None, None
+    calls_s, _, budget_s = field.partition("/")
+    try:
+        calls, budget = int(calls_s.strip()), int(budget_s.strip())
+    except (TypeError, ValueError):
+        return None, None
+    if budget <= 0 or calls < 0:
+        return None, None
+    return calls, budget
+
+
 def parse_agent_run(spec):
-    """'<agent>|<start-iso>|<end-iso>' -> a span dict, or None when unusable.
+    """'<agent>|<start-iso>|<end-iso>[|<calls>/<budget>]' -> a span dict, or None.
 
     Degrades to None on anything unparseable or time-reversed, never to a plausible wrong
     span (IO8) -- a fabricated interval would corrupt the very measurement it exists for.
+
+    P6 / class CTX-F: the fourth field is the branch's tool calls against the budget it was
+    dispatched with. GO7 has required recording "each branch's actual calls against its
+    budget" since the shape was measured -- a domain-researcher at 123 calls and 3.0M tokens
+    that stopped only when the parent said "converge now" twice -- and the span could not
+    express it, so nothing could check it. That is PACK-A, and CI6's memoir.
+
+    It is optional, and the three-field form still parses: every entry already in the log
+    uses it, and breaking those to add a field is not a fix. A malformed budget leaves the
+    SPAN usable and records no budget -- the interval is still good evidence, and losing the
+    parallelism measurement over a typo would cost more than it saves.
+
+    This is a RECORD, not an enforcement. No harness mediates a sub-agent's tool count, and
+    a control that cannot stop the call must not be labelled as though it can.
     """
     parts = [p.strip() for p in str(spec).split("|")]
-    if len(parts) != 3 or not parts[0]:
+    if len(parts) not in (3, 4) or not parts[0]:
         return None
-    agent, start, end = parts
+    agent, start, end = parts[0], parts[1], parts[2]
     s, e = parse_iso(start), parse_iso(end)
     if s is None or e is None:
         return None
     secs = (e - s).total_seconds()
     if secs < 0:
         return None
-    return {"agent": agent, "started_at": s.strftime(ISO), "ended_at": e.strftime(ISO),
-            "duration_seconds": round(secs, 1), "_s": s, "_e": e}
+    run = {"agent": agent, "started_at": s.strftime(ISO), "ended_at": e.strftime(ISO),
+           "duration_seconds": round(secs, 1), "_s": s, "_e": e}
+    if len(parts) == 4:
+        calls, budget = _parse_budget(parts[3])
+        if calls is not None:
+            run["calls"] = calls
+            run["budget_calls"] = budget
+            # GO9: the cap is a circuit breaker whose firing is a DEFECT SIGNAL. Reaching it
+            # is the branch doing what it was told, so `over` means crossed, not reached.
+            run["over_budget"] = calls > budget
+    return run
+
+
+def budget_findings(entries):
+    """Per-branch budget gaps and over-runs across audit entries.
+
+    Two separate signals, and the first is the one that rots: a delegation recorded with no
+    budget is a fan-out nobody bounded, and it looks identical to a well-behaved one. An
+    over-run is the louder finding but the rarer one.
+    """
+    no_budget, over = [], []
+    for entry in entries or []:
+        for run in entry.get("agent_runs") or []:
+            row = {"shortname": entry.get("shortname", "?"), "id": entry.get("id"),
+                   "agent": run.get("agent", "?")}
+            if run.get("budget_calls") is None:
+                no_budget.append(row)
+            elif run.get("over_budget"):
+                row.update({"calls": run.get("calls"), "budget_calls": run.get("budget_calls")})
+                over.append(row)
+    return {"no_budget": no_budget, "over_budget": over}
 
 
 def parallelism_fields(runs):
@@ -248,7 +309,7 @@ def _write_starts(root, data):
     try:
         os.makedirs(os.path.dirname(p), exist_ok=True)
         tmp = p + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
             json.dump(data, f, indent=2, sort_keys=True)
         os.replace(tmp, p)
     except OSError as exc:
@@ -300,6 +361,33 @@ def log_path(root, which):
     return os.path.join(audit_dir(root), "audit-log.jsonl" if which == "audit" else "change-log.jsonl")
 
 
+def ids_at_ref(root, which, ref):
+    """The set of entry ids in `ref`'s committed version of the log, or None if it cannot be read.
+    A forward ratchet fails open on a missing base (returns None), never on a bad current entry."""
+    try:
+        top = subprocess.run(["git", "-C", root, "rev-parse", "--show-toplevel"],
+                             capture_output=True, text=True, check=True).stdout.strip()
+        rel = os.path.relpath(log_path(root, which), top).replace(os.sep, "/")
+        show = subprocess.run(["git", "-C", root, "show", "{}:{}".format(ref, rel)],
+                             capture_output=True, text=True, encoding="utf-8", errors="replace")
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if show.returncode != 0:
+        return None
+    ids = set()
+    for line in show.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if isinstance(entry, dict) and entry.get("id"):
+            ids.add(entry["id"])
+    return ids
+
+
 # ---------- JSONL read / append ----------
 # FR-052. A malformed line must not be fatal (the log has to keep working) but it must not
 # be INVISIBLE either: this file is the system of record and the corpus /dream mines, so a
@@ -333,7 +421,7 @@ def read_log(root, which, warn=True):
 
 def append_log(root, which, entry):
     os.makedirs(audit_dir(root), exist_ok=True)
-    with open(log_path(root, which), "a", encoding="utf-8") as f:
+    with open(log_path(root, which), "a", encoding="utf-8", newline="\n") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
@@ -471,7 +559,7 @@ def ensure_hub(adir):
         return False
     stamp = now_iso()
     review = "%d%s" % (int(stamp[:4]) + 1, stamp[4:10])
-    with open(path, "w", encoding="utf-8") as handle:
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(HUB % review)
     return True
 
@@ -501,7 +589,7 @@ def render(root, project=None):
     body = ("// Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit"
             " (the JSONL logs are the source of truth; see audit-and-change-log.md).\n"
             "window.AUDIT_DATA = " + payload + ";\n")
-    with open(os.path.join(audit_dir(root), "audit-data.js"), "w", encoding="utf-8") as out:
+    with open(os.path.join(audit_dir(root), "audit-data.js"), "w", encoding="utf-8", newline="\n") as out:
         out.write(body)
     idx = os.path.join(audit_dir(root), "index.html")
     tpl = find_template()
@@ -510,7 +598,7 @@ def render(root, project=None):
             viewer = src.read().replace(
                 "__PROJECT__", html.escape(data["project"], quote=True)
             )
-        with open(idx, "w", encoding="utf-8") as out:
+        with open(idx, "w", encoding="utf-8", newline="\n") as out:
             out.write(viewer)
     return data
 
@@ -582,6 +670,17 @@ def cmd_append(args):
             entry[_opt] = _v
     # CT19 tier + fan-out cap: the ceremony budget the turn declared. fan_out is the CAP it
     # declared; agent_runs (below) is what it actually convened, so /dream can compare the two.
+    # F-14: the main line's own budget, in the SAME spelling as a branch's (`used/budget`).
+    # Two spellings would be a second thing to remember, and the asymmetry CTX-M is about is
+    # exactly what a second spelling would re-create.
+    _mb = getattr(args, "main_budget", None) or base.get("main_budget")
+    if _mb:
+        _calls, _budget = _parse_budget(str(_mb))
+        if _calls is not None:
+            entry["main_calls"] = _calls
+            entry["main_budget"] = _budget
+            entry["main_over_budget"] = _calls > _budget
+
     _fo = getattr(args, "fan_out", None)
     if _fo is None:
         _fo = base.get("fan_out")
@@ -872,6 +971,38 @@ def cmd_suggest(args):
 PACKO_SUBSTANTIVE = {"skill", "manual", "prompt", "command"}
 
 
+
+def main_line_findings(entries):
+    """Main-line budget gaps and over-runs across audit entries (F-14, class CTX-M).
+
+    Measured in sp-0003: the main line ran 714 requests for 89,429 AIU while its delegates ran
+    701 for 8,491 - near-identical counts, TEN TIMES the cost per request, 91% of the session.
+    Every budget the pack had bounded delegates, because a fan-out is a visible countable
+    event and a main line is one more reasonable step, repeated several hundred times.
+
+    THE HONEST LIMIT: a branch can count its own tool calls; the main agent cannot count its
+    own model REQUESTS - only the harness store knows those. So `main_calls` is what the agent
+    can actually observe about itself (its own tool calls) against the budget it committed to
+    in the goal state, and the authoritative cost split is the profiler's SP-19, read from the
+    store. Declaration and measurement are reconciled, never conflated, and neither is
+    enforcement.
+
+    Only substantive turns are asked for a budget: a commit or a script run declares no
+    ceremony budget because it has none to declare.
+    """
+    no_budget, over = [], []
+    for entry in entries or []:
+        if entry.get("kind") not in PACKO_SUBSTANTIVE:
+            continue
+        row = {"shortname": entry.get("shortname", "?"), "id": entry.get("id")}
+        if entry.get("main_budget") is None:
+            no_budget.append(row)
+        elif entry.get("main_over_budget"):
+            row.update({"calls": entry.get("main_calls"), "budget": entry.get("main_budget")})
+            over.append(row)
+    return {"no_budget": no_budget, "over_budget": over}
+
+
 def cmd_selfcheck(args):
     """Bounded inline session self-assessment (FC-1, spec-agent-focus-controls). One deterministic
     pass over a session's substantive turns -> goal-state presence gaps + done_when->summary review
@@ -885,6 +1016,15 @@ def cmd_selfcheck(args):
     have = [e for e in subst if e.get("done_when")]
     tier_gaps = [e for e in have if not e.get("tier")]
     over_cap = [e for e in subst if e.get("fan_out") is not None and len(e.get("agent_runs") or []) > int(e.get("fan_out") or 0)]
+    if getattr(args, "since", None):
+        known = ids_at_ref(args.root, "audit", args.since)
+        if known is not None:
+            gaps = [e for e in gaps if e.get("id") not in known]
+            tier_gaps = [e for e in tier_gaps if e.get("id") not in known]
+            over_cap = [e for e in over_cap if e.get("id") not in known]
+    gate_fail = bool(getattr(args, "gate", False) and (gaps or tier_gaps or over_cap))
+    budgets = budget_findings(subst)
+    mainline = main_line_findings(subst)
     review = [{"shortname": e.get("shortname", "?"),
                "done_when": e.get("done_when", ""),
                "summary": e.get("summary", "")} for e in have]
@@ -895,9 +1035,13 @@ def cmd_selfcheck(args):
             "tier_gaps": [{"shortname": e.get("shortname", "?"), "id": e.get("id")} for e in tier_gaps],
             "over_cap": [{"shortname": e.get("shortname", "?"), "id": e.get("id"), "fan_out": e.get("fan_out"),
                           "agent_runs": len(e.get("agent_runs") or [])} for e in over_cap],
+            "budget_gaps": budgets["no_budget"],
+            "over_budget": budgets["over_budget"],
+            "main_line_gaps": mainline["no_budget"],
+            "main_line_over": mainline["over_budget"],
             "review": review,
         }, ensure_ascii=False, indent=2))
-        return 0
+        return 1 if gate_fail else 0
     scope = f"session {args.session}" if args.session else "all sessions"
     if not subst:
         print(f"no substantive turns for {scope}")
@@ -910,6 +1054,26 @@ def cmd_selfcheck(args):
             print(f"    [gap] {e.get('shortname', '?')}")
     else:
         print(f"  all {len(subst)} substantive turns recorded a goal-state.")
+    if mainline["no_budget"]:
+        print("  MAIN-LINE budget GAPS (no budget on the turn's own loop - which is where 91%")
+        print("                         of a measured session's cost was, at 10x the cost per")
+        print("                         request of its own delegates, CTX-M):")
+        for row in mainline["no_budget"]:
+            print(f"    [gap] {row['shortname']}")
+    if mainline["over_budget"]:
+        print("  MAIN-LINE OVER-RUNS (a defect signal about the estimate, GO9):")
+        for row in mainline["over_budget"]:
+            print(f"    [over] {row['shortname']}: {row['calls']} of {row['budget']}")
+    if budgets["no_budget"]:
+        print("  budget GAPS (a delegation with no per-branch budget - GO7 requires one, and an")
+        print("               unbounded branch looks exactly like a well-behaved one, CTX-F):")
+        for row in budgets["no_budget"]:
+            print(f"    [gap] {row['shortname']}: {row['agent']}")
+    if budgets["over_budget"]:
+        print("  budget OVER-RUNS (the firing is a DEFECT SIGNAL - investigate the estimate,")
+        print("                    never raise the number, GO9):")
+        for row in budgets["over_budget"]:
+            print(f"    [over] {row['shortname']}: {row['agent']} used {row['calls']} of {row['budget_calls']}")
     if tier_gaps:
         print("  tier GAPS (goal-state without a tier - the ceremony budget was never declared, CT19 / CTX-C):")
         for e in tier_gaps:
@@ -922,7 +1086,9 @@ def cmd_selfcheck(args):
         print("  scope review (done_when -> summary; judge drift yourself, this is not a verdict):")
         for r in review:
             print(f"    {r['shortname']}: '{r['done_when'][:60]}' -> '{r['summary'][:80]}'")
-    return 0
+    if gate_fail:
+        print("  GATE: FAIL - a substantive turn in scope recorded no goal-state/tier or exceeded its fan-out cap.")
+    return 1 if gate_fail else 0
 
 
 def cmd_import(args):
@@ -1010,8 +1176,21 @@ def main():
     ap_a.add_argument("--started", help="ISO-8601 UTC start stamp captured at grounding; records "
                                         "started_at + duration_seconds so elapsed time is MEASURED, "
                                         "not modeled (instrumentation over inference, IO1)")
-    ap_a.add_argument("--agent-run", dest="agent_run", action="append", metavar="AGENT|START|END",
-                      help="one sub-agent run as '<agent>|<start-iso>|<end-iso>'; repeatable. "
+    ap_a.add_argument("--main-budget", dest="main_budget", metavar="CALLS/BUDGET",
+                      help="the MAIN line's own tool calls against the budget declared in the "
+                           "goal state (CT19), same spelling as --agent-run's. Measured: the "
+                           "main line was 91%% of a session's cost at 10x the per-request cost "
+                           "of its own delegates (CTX-M), and every other budget bounds "
+                           "delegates. A declaration, not an enforcement - the agent cannot "
+                           "count its own model requests; `session-profile.py` SP-19 measures "
+                           "the real split from the store.")
+    ap_a.add_argument("--agent-run", dest="agent_run", action="append",
+                      metavar="AGENT|START|END[|CALLS/BUDGET]",
+                      help="one sub-agent run as '<agent>|<start-iso>|<end-iso>', optionally "
+                           "'|<calls>/<budget>' - the branch's tool calls against the budget it "
+                           "was dispatched with (GO7). `selfcheck` reports a run with no budget "
+                           "as a gap and an over-run as a finding; the firing is a DEFECT SIGNAL, "
+                           "never a reason to raise the number (GO9). Repeatable. "
                            "Records agent_runs + a parallelism block (agent_seconds, span_seconds, "
                            "speedup, peak_concurrency) so fan-out is MEASURED, not asserted (P8). "
                            "Summed duration cannot tell serial from parallel; the union of the "
@@ -1058,6 +1237,10 @@ def main():
                                              "goal-state presence gaps + scope review for a session")
     ap_sc.add_argument("--session", help="the session to self-assess (recommended)")
     ap_sc.add_argument("--json", action="store_true")
+    ap_sc.add_argument("--since", help="a git ref (e.g. origin/main); consider only entries whose id "
+                                       "is absent from that ref's committed audit log - a forward ratchet")
+    ap_sc.add_argument("--gate", action="store_true", help="exit non-zero when a substantive turn in "
+                                       "scope recorded no goal-state/tier or exceeded its declared fan-out cap")
 
     ap_imp = sub.add_parser("import", help="ingest a session-export JSON array into the audit log")
     ap_imp.add_argument("--file", default="-", help="JSON file (or - for stdin)")

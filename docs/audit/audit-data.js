@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-07T21:09:40Z",
+  "generated": "2026-09-07T23:50:26Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -516,6 +516,45 @@ window.AUDIT_DATA = {
         "short": "f2d1ad023",
         "branch": "main",
         "pushed": false
+      }
+    },
+    {
+      "id": "al-01M1Z4FG8HGA3PMTZA00YP2C2D",
+      "shortname": "updatepack-r63",
+      "datetime": "2026-09-07T23:50:26Z",
+      "session": "session_016CSSiS2bM8V2kRAgpXj6EW",
+      "prompt": "/updatepack",
+      "summary": "Updated the installed AI-Forward Pack from revision 61 to 63 (bundle 2026.09.06.1). Ran the SOURCE clone's pack-apply.py rather than the target's, deliberately: rev 62 changed pack-apply.py itself, so the target's rev-61 copy carries a stale deployment map and would not have known about the two new skills or the coord entries. plan then apply: 222 UNCHANGED, 17 UPDATE, 4 MERGE, 4 ADD, 3 BASELINE, 2 SKIP. No CONFLICT, no REVIEW, no CONVERT, no REWRITE, no REMOVE rows, so Stage 2 had nothing needing a person. NEW: /prepare-for-coordination and /execute-with-coordination (skills + Copilot prompts); AGENTS.md workflow list re-pasted 25 -> 27. Scripts updated: coord-core.py (+443), session-profile.py (+275), audit-log.py (+211, selfcheck --gate/--since), pack-doctor.py (+86, gains a coordination check). The 4 MERGE rows carried this repo's deviations and all three persona docs came out BYTE-IDENTICAL to HEAD - verified with git diff --quiet, so the seven domain experts added by /adddomainexperts survived intact. Repo-local work untouched: .claude/skills/grade-benchmarks, .github/prompts/grade-benchmarks.prompt.md and tools/ are absent from every row; skills count 28 = 27 pack + 1 repo-local. APPLIED THE NON-FILE DEPLOY DIRECTIVE from rev 62 that pack-apply does not implement - INSTALL 1.4a: coord classify init wrote .agents/artifacts.yml with 5 patterns (the four this repo's own session-coordination proposal identified as mis-classed, plus docs/audit/index.html), running every regenerate command before writing it; coord install declared and registered the merge drivers and wrote .gitattributes; coord doctor now reads registry ok, merge driver EFFECTIVE. That is the state the 2026-09-06 proposal recorded as NOT PRESENT / none declared - the layer was inert and is now live. Checked the changelog's .gitignore warning: this repo had no bare .agents/ line, so pack-apply wrote .agents/* then !.agents/artifacts.yml in the correct order and no hand correction was needed; the repo-local __pycache__ block survived. Before installing the pre-commit floor I read cmd_precommit rather than assuming it was safe: it runs ADVISORY when no coordination record exists and only refuses paths held by ANOTHER session, so a solo commit passes. GATE: pack-doctor 0 FAIL, 3 WARN, 10 PASS, with the new coordination check passing. The three WARNs are all explainable and none is an install defect - python3 does not exist on Windows (substitute python), copilot settings are the user's per-phase choice (WT1a), and the knowledge graph has pre-existing stale/orphan nodes. docs/docs-index.js verified UNTOUCHED (V10). One managed block in each front door; CLAUDE.md import invariant passes. Nothing under conflicts/ or retired/. FINDING, reported not fixed (a gap found en route is a finding, never a new goal): coord classify init writes the resolved absolute interpreter path into .agents/artifacts.yml - \"C:\\Users\\malla\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" - and that file is COMMITTED via the !.agents/artifacts.yml negation. On any other machine or user account the derived-artifact regenerate commands cannot run, so coord regen fails for a reason unrelated to the merge. It fails loudly rather than silently, which is the right failure direction, but it makes the registry non-portable. This lands directly on the harness benchmark, where every run is a fresh clone.",
+      "kind": "command",
+      "skill": "updatepack",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/ai-forward-pack/INSTALL.md",
+        ".agents/artifacts.yml",
+        ".gitattributes"
+      ],
+      "tags": [
+        "pack",
+        "updatepack",
+        "coordination"
+      ],
+      "outcome": "success",
+      "goal": "Bring the installed pack from revision 61 to the source revision, applying the deployment map and reconciling what the program cannot decide",
+      "done_when": "apply clean, no conflicts residue, pack-doctor green or WARNs explained, docs-index.js untouched, commit offered",
+      "tier": "T1",
+      "fan_out": 0,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true
+      },
+      "started_at": "2026-09-07T23:47:15Z",
+      "duration_seconds": 191.0,
+      "git": {
+        "sha": "9627f08bbf0211b89105b638a0825a4a546e0bcd",
+        "short": "9627f08bb",
+        "branch": "main",
+        "pushed": true
       }
     }
   ],
