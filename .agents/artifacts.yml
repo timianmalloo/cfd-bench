@@ -1,0 +1,17 @@
+# .agents/artifacts.yml - what each artifact IS decides how it merges.
+# AI-Forward coordination registry (session-coordination-plan, "divide by artifact, not by task").
+# Format: pattern: class [regenerate command]. Longest matching pattern wins; a `derived` entry
+# MUST carry a regenerate command. Everything else is `authored` by default - do not enumerate it.
+#
+# The `register` files below also carry `merge=union` in .gitattributes, which is git-native and
+# active immediately (two sessions appending never conflict). The `derived` files are regenerated,
+# not merged; their regenerate merge driver is registered by `coord install`, which needs the
+# rev-62 pack (`coord classify init` / `coord install`). Run that at the next `/updatepack`.
+#
+# --- derived: never merge, always rebuild ---
+docs/docs-index.js: derived  python docs/ai-forward-pack/scripts/docs-graph.py derive
+docs/audit/audit-data.js: derived  python docs/ai-forward-pack/scripts/audit-log.py render
+# --- register: append-only, union-merge ---
+docs/audit/audit-log.jsonl: register
+docs/audit/change-log.jsonl: register
+docs/health-history.jsonl: register
