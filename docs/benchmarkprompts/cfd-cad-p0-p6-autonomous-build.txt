@@ -1,0 +1,498 @@
+================================================================================
+CFD-BENCH HARNESS BENCHMARK - AUTONOMOUS P0-P6 BUILD
+Prompt revision 1  |  authored 2026-09-07  |  targets AI-Forward Pack revision >= 62
+Works verbatim in Claude Code and GitHub Copilot CLI. Do not tailor it per harness.
+================================================================================
+
+--------------------------------------------------------------------------------
+PART A - OPERATOR PRE-FLIGHT  (this part is NOT pasted into the model)
+--------------------------------------------------------------------------------
+
+One benchmark run = one fresh repo = one harness + one model. Never two runs in
+one repo: the audit log, the coordination decision log and the worktree list are
+the measurement surface, and a second run contaminates all three.
+
+Before you start the session:
+
+ 1. Create the run repo as a clone/copy of cfd-bench at a known commit. Record
+    that commit SHA - it is the run's baseline.
+ 2. Bring the pack to revision >= 62. Check:
+        grep "^revision:" docs/ai-forward-pack/INSTALL.md
+    If it reads 61 or lower, run /updatepack against a local ai-forward clone.
+    Revision 62 is what makes this benchmark meaningful: it adds
+    /prepare-for-coordination and /execute-with-coordination and switches the
+    coordination layer on. Below 62 the run still executes (Step 0 degrades to
+    driving coord-core.py by hand) but the coordination axis then measures a
+    workaround rather than the pack.
+ 3. Confirm .gitignore carries, in this order:
+        .agents/*
+        !.agents/artifacts.yml
+    A repo carrying a bare ".agents/" line instead must be corrected by hand.
+ 4. Put the harness in full auto-approve / no-confirmation mode and remove
+    per-tool permission prompts. A permission prompt is an operator-side block
+    and would be scored as a model-side halt, which is wrong.
+ 5. Note the wall-clock start time and the model id.
+
+At the end of the run, score from the artifacts the run is required to leave
+(see PART B section 9). Once two or more runs are finished or halted, grade them
+together from the control repo:
+
+        /grade-benchmarks <run-repo-1>, <run-repo-2>
+
+which runs tools/grade-benchmarks.py over each repo and then rules on the three
+axes no script can score. To see the raw extraction on its own:
+
+        python tools/grade-benchmarks.py <repo> [<repo> ...] --verify-build
+
+The per-run instruments the grader reads are already in each run repo:
+        python docs/ai-forward-pack/scripts/session-profile.py profile --repo .
+        python docs/ai-forward-pack/scripts/session-profile.py compare
+        python docs/ai-forward-pack/scripts/coord-core.py metrics --json
+        python docs/ai-forward-pack/scripts/audit-log.py selfcheck
+        git worktree list
+        cat docs/benchmark/run-report.md
+
+Note on python3: every pack doc writes "python3 <script>". On Windows that
+fails - use "python" or "py -3". This is a substitution, not a missing install.
+
+--------------------------------------------------------------------------------
+PART B - THE PROMPT  (paste everything between the two markers, verbatim)
+--------------------------------------------------------------------------------
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>> BEGIN PROMPT >>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+This is a benchmarking exercise. You are being measured. Read this whole prompt
+before your first tool call.
+
+You are the top-level session for an autonomous build of the CFD-Bench hydrofoil
+design tool, phases P0 through P6, using this repository's AI-Forward loop. You
+hold two roles at once and you never leave either:
+
+  OWNER       - you stand in for the human product owner. You examine each slice,
+                judge whether it is good enough, decide the things a user would
+                decide, and choose the next best action. You do not ask the human
+                anything, ever.
+  COORDINATOR - you run the AI-Forward loop and you divide work across delegate
+                sessions in their own worktrees. You do not author track work
+                yourself; a coordinator that starts writing code in track A stops
+                watching track B.
+
+===============================================================================
+1. THE TERMINAL CONDITION  (read this twice)
+===============================================================================
+
+The run ends when either:
+
+  (a) SUCCESS - every phase P0..P6 is complete against section 4's definition of
+      done, and you have written the run report; or
+  (b) HALT - you are about to ask the human for input, permission, a decision, a
+      preference, a clarification, or approval to continue.
+
+If (b), you must NOT ask. Instead:
+  - write docs/benchmark/run-report.md with everything section 9 requires,
+  - print, as the last line of your response, exactly:
+        BENCHMARK-HALT: <one line, why you could not proceed without a human>
+  - stop.
+
+A halt is a legitimate, recorded outcome. It is scored as the run's end point.
+Concealing a halt by continuing on an unmarked guess is worse than halting: it
+corrupts every measure downstream.
+
+These are NOT halts, and you must not treat them as one:
+  - A decision you find hard or consequential. You are the owner. Decide it.
+  - A gap, ambiguity or contradiction in the repo's proposals. Decide it, mark
+    the assumption, record it, proceed.
+  - A tool, dependency or SDK you have not used. Run the Spike Protocol.
+  - A budget or fan-out cap firing. That is a defect signal (GO9), not a
+    termination argument. Ask why the estimate was wrong, then re-plan.
+  - A harness reminder that you have not finished. Re-read your goal state; if
+    it is met, conclude.
+  - A delegate reporting that it is blocked. You are the coordinator. Arbitrate.
+
+===============================================================================
+2. SCOPE
+===============================================================================
+
+IN SCOPE - the seven named phases of docs/proposals/build-phasing-plan.html,
+revision 2, in its stated order and behind its stated gates:
+
+  P0  Conventions and spine      - define a wing; get span, area, AR, mean chord
+  P1  Estimator, validated       - L/D, Cl/Cd, required alpha, cavitation margin,
+                                   validated against DTIC ADA032272
+  P2  Read a wing                - the shell and the chart set; analysis only
+  P3  Draw a wing                - the five distribution curves, live estimation
+  P4  Trust the numbers          - the VLM tier, downwash, beam structural model
+  P5  State a goal               - constraints/objectives, Pareto search, every
+                                   optimum re-checked at the VLM tier
+  P6  Explain it                 - the numeral check FIRST, then the AI layer
+
+OUT OF SCOPE - do not build, and do not let a delegate start:
+  - DR, the free-surface de-risking slice. It sits between P3 and P4 in the plan
+    and is excluded here with P7: it is a hand-meshed solver run that depends on
+    a WSL2/OpenFOAM substrate outside the benchmark's control. Excluding it does
+    not license you to weaken P0's or P3's fabrication-door constraints.
+  - P7, the CFD tier, and SPIKE-03 (snappyHexMesh auto-generation).
+  - SPIKE-02, the STEP writer. Deferred by the plan. P0 and P3 must still keep
+    the loft a real spline surface capable of exact export and keep the export
+    boundary an interface with a stubbed implementation.
+  - Any change to this prompt, to docs/benchmarkprompts/, or to
+    docs/ai-forward-pack/ (the pack is the instrument; do not edit the
+    instrument). Report a pack defect as a finding in the run report.
+
+A phase's contents are what the phasing plan says they are. You may re-sequence
+work inside a phase; you may not move a deliverable between phases or drop one
+because it is expensive. If you believe a phase boundary is wrong, say so in the
+spec, then build the plan as written.
+
+===============================================================================
+3. THE LOOP
+===============================================================================
+
+Run these workflows by name. In both harnesses they are invoked as /<name>
+(Claude Code: .claude/skills/<name>/SKILL.md; Copilot CLI:
+.github/prompts/<name>.prompt.md). Follow each skill's own flow and exit gate -
+this prompt does not replace them, it sequences them.
+
+STEP 0 - Open the turn, and measure the ground.
+  a. Write the goal state before your first substantive tool call: Goal, Done
+     when, Not in scope, Tier, Fan-out cap.
+  b. python docs/ai-forward-pack/scripts/prompt-log.py add "<this prompt, verbatim>"
+  c. python docs/ai-forward-pack/scripts/audit-log.py start --session <session-id>
+  d. Run /optimize-graph ONCE over the whole run, before any building. Produce
+     the execution graph for P0..P6. The objective is lexicographic and in this
+     order: (1) completeness and rigor, (2) token cost, (3) speed. Rigor floors
+     are immovable nodes - reorder them, never remove them.
+  e. Capability check, measured and recorded, never assumed:
+        grep "^revision:" docs/ai-forward-pack/INSTALL.md
+        ls .claude/skills .github/prompts
+        python docs/ai-forward-pack/scripts/pack-doctor.py --json
+        python docs/ai-forward-pack/scripts/coord-core.py doctor
+        python docs/ai-forward-pack/scripts/coord-core.py metrics
+        git worktree list
+     Record the pack revision and whether /prepare-for-coordination and
+     /execute-with-coordination are installed. If the revision is below 62 or
+     those two are absent, do NOT halt: proceed with the manual equivalent
+     (Step 3 below, driving coord-core.py directly) and record the degradation
+     as a measured fact in the run report. Note now that "coord doctor" on an
+     uninstalled layer reports "0 decisions, nothing claimed", which is
+     indistinguishable from a working layer that saw no traffic - so read the
+     registry's presence, not the counters.
+
+STEP 1 - Ground in what the repo already knows. Do not re-research it.
+  Read, and cite what you read: the seven knowledge bases under docs/knowledge/,
+  docs/knowledge/knowledge-gap-register.md (16 gaps), docs/backlog.md (the
+  spikes and the standing commitments COMMIT-01..04), docs/domain-experts.md
+  (7 experts), docs/notes/decision-0001-defer-geometry-kernel.md, all seven
+  proposals under docs/proposals/, and docs/audit/audit-log.jsonl. Traverse the
+  docs graph (docs-graph.py); do not grep for structure.
+  Run /collectknowledge ONLY for a gap you can name that blocks a decision you
+  must make. The repo already holds 24 graph artifacts of prior research;
+  redoing it is the most expensive way to look busy.
+
+STEP 2 - Roster, then intent.
+  a. /adddomainexperts - verify the seven experts against the work; add only
+     what is genuinely missing. Adding none is a valid, and likely, outcome.
+  b. Back-fill the ADRs the phasing plan names as a blocker for /specify. It
+     says: "still zero ADRs beyond decision-0001 ... real architecture decisions
+     - layered fidelity tiers, station-and-loft geometry, WPF plus HelixToolkit,
+     native CUDA over ILGPU, permissive licensing - live as prose inside
+     proposals. Back-fill them before /specify, or the specification will rest
+     on decisions it cannot be reviewed against." Do that.
+  c. /specify - one spec, three layers (Functional, UX, UI), written bottom-up,
+     UX before UI, each absent layer marked N/A, testable acceptance criteria.
+     The first user is an engineer who understands fluid mechanics and must be
+     able to think in rider requirements: full technical register on screen,
+     with rider translation as an outbound capability.
+  d. /define-architecture - archetype selection, tier allocation, the spikes
+     that are in scope, ADRs for the load-bearing calls.
+
+STEP 3 - Turn the coordination layer on and plan the division of work.
+  If /prepare-for-coordination is installed, run it over P0..P6 and let it do
+  this. Otherwise do it by hand, in this order:
+        python docs/ai-forward-pack/scripts/coord-core.py classify init
+        python docs/ai-forward-pack/scripts/coord-core.py install
+        python docs/ai-forward-pack/scripts/coord-core.py doctor
+  Then extend .agents/artifacts.yml by hand with this repo's own generated and
+  append-only artifacts, under the same rule the tool enforces: RUN each
+  regenerate command before you write it. A wrong regenerate command resolves
+  every merge silently and leaves the artifact permanently stale while reporting
+  as handled.
+  Four known misclassifications in this repo, all currently defaulting to
+  "authored", all of which will conflict on essentially every merge:
+        docs/docs-index.js          -> derived  (docs-graph.py derive)
+        docs/audit/audit-log.jsonl  -> register (append-only, union merge)
+        docs/audit/change-log.jsonl -> register (append-only, union merge)
+        docs/audit/audit-data.js    -> derived  (projection of the JSONL)
+  The finding that reorders the plan: contention is a property of the artifact,
+  not of the task. derived and register need NO coordination at all. "authored"
+  is the only real contention, and it takes one owner per file. Any file two
+  tracks would both author is a wrong boundary - fix the boundary, do not
+  schedule around it.
+  Emit the plan to docs/coordination/<plan-id>.md and .html. It must name the
+  serial spine, the seam requests expected, the struck tracks and why, and a
+  per-track budget and exit evidence. Parallelism is a cost multiplier (~15x),
+  not a saving: if the honest answer for a phase is one session, say one session.
+
+STEP 4 - Build, phase by phase, in the plan's order and behind its gates.
+  For each phase:
+    a. /design-slice for the phase's slices. Name the patterns and contracts;
+       spike anything unfamiliar before depending on it.
+    b. Execute. If /execute-with-coordination is installed, use it. Otherwise
+       coordinate by hand to the same contract. Either way:
+         - one worktree per delegate, one session per worktree:
+               coord worktree new --branch <work-name> --session <track-id>
+         - INSIDE each new tree, run "coord install" then "coord doctor".
+           .git/config is never committed, so a fresh worktree has the merge
+           drivers declared and unregistered. This is the step people skip and
+           it is not optional.
+         - every delegation carries, explicitly: the exact goal and done-when,
+           the authored paths it owns, tier, fan-out cap, a budget (tool calls,
+           tokens, wall clock), a convergence condition, the exit evidence it
+           must return, and what is NOT in scope. A budget with no convergence
+           condition is a timer, not a contract.
+         - cross-track needs go through seam requests ("coord request add" /
+           "coord request resolve"), never through a shared file.
+         - a delegate's report is evidence, not authority. Verify the exit
+           evidence; do not accept the claim. An exit code is not a result -
+           read the state back.
+         - merge in dependency order, run "coord regen" after each merge, and
+           run the full gate set on the INTEGRATED result. Each track's green
+           proves its own gate passed, not that the integration did.
+         - close trees with "coord worktree cleanup". Never remove a worktree to
+           resolve a conflict.
+    c. Implement under TDD (/implement): red first, then green. The Testing
+       Strategy governs what counts as proof.
+    d. OWNER REVIEW - put the owner hat on and answer, in writing, in the audit
+       entry for the phase:
+         - Can I actually do the phase's verb? Demonstrate it by executing the
+           built artifact, not by reading the code.
+         - What is not good enough, and is it worth fixing now or recording as
+           tracked debt?
+         - What is the next best action?
+       Then start the next phase yourself. Do not report back and wait.
+    e. Every defect you create or discover, and every correction you receive,
+       goes into docs/lessons/defect-classes.md as a CLASS, not an instance, and
+       is converted into a control that fails when the shape recurs. Create that
+       file from docs/ai-forward-pack/templates/defect-classes.template.md - it
+       does not exist in this repo yet. A lesson recorded as prose is a memoir.
+
+STEP 5 - Close the run.
+  a. /document - the documentation bundle and a full docs-graph derive.
+  b. /dream - consolidate the run's own corpus into proposed learnings.
+  c. /session-profiler - profile this run.
+  d. Write docs/benchmark/run-report.md (section 9).
+
+===============================================================================
+4. WHAT "PHASE COMPLETE" MEANS
+===============================================================================
+
+A phase is complete only when ALL of these hold. You do not get to soften them.
+
+  1. The phase's "You can:" verb from the phasing plan is DEMONSTRATED by
+     executing the built artifact and recording the actual output. Not asserted,
+     not inferred from source, not "the tests pass".
+  2. Every acceptance criterion in the spec for that phase maps to a test that
+     was RUN, and the run's output is recorded. A test that passes but proves
+     nothing does not count.
+  3. The E7 surface list was reached end to end for each slice: store -> model
+     -> service -> projection/wire -> client type -> UI -> compute reader. A
+     phase that stops at the unit boundary is not done.
+  4. Every hard veto triggered by the change was cleared by a reviewer who is
+     not the author. The domain experts' vetoes are live: a hydrodynamic
+     quantity computed or reported convenes the Computational Fluid Dynamicist;
+     a validation or accuracy claim convenes the Experimental Fluid Dynamics
+     Expert; any thickness or buildability claim convenes the Composite
+     Structures Expert; any correctness claim convenes the Test Architect.
+  5. The standing commitments hold. In particular COMMIT-01: no optimiser result
+     ships on estimator evidence alone - which is why P5 is hard-gated behind
+     P4. And COMMIT-04, honoured by P6's numeral check, which must exist and be
+     shown to work BEFORE any generated explanation ships.
+  6. The audit log carries the phase's entry with its prompt, goal, done_when,
+     tier and fan-out, and an --agent-run record per delegate with its budget.
+  7. Nothing dead is left in the tree: no commented-out code, no dead branches.
+
+Specific floors that the benchmark checks and that you may not trade away:
+  - P0: units, coordinate frame and sign conventions live in the type system,
+    not in comments. The loft stays a real spline surface capable of exact
+    export; the export boundary stays an interface with a stubbed implementation.
+  - P1: validated against the real towing-tank data (DTIC ADA032272, NACA 16-309
+    and 64A309). "It runs" is not validation. If you cannot obtain the data, say
+    so explicitly, state what you validated against instead, and label the result
+    Inferred - do not quietly relabel a smoke test as validation.
+  - P3: a manufacturability realism check on the geometry, minimum trailing-edge
+    thickness above all.
+  - P4: computed span efficiency, not an assumed constant. Multi-fidelity
+    reconciliation: state what the UI shows when two tiers disagree.
+  - P6: the numeral check first, and every AI capability ships with its eval.
+    No key, no network, and everything else still works.
+
+===============================================================================
+5. THE OWNER'S PRE-DELEGATED DECISIONS
+===============================================================================
+
+The repo's own documents name decisions as "needs your input". Every one of them
+is hereby delegated to you. Decide it, record it as an ADR or a decision note
+under docs/adr/ or docs/notes/ with the evidence and the residual risk, and
+proceed. Asking about any of these is a HALT and ends the run.
+
+  - GAP-04, the units and coordinate-convention specification. The phasing plan
+    says "it needs your sign conventions, not mine: origin at leading edge or
+    quarter chord, and the sign of anhedral and twist." Choose. State the
+    convention, justify it from the section catalog and the CAD/CAM export door,
+    and put it in the type system.
+  - The five prose-only architecture decisions listed in Step 2b.
+  - SPIKE-01, HelixToolkit control-point manipulation. Run it, or take its
+    stated fallback (2D curve editing only; the 3D viewport becomes
+    display-and-select). The plan already says the fallback is arguably the
+    better UX. Either is a valid owner decision; deciding nothing is not.
+  - Whether an "acceptable" slice is acceptable. Judge it, record why.
+  - Every remaining open item in docs/backlog.md that P0..P6 touches.
+
+Where you genuinely cannot check something, you have exactly three moves: CHECK
+it (the default), MARK it with an inline "assume:" carrying the belief, what
+would confirm it and what breaks if it is false, or - unavailable to you in this
+run - ASK. Proceeding on an unmarked belief is not a fourth option. An
+assumption that was not written down before the work is not an assumption, it is
+a guess.
+
+===============================================================================
+6. RIGOR IS NOT NEGOTIABLE UNDER TIME PRESSURE
+===============================================================================
+
+You are being timed and counted. That is not a reason to skip a floor. The
+scoring treats a fast run that skipped a gate as a failed run, not a fast one.
+Specifically, and non-exhaustively:
+
+  - The Rigor Protocol spine on every non-trivial decision: map, interrogate,
+    ground in evidence, disconfirm, converge. Label every claim with its
+    confidence. Verified means you observed it, never that it is likely.
+  - Never assert the shape of this repo's own code from memory. Open the file,
+    or label the claim Inferred.
+  - A citation, a tool output, a sub-agent's report or a graph edge does not
+    promote a claim to verified.
+  - The Solution-Selection Ladder before writing: YAGNI -> reuse-in-codebase ->
+    stdlib -> native -> installed dep -> one line -> minimum. Never cut
+    validation, security, accessibility, or the failure-mode and test floors to
+    climb it.
+  - The data model is the highest-priority decision. Declare the grain before
+    the columns. Derive, do not store - two definitions of one quantity is a
+    defect signature, and this domain is full of quantities that tempt you
+    (span, area, aspect ratio, mean chord, alpha_eff).
+  - The UI standard governs every user-facing surface: token system, complete
+    component states including empty/loading/error, WCAG 2.2 AA, and the
+    archetype selected before generating. Run the craft gate:
+        python docs/ai-forward-pack/scripts/ui-craft-gate.py
+    A clean run is a floor, never a verdict.
+  - Instrumentation over inference: a feature is not done until its behaviour is
+    measurable by default, on the normal path, no flag, no re-run. Never infer a
+    running system's behaviour from its source.
+  - Every measurement path degrades to "not recorded", never to a plausible
+    wrong number. This applies to your own reporting about this run.
+
+===============================================================================
+7. WHAT MUST NEVER HAPPEN  (any of these invalidates the run)
+===============================================================================
+
+  - Reporting a phase complete without executing its verb.
+  - Reporting a test as passing that was not run, or whose output you did not
+    read.
+  - Fabricating a number - a residual, an L/D, a timing, a token count. If you
+    do not have it, write "not recorded".
+  - Two delegates authoring the same file.
+  - A delegate working in the primary checkout, or two delegates in one tree.
+  - Editing docs/ai-forward-pack/ or this prompt.
+  - Deleting a worktree to make a conflict go away.
+  - Silently narrowing scope. If you cut something, say so explicitly and say
+    why, in the run report, and finish everything else in full.
+
+===============================================================================
+8. HOW YOU COMMUNICATE DURING THE RUN
+===============================================================================
+
+Result first. Short sentences, active voice, one idea per sentence. No preamble,
+no self-encouragement, no announcing a step and then taking it. Every shell call
+carries a one-line intent. An interim update earns its place only by carrying a
+verified result, a real blocker, a decision, or the next action.
+
+Compress the expression, never the obligation: a confidence label, a citation, a
+marked assumption, a residual risk or a correction is never dropped for brevity.
+Committed artifacts are written for a reader who was not in the session.
+
+At the end of each phase, emit the status table - Completed / Remaining / Best
+next action - and then take the best next action yourself.
+
+===============================================================================
+9. THE RUN REPORT  (docs/benchmark/run-report.md)
+===============================================================================
+
+Write it at the end, and also write it before any BENCHMARK-HALT. Sections:
+
+  1. Identity - harness, model id, pack revision measured at Step 0, baseline
+     commit SHA, start and end timestamps, outcome (SUCCESS or HALT + reason).
+  2. Phases - one row per P0..P6: status, the verb, how the verb was
+     demonstrated (the command run and its actual output), tests run and result,
+     vetoes triggered and who cleared them, what was cut and why.
+  3. Coordination - the plan id; per track: owner, authored paths owned, tier,
+     fan-out cap, budget planned vs actual (tool calls, tokens, wall clock),
+     seam requests raised and resolved, boundary corrections made, exit evidence
+     and how you verified it. Plus "coord metrics --json" output and, for each
+     parallelism justification in the plan, whether it actually paid.
+  4. Contention - files that conflicted, their class at the time, and whether
+     classification would have removed the conflict. Worktrees created and their
+     final disposition.
+  5. Drift and task focus - every point where you or a delegate started work
+     that was not in the goal state, how it was caught, and what it cost. Every
+     budget or fan-out cap that fired, and why the estimate was wrong.
+  6. Owner decisions - each pre-delegated decision from section 5, what you
+     decided, on what evidence, and the residual risk.
+  7. Defect classes - what went into docs/lessons/defect-classes.md and what
+     control each one became.
+  8. Instruments - the raw output of:
+        python docs/ai-forward-pack/scripts/audit-log.py selfcheck
+        python docs/ai-forward-pack/scripts/coord-core.py metrics --json
+        python docs/ai-forward-pack/scripts/session-profile.py profile --repo .
+        git worktree list
+     If an instrument was not run, write "not recorded" and say why. Do not
+     estimate its output.
+  9. Honest assessment - what a competent engineer would say is not good enough
+     about what you built, ranked.
+
+Then append the audit entry for the run and run docs-graph.py derive as your
+last action.
+
+Begin with Step 0.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<< END PROMPT <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+--------------------------------------------------------------------------------
+PART C - NOTES ON THIS PROMPT  (not pasted into the model)
+--------------------------------------------------------------------------------
+
+Why these choices, so a later revision can argue with them:
+
+ - DR excluded. The phasing plan's sequence is P0 P1 P2 P3 DR P4 P5 P6 P7. DR is
+   a hand-meshed OpenFOAM free-surface run and belongs to the same substrate as
+   P7. Including it would make the benchmark measure whether WSL2 and OpenFOAM
+   are installed. To include it, add it to section 2's IN SCOPE list between P3
+   and P4 and add its gate to section 4.
+ - The halt is machine-detectable on purpose. "BENCHMARK-HALT:" as the last line
+   gives the scorer an unambiguous end point instead of a judgement call about
+   whether a question was really a question.
+ - Section 5 exists because the phasing plan explicitly parks GAP-04 and the
+   missing ADRs on the human. Left undelegated, every harness halts at P0 for
+   the same trivial reason and the benchmark measures nothing.
+ - Section 9 is written so the run's own artifacts are sufficient for scoring.
+   Performance and parallelism come from session-profile.py and the per-track
+   planned-vs-actual; coordination and contention from coord metrics, the seam
+   log and the conflict list; task-focus and drift from the goal state against
+   the drift section and the fired budgets; final functionality from the
+   per-phase demonstrated verb.
+ - The prompt deliberately does not name a harness mechanism for sub-agents.
+   /execute-with-coordination Stage 1 requires the model to qualify its own
+   delegation mechanism as enforced / observed-only / unsupported from what it
+   can verify. Naming "the Task tool" or "fleet" here would hand one harness an
+   advantage and would also let an unverified mechanism pass as enforced.
+ - Grounded 2026-09-07 against ai-forward at pack revision 62 and cfd-bench at
+   installed revision 61. If the pack moves past 62, re-check section 3 Step 3
+   and Step 4 against the current /prepare-for-coordination and
+   /execute-with-coordination skill bodies before reusing this prompt.

@@ -1107,6 +1107,13 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     },
     {
+      "id": "surface-proposals-session-coordination-plan",
+      "path": "docs/proposals/session-coordination-plan.html",
+      "title": "Session Coordination Plan",
+      "kind": "knowledge-tool",
+      "description": "Open an interactive knowledge artifact."
+    },
+    {
       "id": "surface-proposals-cad-modelling-experience",
       "path": "docs/proposals/cad-modelling-experience.html",
       "title": "Wing Modelling Experience",

@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-06T16:36:49Z",
+  "generated": "2026-09-07T21:09:40Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -390,6 +390,130 @@ window.AUDIT_DATA = {
       "git": {
         "sha": "c2acddc6978bb370cf0b837e9e7b4a0fb6416325",
         "short": "c2acddc69",
+        "branch": "main",
+        "pushed": false
+      }
+    },
+    {
+      "id": "al-01M1YJN840XQ4Z7GGJQACZ7PC7",
+      "shortname": "ground yourself in this repo. the intention of the repo is to build a bo…",
+      "datetime": "2026-09-07T18:39:00Z",
+      "session": "prompt-log",
+      "prompt": "ground yourself in this repo. the intention of the repo is to build a body of knowledge and a set of proposals that i can then use a common benchmarking asset to see how well a harness (claude code or github copilot etc) can use my ai-forward loop to specify, design and implement the CFD CAD solution from a single prompt (using my AI-forward skills) and then measure them for: performance, parallelism, coordination, contention, task-focus, drift, and final functionality. The setup: each benchmark test in its own repo; instruct the model it is a benchmarking exercise; run the whole collect-knowledge, adddomainexperts, specify, define-architecture, implement-slice loop autonomously until built; the top-level model spawns sub-agents each in its own worktree per the ai-forward coordination guidance; the top-level model acts as the user/owner and makes decisions like a user would; if it stops and blocks on a human before the solution is complete that is the ending point for scoring. Scope is phases p0 to p6 from docs/proposals/build-phasing-plan.html. Ground yourself in the AI-Forward repo as it probably has evolved since the last update pack to CFD-Bench. Create the prompt that works in both github copilot and claude code with the same specificity and precision and expectation, saved in docs\\benchmarkprompts as a .txt",
+      "summary": "prompt logged for reuse",
+      "kind": "prompt",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [],
+      "tags": [],
+      "outcome": "success"
+    },
+    {
+      "id": "al-01M1YJNSJ5GCSA42X19RB3WDTJ",
+      "shortname": "benchmark-prompt-p0-p6",
+      "datetime": "2026-09-07T18:39:18Z",
+      "session": "session_016CSSiS2bM8V2kRAgpXj6EW",
+      "prompt": "create the benchmark prompt for the autonomous P0-P6 CFD-CAD build, grounded in the current ai-forward pack, saved to docs/benchmarkprompts as .txt",
+      "summary": "Wrote the harness benchmark prompt: docs/benchmarkprompts/cfd-cad-p0-p6-autonomous-build.txt. Three parts - operator pre-flight (not pasted), the prompt itself between explicit BEGIN/END markers, and authoring notes. GROUNDED, not recalled: ai-forward source is at pack revision 62 and cfd-bench is installed at 61; rev 62 is \"the coordination layer ships switched on\" and adds two skills this benchmark depends on, /prepare-for-coordination and /execute-with-coordination, neither present here (25 skills installed vs 27 in source). Read both SKILL.md bodies in full and sequenced the prompt against their actual stages, exit gates and CLI calls. Verified cfd-bench has no .agents/, no .gitattributes, no docs/lessons/, no docs/specs|adr|coordination, and a .gitignore missing the .agents/* + !.agents/artifacts.yml pair - consistent with the audit log's own 2026-09-06 correction that the layer ships inert. Read build-phasing-plan.html revision 2 in full: the sequence is P0 P1 P2 P3 DR P4 P5 P6 P7. DECISION: scoped DR out with P7 (it is a hand-meshed OpenFOAM free-surface run and would make the benchmark measure whether WSL2 is installed), stated in the file with the one-line edit that puts it back. Two guaranteed human-block points found in the plan and pre-delegated to the model owner role in section 5 - GAP-04 sign conventions (\"needs your sign conventions, not mine\") and the five prose-only architecture decisions the plan says must be back-filled as ADRs before /specify. Terminal condition is machine-detectable: BENCHMARK-HALT: <reason> as the last line, plus a run report written before any halt. Section 9 maps the seven measurement axes onto instruments already in the pack - session-profile.py profile/compare, coord metrics --json, audit-log.py selfcheck, per-track planned-vs-actual. Deliberately does not name a harness sub-agent mechanism so neither harness is advantaged and an unverified mechanism cannot pass as enforced.",
+      "kind": "manual",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/benchmarkprompts/cfd-cad-p0-p6-autonomous-build.txt"
+      ],
+      "tags": [
+        "benchmark",
+        "harness",
+        "coordination"
+      ],
+      "outcome": "success",
+      "goal": "One harness-neutral benchmark prompt that drives an autonomous P0-P6 CFD-CAD build via the AI-Forward loop",
+      "done_when": "The .txt exists, is verified against the skill and coordination tooling actually present in both harnesses, and states what was verified vs inferred",
+      "tier": "T1",
+      "fan_out": 0,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true
+      },
+      "git": {
+        "sha": "f2d1ad023d0c2b43d3edbacc9b32cb0818cfdb10",
+        "short": "f2d1ad023",
+        "branch": "main",
+        "pushed": false
+      }
+    },
+    {
+      "id": "al-01M1YTFFMYNEF63KNQWSNRV0RN",
+      "shortname": "grade-benchmarks-skill",
+      "datetime": "2026-09-07T20:55:40Z",
+      "session": "session_016CSSiS2bM8V2kRAgpXj6EW",
+      "prompt": "build a grader skill (can shell to scripts) to analyze the outputs and build a comparison of n runs (each run identified by the repo i name) - example of the signature /grade-benchmarks repo1, repo2",
+      "summary": "Built the grader for the harness benchmark: tools/grade-benchmarks.py (stdlib, ~700 lines), .claude/skills/grade-benchmarks/SKILL.md, and the Copilot mirror .github/prompts/grade-benchmarks.prompt.md generated from the skill body with knowledge paths remapped so the two harnesses read the same document. Signature: /grade-benchmarks repo1, repo2 - one repo per run, bare names resolve as siblings of the control repo. SPLIT: the script measures and never judges; the skill rules on what has no defensible ratio. The script reads each run repo by running THAT repo pack scripts from THAT repo cwd (coord doctor/metrics/class/session list/request list, audit-log selfcheck), so the reading matches the pack revision the run used. Deterministic scores for coordination, contention, task-focus and functionality; performance, parallelism and drift are marked judgment and carry no number on purpose - no absolute scale for speed, more parallelism is a cost multiplier not a result, and done_when->summary drift is a reading. Highest-value output is the claimed-vs-observed integrity table: run-report claims are held apart from git/audit/coord/tree and every divergence is a severity-tagged finding. TWO DEFECTS FOUND IN MY OWN GRADER BY SMOKE-TESTING IT AGAINST THIS REPO, both of the class it exists to catch. (1) Phase verification counted P0..P6 tokens appearing anywhere in an audit entry INCLUDING the free-text summary, so one entry that merely discussed the phasing plan scored a full 7/7 on final functionality; fixed to match only shortname/goal/done_when, the turn own identity. (2) Contention scored 1 - conflict_labelled_commits/merge_commits, which measures commit-message vocabulary rather than contention and handed a run with one clean merge a free 1.0; replaced with a real measurement - for every two-parent merge, diff both sides against the merge base and intersect, giving the files genuinely changed on both sides, then classify each through coord class. Also separated COORD-CLASS-UNREGISTERED from a measured authored: an unregistered layer answers authored for everything, which is an ABSENCE of measurement, so contention now reads not recorded rather than 0 and the missing registry is charged once against coordination instead of twice. A run with no merges is likewise not recorded, never a free 1.0. Verified: compiles clean, runs against cfd-bench and ai-forward, emits json+md+html, 20s for two repos. Smoke-test artifacts removed rather than committed. Also added a /grade-benchmarks pointer to PART A of the benchmark prompt. NOTE: ai-forward moved from revision 62 to 63 during this session (audit-log selfcheck gains --gate and --since, promoting goal-state presence from a report to an enforceable gate); the prompt floor of >= 62 remains correct.",
+      "kind": "manual",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "tools/grade-benchmarks.py",
+        ".claude/skills/grade-benchmarks/SKILL.md",
+        ".github/prompts/grade-benchmarks.prompt.md"
+      ],
+      "tags": [
+        "benchmark",
+        "grading",
+        "instrumentation"
+      ],
+      "outcome": "success",
+      "goal": "A /grade-benchmarks skill that grades N benchmark run repos on the seven axes and emits a comparison, with deterministic extraction in a shell-able script",
+      "done_when": "script + Claude skill + Copilot prompt exist, the script runs clean against a real repo, and every field it reads is verified against the actual audit and coord schemas",
+      "tier": "T1",
+      "fan_out": 0,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true
+      },
+      "git": {
+        "sha": "f2d1ad023d0c2b43d3edbacc9b32cb0818cfdb10",
+        "short": "f2d1ad023",
+        "branch": "main",
+        "pushed": false
+      }
+    },
+    {
+      "id": "al-01M1YV94B9GZHEY15YW02PJ0DH",
+      "shortname": "grade-benchmarks-interactive-report",
+      "datetime": "2026-09-07T21:09:40Z",
+      "session": "session_016CSSiS2bM8V2kRAgpXj6EW",
+      "prompt": "one thing i want the report as interactive html not just md",
+      "summary": "Replaced the grader static HTML renderer with an interactive report, and added the seam that lets the skill ruling land inside it. The .html is now THE report: a payload embedded as application/json plus ~16KB of vanilla JS that renders everything client-side, so it works over file:// with no server and no dependency (verified: zero external src/href, 101KB for two runs). Controls: differences-only (hides every row all shown runs agree on - the useful control for N-run comparison), per-run show/hide, click-to-pin a column, text search across rows and findings, severity filters on integrity findings, light/dark/system theme persisted to localStorage, sticky axis nav, sticky metric column, and a per-run drill-down accordion carrying the exhibits the skill Stage 2 must quote - churn and merge-contention with each file coord class, the done_when->summary pairs, the delegation ledger, coord doctor verbatim, skills histogram. The static renderer and its esc() helper were deleted rather than left beside it (HYG-A). The .md stays canonical and carries the same content; noscript points at it. NEW --verdict FILE seam: the skill writes <comparison-id>.verdict.json {ranking, judgment, downgrades, learned} and re-runs the extractor, so the ranking and per-axis judgment render INSIDE both generated views from one source and the skill never hand-edits a derived artifact (V10). An unreadable verdict is a hard stop - falling back to an unjudged report would publish a grading pass with its conclusion silently missing. VERIFICATION, all executed, not asserted: py_compile clean; node --check on the extracted inline JS; then a headless run against the real payload through a minimal DOM stub - render completes, 828 nodes. Every control exercised through its own onclick: differences-only 828->692, hiding a run 828->469, severity filter 828->806, search 828->520, theme cycles light/dark/system setting and clearing data-theme, all-hidden edge case leaves the toggles readable, and every path returns to the 828 baseline. THAT TEST FOUND A REAL BUG: aria-pressed was stamped once at buildControls time and never updated, so after a click the state read false while the filter was on - the pill would never highlight and a screen reader would announce the wrong state on every toggle. Fixed by giving each control a state READER rather than a snapshot and adding syncControls() called at the end of every render, including the all-hidden early return. Verdict rendering verified end to end in both md and html (ranking, per-axis judgment blocks, downgrade rows, learnings, nav entry). Also fixed a stray Devanagari digit that had crept into a dark-mode CSS token (#d9ab-U+096A-4), which would have made --med invalid in the media-query block only. Skill Stage 5 and exit gate rewritten around the verdict flow; Copilot mirror regenerated from the skill body. NOT DONE, deliberately: the per-run docs/benchmark/run-report.md required by section 9 of the benchmark prompt is still md-only - changing that changes the graded contract, so it is the user call.",
+      "kind": "manual",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "tools/grade-benchmarks.py",
+        ".claude/skills/grade-benchmarks/SKILL.md",
+        ".github/prompts/grade-benchmarks.prompt.md"
+      ],
+      "tags": [
+        "benchmark",
+        "grading",
+        "ui"
+      ],
+      "outcome": "success",
+      "goal": "Make the grader comparison report genuinely interactive HTML, with the skill's ruling rendered inside it",
+      "done_when": "The generated .html is self-contained, dependency-free and interactive; every control verified to work headlessly; the skill's verdict renders in both the html and the canonical md",
+      "tier": "T1",
+      "fan_out": 0,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true
+      },
+      "git": {
+        "sha": "f2d1ad023d0c2b43d3edbacc9b32cb0818cfdb10",
+        "short": "f2d1ad023",
         "branch": "main",
         "pushed": false
       }

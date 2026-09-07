@@ -4,3 +4,7 @@
 spikes/
 docs/audit/.run-starts.json
 docs/audit/.run-starts.json.tmp
+
+# Repo-local: Python build artifacts (tools/, and the pack scripts when run)
+__pycache__/
+*.pyc
