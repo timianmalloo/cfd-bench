@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-08T17:20:48Z",
+  "generated": "2026-09-08T20:41:18Z",
   "control_repo": "C:\\Projects\\cfd-bench",
   "runs": [
     {
@@ -8,7 +8,7 @@
         "path": "C:\\Projects\\CFD-Bench-GHCP",
         "exists": true,
         "is_git": true,
-        "head": "834705e",
+        "head": "db42694",
         "branch": "main",
         "pack_revision": 63,
         "skills_installed": [
@@ -44,11 +44,11 @@
         "has_coordination_skills": true
       },
       "git": {
-        "commits": 126,
+        "commits": 148,
         "first_commit": "2026-09-05T20:47:00-07:00",
-        "last_commit": "2026-09-08T09:12:14-07:00",
-        "wall_seconds": 217514.0,
-        "merge_commits": 13,
+        "last_commit": "2026-09-08T13:14:54-07:00",
+        "wall_seconds": 232074.0,
+        "merge_commits": 15,
         "branches": [
           "benchmark-continue-generator-review",
           "benchmark-continue-numeric-review",
@@ -97,121 +97,137 @@
           "benchmark-p2-sre-review",
           "benchmark-p2-test-review",
           "benchmark-p2-ux-review",
+          "benchmark-p3-admission",
           "benchmark-p3-draw-wing",
           "benchmark-p3-platform-review",
           "benchmark-p3-science-review",
+          "benchmark-p4-owner-science-delta",
+          "benchmark-p4-platform-design",
+          "benchmark-p4-platform-final",
+          "benchmark-p4-science-design",
+          "benchmark-p4-science-final",
+          "benchmark-p4-trust-numbers",
+          "benchmark-p5-platform-review",
+          "benchmark-p5-science-review",
+          "benchmark-p5-state-goal",
           "main",
           "origin/main"
         ],
         "conflict_commits": [],
-        "lines_added": 148011,
-        "lines_deleted": 10864,
+        "lines_added": 241927,
+        "lines_deleted": 11042,
         "top_churn": [
           [
             "docs/audit/audit-data.js",
-            87
+            98
           ],
           [
             "docs/docs-index.js",
-            79
+            93
           ],
           [
             "docs/audit/audit-log.jsonl",
-            45
+            54
           ],
           [
             "docs/lessons/defect-classes.md",
-            21
+            29
           ],
           [
             "docs/design/p0-spine.md",
             19
           ],
           [
+            "docs/audit/change-log.jsonl",
+            17
+          ],
+          [
+            "docs/audit/index.html",
+            16
+          ],
+          [
             "docs/proof/p0-spine.md",
             15
           ],
           [
-            "docs/audit/change-log.jsonl",
-            14
-          ],
-          [
-            "docs/audit/index.html",
-            12
+            "src/CfdBench.Cli/CliApplication.cs",
+            13
           ],
           [
             "tests/CfdBench.Core.Tests/CliIntegrationTests.cs",
-            12
-          ],
-          [
-            "src/CfdBench.Cli/CliApplication.cs",
-            11
+            13
           ]
         ],
-        "worktrees_now": 51,
+        "worktrees_now": 61,
         "fabrication_commits": [
+          "a9e8358 feat(p4): add VLM wake, current sections and conditional beam trust analysis Freeze code and executed numerical/CLI/native evidence ",
           "702d170 docs(benchmark): record HALT at P1 with evidence and retained work P0 is accepted; P1 empirical validation and dependency gates rema",
           "63cfa81 docs(benchmark): refresh experimental retraction projection Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
           "55e164d fix(benchmark): integrate Cp correction and retract false experimental rows P1 remains blocked. Synthetic/unauthenticated digitizati",
           "802d31a docs(benchmark): retain superseded P1 admission evidence This captures the rejected90722cc submission, not P1 acceptance. Owner late",
           "5a3d08c Retract unauthenticated DTIC digitization Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
           "with fabrication out of scope its convene-when flips from \"when we",
-          "- Fabrication out of scope but must not be foreclosed. P6 removed as a",
-          "now tested at week 16 instead of week 32. With fabrication out, P5 is"
+          "- Fabrication out of scope but must not be foreclosed. P6 removed as a"
         ],
         "phase_velocity": {
           "P0": "2026-09-07T18:35:58-07:00",
           "P6": "2026-09-07T18:35:58-07:00",
           "P1": "2026-09-07T21:27:49-07:00",
-          "P2": "2026-09-08T07:07:45-07:00"
+          "P2": "2026-09-08T07:07:45-07:00",
+          "P3": "2026-09-08T09:23:24-07:00",
+          "P4": "2026-09-08T12:05:55-07:00"
         }
       },
       "audit": {
-        "entries": 68,
-        "substantive": 60,
+        "entries": 87,
+        "substantive": 78,
         "by_skill": {
           "addpacktorepo": 1,
-          "(none)": 16,
+          "(none)": 21,
           "collectknowledge": 12,
           "adddomainexperts": 2,
           "specify": 1,
           "define-architecture": 1,
           "prepare-for-coordination": 3,
-          "design-slice": 4,
-          "implement": 15,
+          "design-slice": 6,
+          "implement": 19,
           "execute-with-coordination": 2,
           "session-profiler": 3,
-          "optimize-graph": 6,
-          "ui-design": 1,
-          "investigate": 1
+          "optimize-graph": 10,
+          "ui-design": 2,
+          "investigate": 3,
+          "graphify": 1
         },
         "unexpected_skills": [
           "addpacktorepo",
+          "graphify",
           "ui-design"
         ],
-        "measured_seconds": 65035.8,
-        "entries_with_duration": 29,
-        "delegations": 11,
-        "distinct_agents": 8,
+        "measured_seconds": 80165.8,
+        "entries_with_duration": 37,
+        "delegations": 18,
+        "distinct_agents": 15,
         "delegations_without_budget": 1,
-        "delegations_over_budget": 3,
-        "agent_seconds": 12613.0,
-        "span_seconds": 11222.0,
-        "speedup": 1.12,
+        "delegations_over_budget": 7,
+        "agent_seconds": 13363.0,
+        "span_seconds": 11726.0,
+        "speedup": 1.14,
         "peak_concurrency": 2,
         "phases_in_audit": [
           "P0",
           "P1",
-          "P2"
+          "P2",
+          "P3",
+          "P4"
         ],
         "phases_verification_executed": [
           "P1"
         ],
         "selfcheck": {
-          "substantive": 66,
+          "substantive": 85,
           "goal_state_gaps": 14,
           "tier_gaps": 0,
-          "over_cap": 2,
+          "over_cap": 3,
           "review_pairs": [
             {
               "shortname": "collectknowledge-cfd-hydrofoil-simulation",
@@ -472,18 +488,117 @@
               "shortname": "continuation-P2-owner-accepted",
               "done_when": "Real window and chart/numeric surfaces demonstrated, scientificlimits visible and scoped independent Test/Native gates cleared",
               "summary": "Owner accepts observedP2baseline6136704 afterminimumplot0->225.28DIPrepair;166integratedtests/80actual-windowassertions. Testadmissionclearedafterreadingpagedresults;12/9reviewbudgetoverrunrecorded. NativeadvisoryPASS. RealOS100/200/mixedDPI/HC/fullWCAGnotclaimed. NextP3curveediting/manufacturability; noP4safetyclaims."
+            },
+            {
+              "shortname": "p3-original-prompt",
+              "done_when": "Five real splines, current-shape inference, v2 roundtrip and real native proof reviewed",
+              "summary": "P3 delegated continuation; full supplied benchmark prompt retained without changing historical halt."
+            },
+            {
+              "shortname": "p3-optimize-graph",
+              "done_when": "Actual curve commands, file and current-shape compute agree; scoped independent gates clear",
+              "summary": "P3 reviewed source f3fc3af; 149Core+33Desktop+1CompileGuard;58realwindowchecks; exact quintics and actual-shape NeuralFoil parity. optimize-graph executed within combined phase; graphify used source fallback, native gallery deviation recorded. Phase duration is not an additive per-skill duration. Science reviewer20/8overrun; missing review metadata retained. No P4."
+            },
+            {
+              "shortname": "p3-design-slice",
+              "done_when": "Actual curve commands, file and current-shape compute agree; scoped independent gates clear",
+              "summary": "P3 reviewed source f3fc3af; 149Core+33Desktop+1CompileGuard;58realwindowchecks; exact quintics and actual-shape NeuralFoil parity. design-slice executed within combined phase; graphify used source fallback, native gallery deviation recorded. Phase duration is not an additive per-skill duration. Science reviewer20/8overrun; missing review metadata retained. No P4."
+            },
+            {
+              "shortname": "p3-ui-design",
+              "done_when": "Actual curve commands, file and current-shape compute agree; scoped independent gates clear",
+              "summary": "P3 reviewed source f3fc3af; 149Core+33Desktop+1CompileGuard;58realwindowchecks; exact quintics and actual-shape NeuralFoil parity. ui-design executed within combined phase; graphify used source fallback, native gallery deviation recorded. Phase duration is not an additive per-skill duration. Science reviewer20/8overrun; missing review metadata retained. No P4."
+            },
+            {
+              "shortname": "p3-graphify",
+              "done_when": "Actual curve commands, file and current-shape compute agree; scoped independent gates clear",
+              "summary": "P3 reviewed source f3fc3af; 149Core+33Desktop+1CompileGuard;58realwindowchecks; exact quintics and actual-shape NeuralFoil parity. graphify executed within combined phase; graphify used source fallback, native gallery deviation recorded. Phase duration is not an additive per-skill duration. Science reviewer20/8overrun; missing review metadata retained. No P4."
+            },
+            {
+              "shortname": "p3-implement",
+              "done_when": "Actual curve commands, file and current-shape compute agree; scoped independent gates clear",
+              "summary": "P3 reviewed source f3fc3af; 149Core+33Desktop+1CompileGuard;58realwindowchecks; exact quintics and actual-shape NeuralFoil parity. implement executed within combined phase; graphify used source fallback, native gallery deviation recorded. Phase duration is not an additive per-skill duration. Science reviewer20/8overrun; missing review metadata retained. No P4."
+            },
+            {
+              "shortname": "p3-closing-budget-finding",
+              "done_when": "All owned generated changes committed; session released; exact handoff SHA and limits returned",
+              "summary": "Functional source f3fc3af independently reviewed.100manualleafcalls/100;timecapexceeded duringclosing,recorded inrunreceipt.Officialauditindexoutputincluded;no newfeature/review scope.183tests,58nativechecks;owneradmissionpending."
+            },
+            {
+              "shortname": "p3-timing-coercion-correction",
+              "done_when": "Positive guarded duration read back; budget findings retained; all changes committed and session ended",
+              "summary": "Raw ISO timing guard rejects offsetless/future starts; corrected PowerShell date-coercion mistake. Application StopWatch timings unaffected.102manualleafcalls/100 andtimeoverrun explicitlyrecorded. Source f3fc3af remains reviewed; no newfeature scope."
+            },
+            {
+              "shortname": "p3-owner-correction-investigate",
+              "done_when": "Both owner failures reproduced and corrected with actual CLI, cross-surface and raster evidence; frozen source returned",
+              "summary": "VerifiedCLIcatalog-onlydispatch and P2missingreader repaired via existingAuthoredWingEstimator. RawCurrentcapture had160unmeasuredShapes andzeroink; same renderer passes afterboundedlayout/frame settlement.150Core+33Desktop,60nativechecksplus3rasterstates. CLIexit0 LD16.752438/cav5.668543;v1exit0. Newsource d605d3c;affectedowneradmissionpending."
+            },
+            {
+              "shortname": "p3-owner-correction-optimize-graph",
+              "done_when": "Both owner failures reproduced and corrected with actual CLI, cross-surface and raster evidence; frozen source returned",
+              "summary": "VerifiedCLIcatalog-onlydispatch and P2missingreader repaired via existingAuthoredWingEstimator. RawCurrentcapture had160unmeasuredShapes andzeroink; same renderer passes afterboundedlayout/frame settlement.150Core+33Desktop,60nativechecksplus3rasterstates. CLIexit0 LD16.752438/cav5.668543;v1exit0. Newsource d605d3c;affectedowneradmissionpending."
+            },
+            {
+              "shortname": "p3-owner-correction-implement",
+              "done_when": "Both owner failures reproduced and corrected with actual CLI, cross-surface and raster evidence; frozen source returned",
+              "summary": "VerifiedCLIcatalog-onlydispatch and P2missingreader repaired via existingAuthoredWingEstimator. RawCurrentcapture had160unmeasuredShapes andzeroink; same renderer passes afterboundedlayout/frame settlement.150Core+33Desktop,60nativechecksplus3rasterstates. CLIexit0 LD16.752438/cav5.668543;v1exit0. Newsource d605d3c;affectedowneradmissionpending."
+            },
+            {
+              "shortname": "continuation-P3-owner-accepted",
+              "done_when": "Exactgeometry/readers/UI/nativeverb and meaningfulcontrols observed, with independent scoped gates and explicit limits",
+              "summary": "Accepted c21de55 afterv2CLI/P2dispatch andraster-settlement corrections. Owner184tests/60nativechecks/threeinkoracles,actualcurrent-shapeCLI L/D16.752438 margin5.668543. FinalTestArchitect26targetpassesclearedbothdeltas;priorCorephysicsunchangedfromreviewedf3fc3af. Noexperimentalsafety/fabricationclaim. NextP4VLM/downwash/beam/reconciliation."
+            },
+            {
+              "shortname": "p4-design-slice",
+              "done_when": "Actual shared Core CLI native verbs and numerical structural tests with independent gates",
+              "summary": "Committed detailed P4 contract before pre-code independent science/platform gates. Primary material metric values read from Kaiser Rev05/06. All physical claims remain Inferred. No product code yet."
+            },
+            {
+              "shortname": "p4-optimize-graph-close",
+              "done_when": "Same input identity, actual verbs, numerical and beam controls, full regression and independent per-lens gates observed; preserve P3 and exclusions",
+              "summary": "Six-node bounded P4 graph completed; actual source freeze a9e8358. Main under110 calls/120min; each independent reviewer exceeded8-call cap when counting individual tools (25/17/11/43), not batched turns. No new scope or cap raised; tokens not recorded."
+            },
+            {
+              "shortname": "p4-implement-close",
+              "done_when": "Same input identity, actual verbs, numerical and beam controls, full regression and independent per-lens gates observed; preserve P3 and exclusions",
+              "summary": "Implemented P4 only. 215 full tests,31 targeted,45 native checks; raw independent17science and215full/31targeted/45native platform verified. Exact CLI/native content hashes/CL/CDi/e/beam agree; CL0.3063298453, wake0.1836427607, computed finite-grid e1.0018865. Typical solid6061 conditional screening only; no experimental/fabrication claim. Final code reviewed a9e8358 unchanged; review-cap deviation and initialdesign audit-budget gap disclosed."
+            },
+            {
+              "shortname": "p4-owner-delta-investigate",
+              "done_when": "Nonplanar self/context force and recommended-thickness model validity have observed red/green oracles and focused independent science delta disposition",
+              "summary": "Both owner questions verified as defects. Planar oracle passedold; +/-0.15m nonplanar fullvector failed. Oldscale .319816 predicted32.2104mm vs30mm ceiling; no/loose userlimitsfailed. Repaired both drag terms via fullCross.X and scale via model/user minimum. 33P4Core,222full,45native passed; independent7tests and CFD/Composite/Test delta PASS atf105715. Correctedscale.3274857777/root8.4162mm/predicted30mm; no certification/P5."
+            },
+            {
+              "shortname": "p4-owner-delta-optimize-graph",
+              "done_when": "Nonplanar self/context force and recommended-thickness model validity have observed red/green oracles and focused independent science delta disposition",
+              "summary": "Both owner questions verified as defects. Planar oracle passedold; +/-0.15m nonplanar fullvector failed. Oldscale .319816 predicted32.2104mm vs30mm ceiling; no/loose userlimitsfailed. Repaired both drag terms via fullCross.X and scale via model/user minimum. 33P4Core,222full,45native passed; independent7tests and CFD/Composite/Test delta PASS atf105715. Correctedscale.3274857777/root8.4162mm/predicted30mm; no certification/P5."
+            },
+            {
+              "shortname": "p4-owner-delta-implement",
+              "done_when": "Nonplanar self/context force and recommended-thickness model validity have observed red/green oracles and focused independent science delta disposition",
+              "summary": "Both owner questions verified as defects. Planar oracle passedold; +/-0.15m nonplanar fullvector failed. Oldscale .319816 predicted32.2104mm vs30mm ceiling; no/loose userlimitsfailed. Repaired both drag terms via fullCross.X and scale via model/user minimum. 33P4Core,222full,45native passed; independent7tests and CFD/Composite/Test delta PASS atf105715. Correctedscale.3274857777/root8.4162mm/predicted30mm; no certification/P5."
+            },
+            {
+              "shortname": "continuation-P4-owner-accepted",
+              "done_when": "Realflow/context/strict-failure/nativeverbs and independent numerical/material/platform gates observed, limits retained",
+              "summary": "OwneracceptsboundedP4;222tests,45nativechecks,actualfreeCL.3063298453 vscontext.1836427607,computede1.001675,strictmodeexit2/nullmargin. Twoownerquestionsconfirmedandfixed:nonplanardragcrossproductandmodel-validitythicknessscale. Independentdelta7testsPASS atf105715; sourceunchangedindelivery. Evidencecommit5a07863 ranAGENT_SESSIONunset/advisory; currentpathchecks doNOTretroactivelymakeit enforced. NextP5mustrecheckeverydisplayedoptimum."
             }
           ]
         },
         "phase_timeline": {
           "P0": 34233.0,
           "P1": 32683.0,
-          "P2": 7469.0
+          "P2": 7469.0,
+          "P3": 6583.0,
+          "P4": 4138.0
         },
         "owner_reviews": [
           "P0",
           "P1",
-          "P2"
+          "P2",
+          "P3",
+          "P4"
         ],
         "phase_narrative": [
           {
@@ -505,6 +620,20 @@
             "verified": false,
             "done_when": "Real window and chart/numeric surfaces demonstrated, scientificlimits visible and scoped independent Test/Native gates cleared",
             "summary": "Owner accepts observedP2baseline6136704 afterminimumplot0->225.28DIPrepair;166integratedtests/80actual-windowassertions. Testadmissionclearedafterreadingpagedresults;12/9reviewbudgetoverrunrecorded. NativeadvisoryPASS. RealOS100/200/mixedDPI/HC/fullWCAGnotclaimed. NextP3curveediting/manufacturability; noP4safetyclaims.",
+            "owner_reviewed": true
+          },
+          {
+            "phase": "P3",
+            "verified": false,
+            "done_when": "Same input identity, actual verbs, numerical and beam controls, full regression and independent per-lens gates observed; preserve P3 and exclusions",
+            "summary": "Six-node bounded P4 graph completed; actual source freeze a9e8358. Main under110 calls/120min; each independent reviewer exceeded8-call cap when counting individual tools (25/17/11/43), not batched turns. No new scope or cap raised; tokens not recorded.",
+            "owner_reviewed": true
+          },
+          {
+            "phase": "P4",
+            "verified": false,
+            "done_when": "Realflow/context/strict-failure/nativeverbs and independent numerical/material/platform gates observed, limits retained",
+            "summary": "OwneracceptsboundedP4;222tests,45nativechecks,actualfreeCL.3063298453 vscontext.1836427607,computede1.001675,strictmodeexit2/nullmargin. Twoownerquestionsconfirmedandfixed:nonplanardragcrossproductandmodel-validitythicknessscale. Independentdelta7testsPASS atf105715; sourceunchangedindelivery. Evidencecommit5a07863 ran",
             "owner_reviewed": true
           }
         ],
@@ -538,6 +667,16 @@
             "shortname": "benchmark-run-halt",
             "marker": "Fabricat",
             "when": "2026-09-08T06:45:15Z"
+          },
+          {
+            "shortname": "continuation-P3-owner-accepted",
+            "marker": "fabricat",
+            "when": "2026-09-08T18:55:20Z"
+          },
+          {
+            "shortname": "p4-implement-close",
+            "marker": "fabricat",
+            "when": "2026-09-08T19:46:47Z"
           }
         ]
       },
@@ -553,34 +692,26 @@
         "doctor_exit": 0,
         "doctor": "registry         ok - 5 pattern(s)\r\nmerge driver     effective - coord-regen, coord-register declared, coord-regen, coord-register registered\r\n\r\nharness capability (from spikes - NOT measured here; re-qualify per version)\r\n  claude   edit boundary: enforcing   established 2026-08-24, against not recorded (spike S5 pinned no version)\r\n    because   PreToolUse contract established by execution and the deny response is honoured (spike S5, five cases incl. both fail-safe paths).\r\n    floor     the commit floor enforces regardless of the hook\r\n  copilot  edit boundary: enforcing   established 2026-08-24, against Copilot CLI 1.0.80\r\n    because   A live session honoured a deny: a read of an unleased file succeeded, a write to a leased one was refused with our reason rendered verbatim into the transcript, and the file was unmodified. RESIDUAL, unchanged: Copilot fails OPEN on a 30s hook timeout, so a hung hook allows. Our measured check is 63ms p95, and the commit floor backs it.\r\n    floor     the commit floor enforces regardless of the hook",
         "metrics": {
-          "decisions": 1116,
-          "allowed": 1113,
-          "refused": 3,
+          "decisions": 1403,
+          "allowed": 1398,
+          "refused": 5,
           "not_checked": 0,
-          "edits_under_lease_pct": 99.7,
+          "edits_under_lease_pct": 99.6,
           "unique_commits": 0,
           "unique_commits_reason": null,
           "wt4": {
-            "sessions": 49,
-            "sessions_recorded": 49,
+            "sessions": 57,
+            "sessions_recorded": 57,
             "not_recorded": 0,
             "in_primary": 2,
-            "pct": 4.1
+            "pct": 3.5
           },
           "reason": ""
         },
         "sessions_raw": {
           "errors": [],
-          "files_scanned": 47,
+          "files_scanned": 53,
           "sessions": [
-            {
-              "agent": "benchmark-continue-coordinator",
-              "claims": [],
-              "last_at": 1788870754.2577598,
-              "session": "benchmark-continue-coordinator",
-              "started_at": 1788870754.2577598,
-              "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-continue-p1-p6"
-            },
             {
               "agent": "benchmark-continue-coordinator",
               "claims": [],
@@ -588,14 +719,6 @@
               "session": "benchmark-p2-admit-native",
               "started_at": 1788882842.5482368,
               "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-p2-admit-native"
-            },
-            {
-              "agent": "benchmark-continue-coordinator",
-              "claims": [],
-              "last_at": 1788884301.0639877,
-              "session": "benchmark-p3-draw-wing",
-              "started_at": 1788883934.493671,
-              "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-p3-draw-wing"
             },
             {
               "agent": "benchmark-p3-platform-review",
@@ -612,10 +735,18 @@
               "session": "benchmark-p3-science-review",
               "started_at": 1788884723.5468042,
               "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-p3-science-review"
+            },
+            {
+              "agent": "benchmark-continue-coordinator",
+              "claims": [],
+              "last_at": 1788898951.2557797,
+              "session": "benchmark-p5-state-goal",
+              "started_at": 1788898494.499489,
+              "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-p5-state-goal"
             }
           ]
         },
-        "sessions": 5,
+        "sessions": 4,
         "seams_total": 8,
         "seams_open": 0,
         "seams_resolved": 8,
@@ -626,25 +757,25 @@
         "hot_files": [
           {
             "path": "docs/audit/audit-data.js",
-            "commits": 87,
+            "commits": 98,
             "class": "derived",
             "measured": true
           },
           {
             "path": "docs/docs-index.js",
-            "commits": 79,
+            "commits": 93,
             "class": "derived",
             "measured": true
           },
           {
             "path": "docs/audit/audit-log.jsonl",
-            "commits": 45,
+            "commits": 54,
             "class": "register",
             "measured": true
           },
           {
             "path": "docs/lessons/defect-classes.md",
-            "commits": 21,
+            "commits": 29,
             "class": "authored",
             "measured": true
           },
@@ -655,32 +786,32 @@
             "measured": true
           },
           {
+            "path": "docs/audit/change-log.jsonl",
+            "commits": 17,
+            "class": "register",
+            "measured": true
+          },
+          {
+            "path": "docs/audit/index.html",
+            "commits": 16,
+            "class": "derived",
+            "measured": true
+          },
+          {
             "path": "docs/proof/p0-spine.md",
             "commits": 15,
             "class": "authored",
             "measured": true
           },
           {
-            "path": "docs/audit/change-log.jsonl",
-            "commits": 14,
-            "class": "register",
-            "measured": true
-          },
-          {
-            "path": "docs/audit/index.html",
-            "commits": 12,
-            "class": "derived",
-            "measured": true
-          },
-          {
-            "path": "tests/CfdBench.Core.Tests/CliIntegrationTests.cs",
-            "commits": 12,
+            "path": "src/CfdBench.Cli/CliApplication.cs",
+            "commits": 13,
             "class": "authored",
             "measured": true
           },
           {
-            "path": "src/CfdBench.Cli/CliApplication.cs",
-            "commits": 11,
+            "path": "tests/CfdBench.Core.Tests/CliIntegrationTests.cs",
+            "commits": 13,
             "class": "authored",
             "measured": true
           }
@@ -713,7 +844,7 @@
         ],
         "known_hot_examined": 4,
         "known_hot_correct": 4,
-        "merges_examined": 13,
+        "merges_examined": 15,
         "contended_files": [
           {
             "path": "docs/audit/audit-data.js",
@@ -785,13 +916,13 @@
       },
       "tree": {
         "source_files": {
-          ".py": 28,
-          ".cs": 37,
+          ".py": 30,
+          ".cs": 63,
           ".xaml": 2
         },
-        "source_loc": 22998,
+        "source_loc": 26693,
         "solutions": [],
-        "projects": 7,
+        "projects": 8,
         "test_projects": 3,
         "spec_count": 1,
         "adr_count": 5,
@@ -808,11 +939,11 @@
       "axes": {
         "performance": {
           "values": {
-            "wall_seconds": 217514.0,
-            "measured_seconds": 65035.8,
-            "commits": 126,
-            "lines_added": 148011,
-            "audit_entries": 68
+            "wall_seconds": 232074.0,
+            "measured_seconds": 80165.8,
+            "commits": 148,
+            "lines_added": 241927,
+            "audit_entries": 87
           },
           "score": null,
           "judgment": true,
@@ -820,14 +951,14 @@
         },
         "parallelism": {
           "values": {
-            "delegations": 11,
-            "distinct_agents": 8,
+            "delegations": 18,
+            "distinct_agents": 15,
             "peak_concurrency": 2,
-            "agent_seconds": 12613.0,
-            "span_seconds": 11222.0,
-            "speedup": 1.12,
-            "worktrees_now": 51,
-            "branches": 52,
+            "agent_seconds": 13363.0,
+            "span_seconds": 11726.0,
+            "speedup": 1.14,
+            "worktrees_now": 61,
+            "branches": 62,
             "tracks_planned": 8
           },
           "score": null,
@@ -840,10 +971,10 @@
             "registry_rules": 5,
             "gitattributes": true,
             "pre_commit_hook": true,
-            "sessions_registered": 5,
-            "decisions": 1116,
-            "refused": 3,
-            "edits_under_lease_pct": 99.7,
+            "sessions_registered": 4,
+            "decisions": 1403,
+            "refused": 5,
+            "edits_under_lease_pct": 99.6,
             "seams_raised": 8,
             "seams_resolved": 8,
             "plan_present": true,
@@ -858,7 +989,7 @@
         },
         "contention": {
           "values": {
-            "merges_examined": 13,
+            "merges_examined": 15,
             "files_contended_in_a_merge": 6,
             "contended_needing_no_human": "5/6",
             "known_hot_classified_right": "4/4",
@@ -871,25 +1002,26 @@
         },
         "task_focus": {
           "values": {
-            "substantive_turns": 66,
+            "substantive_turns": 85,
             "goal_state_gaps": 14,
             "tier_gaps": 0,
-            "fan_out_over_cap": 2,
+            "fan_out_over_cap": 3,
             "delegations_without_budget": 1,
-            "delegations_over_budget": 3
+            "delegations_over_budget": 7
           },
-          "score": 0.917,
+          "score": 0.936,
           "judgment": false,
           "note": ""
         },
         "drift": {
           "values": {
-            "review_pairs": 52,
+            "review_pairs": 71,
             "unexpected_skills": [
               "addpacktorepo",
+              "graphify",
               "ui-design"
             ],
-            "delegations_over_budget": 3,
+            "delegations_over_budget": 7,
             "conflict_commits": 0
           },
           "score": null,
@@ -905,13 +1037,15 @@
             "phases_in_audit": [
               "P0",
               "P1",
-              "P2"
+              "P2",
+              "P3",
+              "P4"
             ],
             "phases_verification_executed": [
               "P1"
             ],
-            "source_loc": 22998,
-            "projects": 7,
+            "source_loc": 26693,
+            "projects": 8,
             "test_projects": 3,
             "specs": 1,
             "adrs": 5,
@@ -931,22 +1065,22 @@
         },
         {
           "severity": "medium",
-          "claim": "11 delegations recorded",
+          "claim": "18 delegations recorded",
           "observed": "1 carry no budget - an unbounded fan-out reads exactly like a well-behaved one"
         },
         {
           "severity": "high",
           "claim": "benchmark integrity (prompt section 7 makes fabrication disqualifying)",
-          "observed": "14 fabrication/retraction marker(s) in the audit and/or commit record - a delegate invented data; catching and retracting it does not make the run clean"
+          "observed": "16 fabrication/retraction marker(s) in the audit and/or commit record - a delegate invented data; catching and retracting it does not make the run clean"
         }
       ],
       "quality": {
         "model_allocation": {
           "counts": {
-            "unspecified": 11
+            "unspecified": 18
           },
           "distinct_models": 0,
-          "delegations_named": 11
+          "delegations_named": 18
         },
         "veto_ledger": {
           "events": [
@@ -994,42 +1128,151 @@
               "verdict": "PASS",
               "model": "gpt-5.5",
               "where": null
+            },
+            {
+              "verdict": "PASS",
+              "model": null,
+              "where": null
+            },
+            {
+              "verdict": "PASS",
+              "model": null,
+              "where": null
+            },
+            {
+              "verdict": "PASS",
+              "model": null,
+              "where": null
             }
           ],
           "vetoes": 2,
-          "clears": 7,
+          "clears": 10,
           "reviewer_models": [
             "gpt-5.5"
           ]
         },
-        "review_rigor_score": 0.787,
-        "oracle_mutation_hits": 2,
+        "review_rigor_score": 1.0,
+        "oracle_mutation_hits": 5,
         "red_first_hits": 1,
         "coordinator_verification_hits": 0,
-        "self_correction_hits": 27,
-        "defect_classes": 34,
-        "defect_class_conversion": 0.5,
+        "self_correction_hits": 39,
+        "defect_classes": 52,
+        "defect_class_conversion": 0.673,
         "phase_order_seen": [
           "P0",
           "P6",
           "P1",
-          "P2"
+          "P2",
+          "P3",
+          "P4"
         ],
-        "phase_order_inversions": 2
+        "phase_order_inversions": 4,
+        "quota_events": {
+          "count": 0,
+          "forced_model_changes": 0,
+          "samples": []
+        },
+        "review_rounds": {
+          "author": 0,
+          "gate": 0,
+          "per_phase": {},
+          "clear_with_amendments": 0,
+          "bare_clears": 0,
+          "first_submission_clean_rate": null
+        },
+        "resilience": {
+          "halts": 6,
+          "adapts": 1,
+          "fabrications": 16,
+          "label": "adapted and halted"
+        },
+        "defect_velocity": {
+          "classes": 52,
+          "per_demonstrated_phase": 52.0,
+          "instances": 48
+        },
+        "budget_overrun": {
+          "delegations_over_budget": 7,
+          "overage_calls": 70,
+          "owner_recorded": true
+        },
+        "policy_adaptations": {
+          "count": 0,
+          "samples": []
+        },
+        "supersessions": 1,
+        "phase_lifecycle": {
+          "P0": {
+            "authored": true,
+            "gated": true,
+            "merged": true,
+            "owner_reviewed": false,
+            "verified": false,
+            "state": "merged"
+          },
+          "P1": {
+            "authored": true,
+            "gated": true,
+            "merged": true,
+            "owner_reviewed": true,
+            "verified": true,
+            "state": "verified"
+          },
+          "P2": {
+            "authored": true,
+            "gated": true,
+            "merged": true,
+            "owner_reviewed": false,
+            "verified": false,
+            "state": "merged"
+          },
+          "P3": {
+            "authored": true,
+            "gated": true,
+            "merged": true,
+            "owner_reviewed": true,
+            "verified": false,
+            "state": "owner_reviewed"
+          },
+          "P4": {
+            "authored": true,
+            "gated": true,
+            "merged": true,
+            "owner_reviewed": false,
+            "verified": false,
+            "state": "merged"
+          },
+          "P5": {
+            "authored": false,
+            "gated": false,
+            "merged": false,
+            "owner_reviewed": false,
+            "verified": false,
+            "state": "not started"
+          },
+          "P6": {
+            "authored": false,
+            "gated": false,
+            "merged": false,
+            "owner_reviewed": false,
+            "verified": false,
+            "state": "not started"
+          }
+        }
       },
       "snapshot": {
-        "graded_sha": "834705e",
-        "last_commit": "2026-09-08T09:12:14-07:00",
-        "last_commit_age_hours": 1.1,
+        "graded_sha": "db42694",
+        "last_commit": "2026-09-08T13:14:54-07:00",
+        "last_commit_age_hours": 0.4,
         "working_tree_dirty": false,
         "run_active": true
       },
       "cost": {
         "native_unit": "not recorded (harness token/AIU store not read by the grader)",
-        "wall_seconds": 217514.0,
-        "measured_seconds": 65035.8,
-        "commits": 126,
-        "lines_added": 148011,
+        "wall_seconds": 232074.0,
+        "measured_seconds": 80165.8,
+        "commits": 148,
+        "lines_added": 241927,
         "reasoning_visibility": "not recorded"
       },
       "derived": {
@@ -1040,51 +1283,61 @@
         "integrity_score": 0.46,
         "high_findings": 1,
         "medium_findings": 2,
-        "cost_per_demonstrated_phase_seconds": 65035.8,
-        "commits_per_demonstrated_phase": 126.0,
+        "cost_per_demonstrated_phase_seconds": 80165.8,
+        "commits_per_demonstrated_phase": 148.0,
         "authored_churn_ratio": 0.286,
-        "rework_ratio": 0.073,
-        "delegation_discipline": 0.636,
-        "parallel_speedup": 1.12,
-        "worktrees_now": 51,
-        "fabrication_events": 14,
+        "rework_ratio": 0.046,
+        "delegation_discipline": 0.556,
+        "parallel_speedup": 1.14,
+        "worktrees_now": 61,
+        "fabrication_events": 16,
         "halt_honesty": 1.0,
-        "owner_reviews_present": 3,
+        "owner_reviews_present": 5,
         "seam_resolution_ratio": 1.0,
-        "review_rigor": 0.787,
+        "review_rigor": 1.0,
         "distinct_delegate_models": 0,
         "vetoes_raised": 2,
         "red_first_hits": 1,
         "coordinator_verifications": 0,
-        "self_corrections": 27,
-        "oracle_mutation_hits": 2,
-        "defect_class_conversion": 0.5,
-        "phase_order_inversions": 2,
+        "self_corrections": 39,
+        "oracle_mutation_hits": 5,
+        "defect_class_conversion": 0.673,
+        "phase_order_inversions": 4,
+        "review_author_rounds": 0,
+        "review_gate_rounds": 0,
+        "first_submission_clean_rate": null,
+        "quota_events": 0,
+        "forced_model_changes": 0,
+        "policy_adaptations": 0,
+        "supersessions": 1,
+        "budget_overage_calls": 70,
+        "resilience": "adapted and halted",
+        "defect_classes_per_phase": 52.0,
         "radar": {
           "Completeness": 0.143,
           "Verification": 0.5,
           "Integrity": 0.46,
           "Coordination": 0.999,
-          "Task focus": 0.917,
+          "Task focus": 0.936,
           "Efficiency": 0.286,
           "Honesty": 1.0,
-          "Review rigor": 0.787
+          "Review rigor": 1.0
         },
-        "composite_score": 0.636,
-        "grade": "C"
+        "composite_score": 0.665,
+        "grade": "C+"
       },
       "repairs": [
         {
           "target": "prompt",
           "severity": "high",
           "item": "Add a provenance-required admission gate for any numerical corpus (solver/tool id + a reproducible generate command whose output hash is re-verified), fail-closed.",
-          "evidence": "14 fabrication/retraction markers in the record"
+          "evidence": "16 fabrication/retraction markers in the record"
         },
         {
           "target": "benchmark",
           "severity": "medium",
           "item": "Require a committed .sln so --verify-build can observe final functionality instead of the grader reconstructing the build by hand.",
-          "evidence": "7 .csproj but no .sln"
+          "evidence": "8 .csproj but no .sln"
         },
         {
           "target": "benchmark",
@@ -1096,7 +1349,7 @@
           "target": "prompt",
           "severity": "medium",
           "item": "Mandate `coord worktree cleanup` at run close and count trees before/after; orphaned worktrees accumulate silently.",
-          "evidence": "51 worktrees open at grade time"
+          "evidence": "61 worktrees open at grade time"
         },
         {
           "target": "prompt",
@@ -1123,16 +1376,16 @@
           "evidence": "seams present, latency not recorded"
         }
       ],
-      "deterministic_floor": 0.709,
+      "deterministic_floor": 0.714,
       "axes_not_scored": [
         "drift",
         "parallelism",
         "performance"
       ],
       "delta": {
-        "against": "grade-20260908T165738Z.json",
+        "against": "grade-20260908T172048Z.json",
         "prior_sha": "834705e",
-        "current_sha": "834705e",
+        "current_sha": "db42694",
         "demonstrated_phases": {
           "from": 1,
           "to": 1,
@@ -1140,13 +1393,13 @@
         },
         "deterministic_floor": {
           "from": 0.709,
-          "to": 0.709,
-          "delta": 0.0
+          "to": 0.714,
+          "delta": 0.005
         },
         "commits": {
           "from": 126,
-          "to": 126,
-          "delta": 0
+          "to": 148,
+          "delta": 22
         }
       }
     }

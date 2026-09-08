@@ -290,7 +290,7 @@ window.DOCS_INDEX = {
     },
     {
       "id": "grade-ghcp-p0-p6",
-      "path": "docs/benchmark/comparisons/grade-20260908T172048Z.md",
+      "path": "docs/benchmark/comparisons/grade-20260908T204118Z.md",
       "title": "Benchmark grade: CFD-Bench-GHCP P0-P6 (snapshot; run now active past P1)",
       "type": "doc",
       "status": "accepted",
@@ -298,7 +298,7 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2027-03-08",
       "reviewSuggested": [],
-      "summary": "Snapshot grade of CFD-Bench-GHCP at SHA 834705e (run still active; grade C, composite 0.636). Adds an exec-summary tile row (winner/grades/headline metrics) and two repair-item sections (benchmark & prompt, AI-Forward pack) on top of the twelve deterministic surfaces and the eight-spoke comparison radar.",
+      "summary": "Snapshot grade of CFD-Bench-GHCP (grade C). Now carries all 22 grading surfaces: the original twelve plus phase-parity/lifecycle matrix, review-iteration depth, CLEAR-with-amendments rate, model-availability/quota events, halt-vs-adapt resilience, defect-class velocity, budget-overrun magnitude, policy-adaptation and artifact-supersession tracking.",
       "tags": [
         "benchmark",
         "grading",
@@ -308,7 +308,7 @@ window.DOCS_INDEX = {
       ],
       "links": [],
       "diagrams": [],
-      "sourceSha256": "eb69b4181da408eff3f8f84d2ce1179060f8f914bf90edf810b59672309b2369"
+      "sourceSha256": "65512f011c102cfc1b6bef7d07ad79875840eec513eaa87e2b214bb70a586f04"
     },
     {
       "id": "glossary-cfd-hydrofoil",
@@ -1106,8 +1106,8 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     },
     {
-      "id": "surface-benchmark-comparisons-grade-20260908t172048z",
-      "path": "docs/benchmark/comparisons/grade-20260908T172048Z.html",
+      "id": "surface-benchmark-comparisons-grade-20260908t204118z",
+      "path": "docs/benchmark/comparisons/grade-20260908T204118Z.html",
       "title": "Benchmark comparison",
       "kind": "knowledge-tool",
       "description": "Open an interactive knowledge artifact.",
@@ -1156,5 +1156,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "27606570962de029dc408d3bbf63a7ced92d711799e1155f28a58012d8476454"
+  "graphSha256": "71033e87cd91db6eec35964cd33b9a75b6dd9f51a1c5bb41f24194030e23258b"
 };

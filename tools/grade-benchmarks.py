@@ -51,6 +51,24 @@ SELF_CORRECT_RE = re.compile(r"overstat|\bamend|re-?point|corrected|correction|R
                              r"walk(?:ed)? back|retract", re.I)
 ORACLE_RE = re.compile(r"per-case oracle|\boracle\b|\bmutant\b|mutation|adversarial row|executable theory"
                        r"|kills? the mutant", re.I)
+# #13-#22 vocabulary.
+QUOTA_RE = re.compile(r"\bquota\b|rate[- ]limit|\b429\b|\b529\b|exhaust|over quota|out of quota"
+                      r"|model unavailable|capacity", re.I)
+ADAPT_RE = re.compile(r"\badapt|work(?:ed)?\s+around|fell?\s+back|constrain(?:ed)?\s+the\b"
+                      r"|instead of dropping|re-?plan", re.I)
+POLICY_RE = re.compile(r"constrain(?:ed)?\s+the\s+\S.{0,28}(rule|policy)|adapt(?:ed)?\s+the\s+\S.{0,28}"
+                       r"(rule|policy)|chang(?:ed|e)\s+the\s+\S.{0,28}(rule|policy)|instead of dropping", re.I)
+SUPERSEDE_RE = re.compile(r"supersed|rewritten|re-?pinned|retract(?:ed)?\s+rows", re.I)
+AMEND_RE = re.compile(r"CLEAR\s+with\s+amendment|clear[^.]{0,15}amendment|amend(?:ed|ments)\s+applied", re.I)
+ROUNDS_RE = re.compile(r"(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(author|gate)\s+rounds?", re.I)
+CLEAR_RE = re.compile(r"\bCLEAR\b")
+HALT_WORD_RE = re.compile(r"BENCHMARK-HALT|\bhalt(?:ed|s)?\b", re.I)
+WORD2NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+            "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+
+
+def _wordnum(tok):
+    return int(tok) if tok.isdigit() else WORD2NUM.get(tok.lower(), 0)
 
 # The loop the benchmark prompt sequences. A skill outside this set is not automatically
 # drift - it is a question for the grader, which is why this is a list and not a rule.
@@ -371,7 +389,9 @@ def collect_audit(repo):
         "shortname": e.get("shortname"), "summary": str(e.get("summary") or "")[:700],
         "done_when": str(e.get("done_when") or "")[:300], "datetime": e.get("datetime"),
         "outcome": e.get("outcome"), "tier": e.get("tier"), "signals": e.get("signals") or {},
-        "agents": [str((ar or {}).get("agent") or "") for ar in (e.get("agent_runs") or [])],
+        "agents": [{"name": str((ar or {}).get("agent") or ""), "calls": (ar or {}).get("calls"),
+                    "budget": (ar or {}).get("budget_calls"), "over": (ar or {}).get("over_budget")}
+                   for ar in (e.get("agent_runs") or [])],
     } for e in entries]
     return out
 
@@ -969,6 +989,16 @@ def collect_derived(run):
         "oracle_mutation_hits": quality.get("oracle_mutation_hits"),
         "defect_class_conversion": quality.get("defect_class_conversion"),
         "phase_order_inversions": quality.get("phase_order_inversions"),
+        "review_author_rounds": (quality.get("review_rounds") or {}).get("author"),
+        "review_gate_rounds": (quality.get("review_rounds") or {}).get("gate"),
+        "first_submission_clean_rate": (quality.get("review_rounds") or {}).get("first_submission_clean_rate"),
+        "quota_events": (quality.get("quota_events") or {}).get("count"),
+        "forced_model_changes": (quality.get("quota_events") or {}).get("forced_model_changes"),
+        "policy_adaptations": (quality.get("policy_adaptations") or {}).get("count"),
+        "supersessions": quality.get("supersessions"),
+        "budget_overage_calls": (quality.get("budget_overrun") or {}).get("overage_calls"),
+        "resilience": (quality.get("resilience") or {}).get("label"),
+        "defect_classes_per_phase": (quality.get("defect_velocity") or {}).get("per_demonstrated_phase"),
         # The rethought radar: seven deterministic 0..1 spokes, each higher-is-better and as
         # orthogonal as the data allows. The old radar plotted Functionality and Phase-demo, which
         # were the SAME number (both demonstrated/7) - a wasted spoke. It is replaced by
@@ -1002,9 +1032,10 @@ def collect_quality(repo, run):
     # #3 delegate model allocation.
     model_counts, named = {}, 0
     for e in entries:
-        for name in e.get("agents") or []:
+        for a in e.get("agents") or []:
+            name = a.get("name") if isinstance(a, dict) else str(a)
             named += 1
-            m = MODEL_RE.search(name)
+            m = MODEL_RE.search(name or "")
             key = m.group(0).lower() if m else "unspecified"
             model_counts[key] = model_counts.get(key, 0) + 1
     distinct_models = len([k for k in model_counts if k != "unspecified"])
@@ -1040,6 +1071,84 @@ def collect_quality(repo, run):
     inversions = sum(1 for i in range(len(by_time)) for j in range(i + 1, len(by_time))
                      if PHASES.index(by_time[i]) > PHASES.index(by_time[j]))
 
+    # #13 model availability / quota events.
+    quota_events = [t[:160] for t in corpus if QUOTA_RE.search(t)]
+    forced_model_changes = sum(1 for t in quota_events if MODEL_RE.search(t))
+
+    # #14 review-iteration depth + #15 CLEAR-with-amendments.
+    author_rounds = gate_rounds = 0
+    per_phase_rounds = {}
+    for t in corpus:
+        pm = re.search(r"\b[Pp][0-6]\b", t)
+        ph = pm.group(0).upper() if pm else None
+        for rm in ROUNDS_RE.finditer(t):
+            n, kind = _wordnum(rm.group(1)), rm.group(2).lower()
+            if kind == "author":
+                author_rounds += n
+            else:
+                gate_rounds += n
+            if ph:
+                per_phase_rounds.setdefault(ph, {"author": 0, "gate": 0})
+                per_phase_rounds[ph][kind] += n
+    clear_with_amendments = sum(1 for t in corpus if AMEND_RE.search(t))
+    bare_clears = sum(len(CLEAR_RE.findall(t)) for t in corpus)
+    first_submission_clean_rate = round(max(0.0, 1 - clear_with_amendments / bare_clears), 3) \
+        if bare_clears else None
+
+    # #18 halt-vs-adapt resilience. The label is the reliable halt/adapt axis; fabrication is kept
+    # as a separate count and is already raised as a HIGH integrity finding (#1), so it does not
+    # dominate the label (the marker scan also catches honest prose that discusses fabrication).
+    fab_total = len(audit.get("fabrication_audit") or []) + len(git_facts.get("fabrication_commits") or [])
+    halts = sum(1 for t in corpus if HALT_WORD_RE.search(t))
+    adapts = sum(1 for t in corpus if ADAPT_RE.search(t))
+    if adapts and halts:
+        resilience_label = "adapted and halted"
+    elif adapts:
+        resilience_label = "adaptive"
+    elif halts:
+        resilience_label = "halted"
+    else:
+        resilience_label = "steady (no blocker events)"
+
+    # #19 defect-class registration velocity.
+    dc_instances = len(re.findall(r"instance", dc, re.I))
+    demonstrated = len(audit.get("phases_verification_executed") or [])
+    dc_per_phase = round(dc_classes / demonstrated, 2) if demonstrated else None
+
+    # #20 budget-overrun magnitude and ownership.
+    overage_calls = 0
+    for e in entries:
+        for a in e.get("agents") or []:
+            if isinstance(a, dict) and a.get("over") and isinstance(a.get("calls"), int) \
+                    and isinstance(a.get("budget"), int):
+                overage_calls += max(0, a["calls"] - a["budget"])
+    owner_recorded_overrun = any(re.search(r"budget overrun|over[- ]budget|overran", t, re.I) for t in corpus)
+
+    # #21 policy-adaptation events, #22 artifact supersession.
+    policy_events = [t[:160] for t in corpus if POLICY_RE.search(t)]
+    supersessions = sum(1 for t in corpus if SUPERSEDE_RE.search(t))
+
+    # #16 phase lifecycle: authored -> gated -> merged -> owner-reviewed -> verified.
+    verified_set = set(audit.get("phases_verification_executed") or [])
+    lifecycle = {p: {"authored": False, "gated": False, "merged": False,
+                     "owner_reviewed": False, "verified": p in verified_set} for p in PHASES}
+    for subj in (git_facts.get("commit_log") or []):
+        for p in PHASES:
+            if not re.search(r"\b{}\b".format(p), subj, re.I):
+                continue
+            st = lifecycle[p]
+            if re.search(r"\bfeat\b|author|integrate|deliver|implement", subj, re.I):
+                st["authored"] = True
+            if re.search(r"gate|review|CLEAR|VETO|blocker|proof", subj, re.I):
+                st["gated"] = True
+            if re.search(r"\bmerge\b|close the phase|admission|accept", subj, re.I):
+                st["merged"] = True
+            if re.search(r"owner[- ]review|owner[- ]correction|owner accept|accept .*capability", subj, re.I):
+                st["owner_reviewed"] = True
+    _order = ["verified", "owner_reviewed", "merged", "gated", "authored"]
+    for p in PHASES:
+        lifecycle[p]["state"] = next((k for k in _order if lifecycle[p].get(k)), "not started")
+
     review_rigor = round(min(1.0, (len(veto_events) / 8.0)
                              * (1.0 if len(reviewer_models) >= 2 else 0.7)), 3) if veto_events else 0.0
     return {
@@ -1056,6 +1165,20 @@ def collect_quality(repo, run):
         "defect_class_conversion": dc_conversion,
         "phase_order_seen": by_time,
         "phase_order_inversions": inversions,
+        "quota_events": {"count": len(quota_events), "forced_model_changes": forced_model_changes,
+                         "samples": quota_events[:5]},
+        "review_rounds": {"author": author_rounds, "gate": gate_rounds, "per_phase": per_phase_rounds,
+                          "clear_with_amendments": clear_with_amendments, "bare_clears": bare_clears,
+                          "first_submission_clean_rate": first_submission_clean_rate},
+        "resilience": {"halts": halts, "adapts": adapts, "fabrications": fab_total,
+                       "label": resilience_label},
+        "defect_velocity": {"classes": dc_classes, "per_demonstrated_phase": dc_per_phase,
+                            "instances": dc_instances},
+        "budget_overrun": {"delegations_over_budget": (audit.get("delegations_over_budget") or 0),
+                           "overage_calls": overage_calls, "owner_recorded": owner_recorded_overrun},
+        "policy_adaptations": {"count": len(policy_events), "samples": policy_events[:5]},
+        "supersessions": supersessions,
+        "phase_lifecycle": lifecycle,
     }
 
 
@@ -1391,6 +1514,16 @@ def render_markdown(runs, generated, verdict=None):
         ("oracle/mutation signals", lambda d: d.get("oracle_mutation_hits")),
         ("defect-class control conversion", lambda d: d.get("defect_class_conversion")),
         ("phase-order inversions", lambda d: d.get("phase_order_inversions")),
+        ("author rounds / gate rounds", lambda d: "{} / {}".format(
+            d.get("review_author_rounds"), d.get("review_gate_rounds"))),
+        ("first-submission-clean rate", lambda d: d.get("first_submission_clean_rate")),
+        ("quota / availability events", lambda d: d.get("quota_events")),
+        ("forced model changes", lambda d: d.get("forced_model_changes")),
+        ("policy adaptations", lambda d: d.get("policy_adaptations")),
+        ("artifact supersessions", lambda d: d.get("supersessions")),
+        ("budget overage (calls)", lambda d: d.get("budget_overage_calls")),
+        ("defect classes / demonstrated phase", lambda d: d.get("defect_classes_per_phase")),
+        ("resilience", lambda d: d.get("resilience")),
     ]
     for label, get in derived_rows:
         unit = "_seconds" if "cost per demonstrated phase" in label else label
@@ -1498,6 +1631,42 @@ def render_markdown(runs, generated, verdict=None):
         for p in PHASES:
             if p in pv:
                 out.append("| {} | {} |".format(p, pv[p]))
+        out.append("")
+
+    _STATE_ABBR = {"not started": "\u2013", "authored": "auth", "gated": "gate",
+                   "merged": "merge", "owner_reviewed": "ownr", "verified": "VERIF"}
+    out += ["## Phase parity & lifecycle", "",
+            "*Per phase, the furthest lifecycle state reached: authored -> gated -> merged -> "
+            "owner-reviewed -> verified (VERIF = an executed verification signal).*", "",
+            "| run | " + " | ".join(PHASES) + " |", "|---" * (len(PHASES) + 1) + "|"]
+    for r in runs:
+        lc = (r.get("quality") or {}).get("phase_lifecycle") or {}
+        cells = [_STATE_ABBR.get((lc.get(p) or {}).get("state"), "\u2013") for p in PHASES]
+        out.append("| {} | ".format(r["identity"]["name"]) + " | ".join(cells) + " |")
+    out.append("")
+
+    out += ["## Rigor & resilience", ""]
+    for r in runs:
+        q = r.get("quality") or {}
+        rr, res = q.get("review_rounds") or {}, q.get("resilience") or {}
+        qe, bo = q.get("quota_events") or {}, q.get("budget_overrun") or {}
+        out += ["### {}".format(r["identity"]["name"]),
+                "- resilience: **{}** (halts {}, adapts {}, fabrications {})".format(
+                    res.get("label"), res.get("halts"), res.get("adapts"), res.get("fabrications")),
+                "- review rounds: {} author / {} gate; {} CLEAR-with-amendments of {} clears "
+                "(first-submission-clean {})".format(
+                    rr.get("author"), rr.get("gate"), rr.get("clear_with_amendments"),
+                    rr.get("bare_clears"), rr.get("first_submission_clean_rate")),
+                "- model availability: {} quota/availability event(s), {} forced model change(s)".format(
+                    qe.get("count"), qe.get("forced_model_changes")),
+                "- budget overrun: {} delegation(s) over budget, {} call(s) overage, owner-recorded {}".format(
+                    bo.get("delegations_over_budget"), bo.get("overage_calls"), bo.get("owner_recorded")),
+                "- policy adaptations: {} \u00b7 artifact supersessions: {}".format(
+                    (q.get("policy_adaptations") or {}).get("count"), q.get("supersessions")), ""]
+        for s in (qe.get("samples") or [])[:2]:
+            out.append("  - quota: {}".format(str(s).replace("|", "\\|")))
+        for s in ((q.get("policy_adaptations") or {}).get("samples") or [])[:2]:
+            out.append("  - policy: {}".format(str(s).replace("|", "\\|")))
         out.append("")
 
     out += repairs_md(runs, verdict)
@@ -1767,7 +1936,16 @@ function derivedRows(){
     ["in-flight self-corrections", function(d){ return d.self_corrections; }],
     ["oracle/mutation signals", function(d){ return d.oracle_mutation_hits; }],
     ["defect-class control conversion", function(d){ return d.defect_class_conversion; }],
-    ["phase-order inversions", function(d){ return d.phase_order_inversions; }]
+    ["phase-order inversions", function(d){ return d.phase_order_inversions; }],
+    ["author rounds / gate rounds", function(d){ return d.review_author_rounds+" / "+d.review_gate_rounds; }],
+    ["first-submission-clean rate", function(d){ return d.first_submission_clean_rate; }],
+    ["quota / availability events", function(d){ return d.quota_events; }],
+    ["forced model changes", function(d){ return d.forced_model_changes; }],
+    ["policy adaptations", function(d){ return d.policy_adaptations; }],
+    ["artifact supersessions", function(d){ return d.supersessions; }],
+    ["budget overage (calls)", function(d){ return d.budget_overage_calls; }],
+    ["defect classes / demonstrated phase", function(d){ return d.defect_classes_per_phase; }],
+    ["resilience", function(d){ return d.resilience; }]
   ];
   return defs.map(function(def){
     return [def[0], RUNS.map(function(r){ return def[1](r.derived||{}); })];
@@ -2329,6 +2507,55 @@ function repairsSection(runs){
   return sec;
 }
 
+/* ---- #16/#17 phase parity & lifecycle matrix ---- */
+function phaseParity(runs){
+  var sec=el("section"); sec.id="parity";
+  sec.appendChild(el("h2",null,"Phase parity & lifecycle"));
+  sec.appendChild(el("p","note","Furthest lifecycle state per phase: authored \u2192 gated \u2192 merged "
+    + "\u2192 owner-reviewed \u2192 verified. VERIF = an executed verification signal."));
+  var ABBR={"not started":"\u2013","authored":"auth","gated":"gate","merged":"merge","owner_reviewed":"ownr","verified":"VERIF"};
+  var COLOR={"not started":"var(--muted)","authored":"var(--lo)","gated":"var(--lo)","merged":"var(--med)","owner_reviewed":"var(--accent)","verified":"var(--ok)"};
+  var P=["P0","P1","P2","P3","P4","P5","P6"];
+  var wrap=el("div","wrap"), t=el("table"), th=el("thead"), hr=el("tr");
+  hr.appendChild(el("th","metric","run"));
+  P.forEach(function(p){ hr.appendChild(el("th",null,p)); });
+  th.appendChild(hr); t.appendChild(th); var tb=el("tbody");
+  runs.forEach(function(r){
+    var lc=(r.quality||{}).phase_lifecycle||{}, tr=el("tr");
+    tr.appendChild(el("td","metric",r.identity.name));
+    P.forEach(function(p){
+      var stt=((lc[p]||{}).state)||"not started";
+      var td=el("td",null,ABBR[stt]||"\u2013"); td.style.color=COLOR[stt]||"var(--ink)"; td.style.fontWeight="600";
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb); wrap.appendChild(t); sec.appendChild(wrap);
+  return sec;
+}
+
+/* ---- #13/#14/#15/#18/#20/#21/#22 rigor & resilience ---- */
+function rigorResilience(runs){
+  var sec=el("section"); sec.id="resilience";
+  sec.appendChild(el("h2",null,"Rigor & resilience"));
+  runs.forEach(function(r){
+    var q=r.quality||{}, rr=q.review_rounds||{}, res=q.resilience||{}, qe=q.quota_events||{}, bo=q.budget_overrun||{};
+    sec.appendChild(el("h3",null,r.identity.name));
+    var ul=el("ul","learned");
+    ul.appendChild(el("li",null,"resilience: "+res.label+" (halts "+res.halts+", adapts "+res.adapts+", fabrications "+res.fabrications+")"));
+    ul.appendChild(el("li",null,"review rounds: "+rr.author+" author / "+rr.gate+" gate; "+rr.clear_with_amendments
+      +" CLEAR-with-amendments of "+rr.bare_clears+" clears (first-submission-clean "+fmt(rr.first_submission_clean_rate)+")"));
+    ul.appendChild(el("li",null,"model availability: "+qe.count+" event(s), "+qe.forced_model_changes+" forced model change(s)"));
+    ul.appendChild(el("li",null,"budget overrun: "+bo.delegations_over_budget+" over budget, "+bo.overage_calls
+      +" call overage, owner-recorded "+fmt(bo.owner_recorded)));
+    ul.appendChild(el("li",null,"policy adaptations: "+((q.policy_adaptations||{}).count)+" \u00b7 supersessions: "+q.supersessions));
+    sec.appendChild(ul);
+    (qe.samples||[]).slice(0,2).forEach(function(s){ sec.appendChild(el("p","note","quota: "+s)); });
+    ((q.policy_adaptations||{}).samples||[]).slice(0,2).forEach(function(s){ sec.appendChild(el("p","note","policy: "+s)); });
+  });
+  return sec;
+}
+
 function render(keepFocus){
   var active = keepFocus ? document.activeElement : null;
   var caret = active && active.selectionStart;
@@ -2427,8 +2654,10 @@ function render(keepFocus){
   app.appendChild(fabrication(runs));
   app.appendChild(perPhase(runs));
   app.appendChild(snapshotSection(runs));
+  app.appendChild(phaseParity(runs));
   app.appendChild(modelsVeto(runs));
   app.appendChild(phaseVelocity(runs));
+  app.appendChild(rigorResilience(runs));
   app.appendChild(repairsSection(runs));
 
   AXES.forEach(function(pair){
@@ -2509,7 +2738,7 @@ function render(keepFocus){
 function buildNav(){
   var nav = document.getElementById("nav");
   nav.textContent = "";
-  var items = (V ? [["verdict","Ranking"]] : []).concat([["exec","Summary"],["summary","Facts"],["derived","Derived metrics"],["fabrication","Fabrication"],["perphase","Per-phase evidence"],["snapshot","Snapshot & delta"],["models","Models & vetoes"],["velocity","Phase velocity"],["repairs","Repair items"]])
+  var items = (V ? [["verdict","Ranking"]] : []).concat([["exec","Summary"],["summary","Facts"],["derived","Derived metrics"],["parity","Phase parity"],["fabrication","Fabrication"],["perphase","Per-phase evidence"],["snapshot","Snapshot & delta"],["models","Models & vetoes"],["velocity","Phase velocity"],["resilience","Rigor & resilience"],["repairs","Repair items"]])
       .concat(AXES).concat([["integrity","Integrity"],["detail","Per-run detail"],["kiviat","Comparison radar"]]);
   items.forEach(function(p){
     var a = el("a",null,p[1]); a.href = "#"+p[0]; nav.appendChild(a);

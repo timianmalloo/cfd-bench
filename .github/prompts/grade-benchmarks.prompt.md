@@ -110,7 +110,13 @@ mismatch rather than checking out. The HTML opens with an **exec-summary tile ro
 demonstrated, active count - and a per-run **letter-grade chip** (a composite = mean of the eight
 radar spokes, mapped A-F). Two **repair-item** sections list improvements the run's signals imply -
 one for the **benchmark/prompt**, one for the **AI-Forward pack** - each row deterministic (target +
-severity + item + evidence) or authored in the verdict's `repairs` block.
+severity + item + evidence) or authored in the verdict's `repairs` block. It also emits a **phase
+parity & lifecycle** matrix (per phase across runs: authored -> gated -> merged -> owner-reviewed ->
+verified), a **rigor & resilience** section (halt-vs-adapt label, author/gate review rounds,
+CLEAR-with-amendments and first-submission-clean rate, model-availability/quota events with
+forced-model-change count, budget-overrun magnitude and ownership, policy-adaptation and
+artifact-supersession counts), and the derived-metrics table carries all of these. Corpus-scan
+signals are reproducible but heuristic - read the matrix alongside phase-velocity, not alone.
 
 **It scores only what has a defensible ratio.** Coordination, contention, task focus and
 functionality carry numbers. **Performance, parallelism and drift are marked `judgment`** and

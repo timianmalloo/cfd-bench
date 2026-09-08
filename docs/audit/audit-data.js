@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-08T17:22:50Z",
+  "generated": "2026-09-08T20:42:53Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -720,6 +720,27 @@ window.AUDIT_DATA = {
       "outcome": "success",
       "goal": "Add exec tiles/grades and benchmark+pack repair-item sections to the grader",
       "done_when": "tiles+grades+repairs render in html+md, node-check clean, committed+pushed",
+      "tier": "T1",
+      "fan_out": 0
+    },
+    {
+      "id": "al-01M21C4SS4DMWFX8EXCTZ0N4TD",
+      "shortname": "grade-proposals-13-22",
+      "datetime": "2026-09-08T20:42:53Z",
+      "session": "grade-ghcp-0908",
+      "prompt": "work on applying all 22 proposals",
+      "summary": "Implemented proposals #13-#22 (the 12 were already shipped): model-availability/quota events + forced-model-change, review-iteration depth (author/gate rounds per phase), CLEAR-with-amendments + first-submission-clean rate, phase-lifecycle state machine, cross-run phase-parity matrix, halt-vs-adapt resilience label, defect-class registration velocity, budget-overrun magnitude+ownership, policy-adaptation events, artifact-supersession tracking. Verified 2-run: Claude 1 quota/1 forced-change (Fable exhaustion), 19 author/15 gate rounds, first-submission-clean 0.77, adaptive; GHCP adapted-and-halted, 70-call overage. New md+html sections (Phase parity & lifecycle, Rigor & resilience) + 12 derived rows; node-check clean; SKILL+prompt updated.",
+      "kind": "skill",
+      "skill": "grade-benchmarks",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/benchmark/comparisons/grade-20260908T204118Z.md"
+      ],
+      "tags": [],
+      "outcome": "success",
+      "goal": "Implement all remaining proposals (#13-#22) in the grader",
+      "done_when": "10 new surfaces render in md+html, node-check clean, committed+pushed",
       "tier": "T1",
       "fan_out": 0
     }
