@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-08T12:43:32Z",
+  "generated": "2026-09-08T13:07:31Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -617,6 +617,27 @@ window.AUDIT_DATA = {
       "fan_out": 0,
       "started_at": "2026-09-08T12:35:01Z",
       "duration_seconds": 511.0
+    },
+    {
+      "id": "al-01M20J307W17NZADCP0K6SAQ27",
+      "shortname": "grade-ghcp-phase-token-fix",
+      "datetime": "2026-09-08T13:07:31Z",
+      "session": "grade-ghcp-0908",
+      "prompt": "apply the patch and then re-run the grade",
+      "summary": "Patched grade-benchmarks.py phase-token detector (GRADER-PHASE-TOKEN): strip P#-P# ranges + clause/negation aware report matching. Red->green: claimed_complete [P0,P1,P2,P6]->[P0,P1], verification_executed [P0,P1,P6]->[P1]. Re-ran grade; false P2/P6 integrity rows gone; regenerated md/html with refreshed verdict.",
+      "kind": "skill",
+      "skill": "grade-benchmarks",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/benchmark/comparisons/grade-20260908T130627Z.md"
+      ],
+      "tags": [],
+      "outcome": "success",
+      "goal": "Patch the extractor phase-token detection and re-run the grade",
+      "done_when": "false P2/P6 rows removed; grade regenerated with verdict; committed",
+      "tier": "T1",
+      "fan_out": 0
     }
   ],
   "changes": [

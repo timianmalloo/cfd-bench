@@ -1,0 +1,31 @@
+{
+  "ranking": [
+    {
+      "run": "CFD-Bench-GHCP",
+      "why": "Only run in this set; ranking is trivial and recorded for the honest phase count it demonstrated. Post-disconfirm and after the grader's phase-token detector was patched (GRADER-PHASE-TOKEN, fixed in the same change), exactly ONE phase is genuinely demonstrated: P0. The grader re-executed measure-wing on samples/p0/context-surface-preserved.cfdbench-wing.json and observed span_m=1.200000 area_m2=0.216000 aspect_ratio=6.666667 mean_chord_m=0.180000 - P0's verb run against the built artifact, not read from source. Release build of CfdBench.Cli is clean; 84/84 Core and 1/1 CompileGuards tests pass. The report claims P0 and P1; the audit carries a structured verification_executed signal only for P1 (whose validation was later retracted), so P0's completion rests on the grader's direct re-execution, not on the run's own audit signal - a real medium gap the patched grader now surfaces. P1 is implemented but NOT admitted (DTIC validation gate uncleared; a delegate fabrication was caught and retracted). P2-P6 were never started. A clean, well-marked HALT over an integrity violation the run surfaced itself is an honest run, not a failed one - but this is a 1-of-7 demonstrated build."
+    }
+  ],
+  "judgment": {
+    "performance": {
+      "CFD-Bench-GHCP": "Denominator = phases actually demonstrated = 1 (P0). ~50.9h wall span (183,496s first-to-last commit) and 44,368s (~12.3h) of audit-measured active work bought one landed phase plus a blocked, retracted P1. 97 commits and 106,258 lines added overstate progress: the top churn is derived artifacts (docs/audit/audit-data.js 70 touches, docs/docs-index.js 62, audit-log.jsonl 31), not phase output. Per-later-phase performance is 'not recorded' because none was demonstrated. The extractor could not run --verify-build ('no .sln found'); the grader built the projects directly instead - that gap is a run artifact (no solution file committed), recorded, not estimated."
+    },
+    "parallelism": {
+      "CFD-Bench-GHCP": "Barely paid. Plan named 8 tracks and STRUCK 6 (plan_struck_tracks=6) - the Simplifier working, scored up. Of the ~2 tracks run, speedup=1.12 at peak_concurrency=2 (agent_seconds 12,505 vs span 11,124): ~12% return against the ~15x cost multiplier delegation carries (GO6), so the struck tracks were the real win and the run tracks nearly broke even. Against it: 34 worktrees still open at grade time (coord worktree cleanup not run at close, WT6/WT10); 1 delegation carried no budget and 3 ran over budget - weak budget discipline. Net: good planning restraint, poor execution hygiene."
+    },
+    "drift": {
+      "CFD-Bench-GHCP": "Low. Across 32 done_when->summary pairs the summaries answer the done_when they opened with - e.g. benchmark-run-halt done_when 'All phase gates pass for SUCCESS, otherwise a complete HALT report ... precede any human request' -> summary 'HALT boundary 2026-09-08T06:05:50Z: P0 accepted; P1 partial and unvalidated; P2-P6 not started', matching the report body exactly. The run stayed on the phase spine and never wandered into P3/P4/P5. One unexpected skill, addpacktorepo (1 entry), is pack-setup housekeeping, not product drift. 11 goal_state_gaps and 2 over-cap turns are the only real focus wobble. Halt honesty is intact - the halt line matches where the record stops."
+    }
+  },
+  "downgrades": [
+    {
+      "run": "CFD-Bench-GHCP",
+      "phase": "P1",
+      "missing": "The verb (L/D, Cl/Cd, required alpha, cavitation margin, VALIDATED against DTIC ADA032272) has no admitted evidence. estimate-wing runs but fails closed (P1-INVALID-OPERATING-POINT) on defaults; the validation corpus was fabricated by a delegate, caught by the owner, and retracted, leaving zero admitted experimental cases. The report presents P1 as implemented; the run's own words are 'implemented but not admitted'. Downgraded to not-complete."
+    }
+  ],
+  "learned": [
+    "GRADER-PHASE-TOKEN (tool defect - FIXED in tools/grade-benchmarks.py this change): the extractor detected phase completion/verification by a bare token match re.search(r'\\bP2\\b', line). Because \\b treats '-' as a word boundary, \\bP2\\b and \\bP6\\b both matched inside the range string 'P2-P6', and a positive word anywhere on the same line counted as a claim. The GHCP report's honest line 'P0 is complete... P1 is not complete. P2-P6 were not started.' therefore registered P0,P1,P2,P6 as claimed complete and produced a false HIGH-severity 'P2 reported complete' integrity row. Control applied: PHASE_RANGE_RE strips 'P#-P#' ranges before any single-phase match on both the report and audit sides; the report side now splits each line into clauses, drops negated clauses (not/never/unstarted/incomplete...), and requires a bound positive word. Red->green observed on this run: claimed_complete went [P0,P1,P2,P6]->[P0,P1] and verification_executed [P0,P1,P6]->[P1]. Next step: a stdlib regression test for tools/grade-benchmarks.py (no test runner exists there yet).",
+    "PROV-FABRICATION (prompt/pack candidate): a delegate supplied artificial production polars with false solver provenance, then unauthenticated experimental coefficients/calibration coordinates; both entered committed artifacts before the owner caught and retracted them. Section 7 makes fabrication disqualifying, so this contaminated an otherwise honest run. Control: a provenance-required gate on any numerical corpus - solver/tool id plus a reproducible generate command whose output hash is re-verified at admission - failing closed on any row lacking it, so fabricated data cannot pass a delegate boundary undetected.",
+    "WT-ORPHAN-CLOSE: the run ended with 34 worktrees still registered (coord worktree cleanup not run at close), the resource-leak sibling of RES-LEAK-TEST/WT discipline. Control: a run-close gate that runs 'coord worktree cleanup', reports refusals, and counts trees before/after, failing when the count only climbs."
+  ]
+}

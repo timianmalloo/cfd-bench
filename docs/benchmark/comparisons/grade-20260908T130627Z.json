@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-08T12:41:15Z",
+  "generated": "2026-09-08T13:06:27Z",
   "control_repo": "C:\\Projects\\cfd-bench",
   "runs": [
     {
@@ -51,6 +51,9 @@
         "merge_commits": 9,
         "branches": [
           "benchmark-continue-generator-review",
+          "benchmark-continue-numeric-review",
+          "benchmark-continue-p1-assessment",
+          "benchmark-continue-p1-assessment-data-review",
           "benchmark-continue-p1-p6",
           "benchmark-continue-science-review",
           "benchmark-foundation-plan",
@@ -131,7 +134,7 @@
             10
           ]
         ],
-        "worktrees_now": 34
+        "worktrees_now": 37
       },
       "audit": {
         "entries": 45,
@@ -165,13 +168,10 @@
         "peak_concurrency": 2,
         "phases_in_audit": [
           "P0",
-          "P1",
-          "P6"
+          "P1"
         ],
         "phases_verification_executed": [
-          "P0",
-          "P1",
-          "P6"
+          "P1"
         ],
         "selfcheck": {
           "substantive": 43,
@@ -354,25 +354,25 @@
         "doctor_exit": 0,
         "doctor": "registry         ok - 5 pattern(s)\r\nmerge driver     effective - coord-regen, coord-register declared, coord-regen, coord-register registered\r\n\r\nharness capability (from spikes - NOT measured here; re-qualify per version)\r\n  claude   edit boundary: enforcing   established 2026-08-24, against not recorded (spike S5 pinned no version)\r\n    because   PreToolUse contract established by execution and the deny response is honoured (spike S5, five cases incl. both fail-safe paths).\r\n    floor     the commit floor enforces regardless of the hook\r\n  copilot  edit boundary: enforcing   established 2026-08-24, against Copilot CLI 1.0.80\r\n    because   A live session honoured a deny: a read of an unleased file succeeded, a write to a leased one was refused with our reason rendered verbatim into the transcript, and the file was unmodified. RESIDUAL, unchanged: Copilot fails OPEN on a 30s hook timeout, so a hung hook allows. Our measured check is 63ms p95, and the commit floor backs it.\r\n    floor     the commit floor enforces regardless of the hook",
         "metrics": {
-          "decisions": 740,
-          "allowed": 737,
+          "decisions": 751,
+          "allowed": 748,
           "refused": 3,
           "not_checked": 0,
           "edits_under_lease_pct": 99.6,
           "unique_commits": 0,
           "unique_commits_reason": null,
           "wt4": {
-            "sessions": 36,
-            "sessions_recorded": 36,
+            "sessions": 39,
+            "sessions_recorded": 39,
             "not_recorded": 0,
             "in_primary": 2,
-            "pct": 5.6
+            "pct": 5.1
           },
           "reason": ""
         },
         "sessions_raw": {
           "errors": [],
-          "files_scanned": 38,
+          "files_scanned": 41,
           "sessions": [
             {
               "agent": "benchmark-continue-coordinator",
@@ -385,25 +385,41 @@
             {
               "agent": "benchmark-continue-coordinator",
               "claims": [],
-              "last_at": 1788870754.2577598,
-              "session": "benchmark-continue-coordinator",
-              "started_at": 1788870754.2577598,
-              "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-continue-p1-p6"
+              "last_at": 1788871484.1520402,
+              "session": "benchmark-continue-numeric-review",
+              "started_at": 1788871484.1520402,
+              "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-continue-numeric-review"
             },
             {
               "agent": "benchmark-continue-coordinator",
               "claims": [],
-              "last_at": 1788870917.8387196,
-              "session": "benchmark-continue-science-review",
-              "started_at": 1788870917.8387196,
-              "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-continue-science-review"
+              "last_at": 1788872417.4639537,
+              "session": "benchmark-continue-p1-assessment",
+              "started_at": 1788872040.9958615,
+              "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-continue-p1-assessment"
+            },
+            {
+              "agent": "benchmark-continue-p1-assessment",
+              "claims": [],
+              "last_at": 1788872418.261345,
+              "session": "benchmark-continue-p1-assessment-data-review",
+              "started_at": 1788872418.261345,
+              "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-continue-p1-assessment-data-review"
+            },
+            {
+              "agent": "benchmark-continue-coordinator",
+              "claims": [],
+              "last_at": 1788870754.2577598,
+              "session": "benchmark-continue-coordinator",
+              "started_at": 1788870754.2577598,
+              "worktree": "C:/Projects/CFD-Bench-GHCP-benchmark-continue-p1-p6"
             }
           ]
         },
-        "sessions": 3,
-        "seams_total": 7,
+        "sessions": 5,
+        "seams_total": 8,
         "seams_open": 2,
-        "seams_resolved": 5
+        "seams_resolved": 6
       },
       "contention": {
         "hot_files": [
@@ -550,9 +566,7 @@
         "claims_success": false,
         "phases_claimed_complete": [
           "P0",
-          "P1",
-          "P2",
-          "P6"
+          "P1"
         ],
         "has_instruments_section": true,
         "has_drift_section": true,
@@ -603,8 +617,8 @@
             "agent_seconds": 12505.0,
             "span_seconds": 11124.0,
             "speedup": 1.12,
-            "worktrees_now": 34,
-            "branches": 35,
+            "worktrees_now": 37,
+            "branches": 38,
             "tracks_planned": 8
           },
           "score": null,
@@ -617,17 +631,17 @@
             "registry_rules": 5,
             "gitattributes": true,
             "pre_commit_hook": true,
-            "sessions_registered": 3,
-            "decisions": 740,
+            "sessions_registered": 5,
+            "decisions": 751,
             "refused": 3,
             "edits_under_lease_pct": 99.6,
-            "seams_raised": 7,
-            "seams_resolved": 5,
+            "seams_raised": 8,
+            "seams_resolved": 6,
             "plan_present": true,
             "plan_tracks": 8,
             "plan_struck_tracks": 6
           },
-          "score": 0.903,
+          "score": 0.915,
           "judgment": false,
           "note": ""
         },
@@ -674,19 +688,14 @@
           "values": {
             "phases_claimed_complete": [
               "P0",
-              "P1",
-              "P2",
-              "P6"
+              "P1"
             ],
             "phases_in_audit": [
               "P0",
-              "P1",
-              "P6"
+              "P1"
             ],
             "phases_verification_executed": [
-              "P0",
-              "P1",
-              "P6"
+              "P1"
             ],
             "source_loc": 20131,
             "projects": 5,
@@ -696,20 +705,15 @@
             "build_ok": null,
             "test_ok": null
           },
-          "score": 0.429,
+          "score": 0.143,
           "judgment": false,
           "note": ""
         }
       },
       "integrity": [
         {
-          "severity": "high",
-          "claim": "phases reported complete: P2",
-          "observed": "no successful audit entry names them"
-        },
-        {
           "severity": "medium",
-          "claim": "phases reported complete: P2",
+          "claim": "phases reported complete: P0",
           "observed": "no audit entry for them records verification_executed=true"
         },
         {
@@ -718,7 +722,7 @@
           "observed": "1 carry no budget - an unbounded fan-out reads exactly like a well-behaved one"
         }
       ],
-      "deterministic_floor": 0.741,
+      "deterministic_floor": 0.672,
       "axes_not_scored": [
         "drift",
         "parallelism",
@@ -730,39 +734,29 @@
     "ranking": [
       {
         "run": "CFD-Bench-GHCP",
-        "why": "Only run in this set, so the ranking is trivial; recorded here for the honest phase count it actually demonstrated. Post-disconfirm, exactly ONE phase is genuinely demonstrated: P0. The grader ran measure-wing on samples/p0/context-surface-preserved.cfdbench-wing.json and observed span_m=1.200000 area_m2=0.216000 aspect_ratio=6.666667 mean_chord_m=0.180000 - P0's verb executed against the built artifact, not read from source. Release build of CfdBench.Cli is clean; 84/84 Core tests and 1/1 CompileGuards test pass. The run then HALTED honestly at P1 (validation gate against DTIC ADA032272 uncleared) and self-disclosed a delegate fabrication (artificial polars + false experimental provenance) that the owner caught and retracted. A clean, well-marked halt over an integrity violation it surfaced itself ranks as an honest run, not a failed one - but P1 is not admitted and P2-P6 were never started, so this is a 1-of-7 demonstrated build."
+        "why": "Only run in this set; ranking is trivial and recorded for the honest phase count it demonstrated. Post-disconfirm and after the grader's phase-token detector was patched (GRADER-PHASE-TOKEN, fixed in the same change), exactly ONE phase is genuinely demonstrated: P0. The grader re-executed measure-wing on samples/p0/context-surface-preserved.cfdbench-wing.json and observed span_m=1.200000 area_m2=0.216000 aspect_ratio=6.666667 mean_chord_m=0.180000 - P0's verb run against the built artifact, not read from source. Release build of CfdBench.Cli is clean; 84/84 Core and 1/1 CompileGuards tests pass. The report claims P0 and P1; the audit carries a structured verification_executed signal only for P1 (whose validation was later retracted), so P0's completion rests on the grader's direct re-execution, not on the run's own audit signal - a real medium gap the patched grader now surfaces. P1 is implemented but NOT admitted (DTIC validation gate uncleared; a delegate fabrication was caught and retracted). P2-P6 were never started. A clean, well-marked HALT over an integrity violation the run surfaced itself is an honest run, not a failed one - but this is a 1-of-7 demonstrated build."
       }
     ],
     "judgment": {
       "performance": {
-        "CFD-Bench-GHCP": "Denominator = phases actually demonstrated = 1 (P0). ~50.9h wall span (183,496s first-to-last commit) and 44,368s (~12.3h) of audit-measured active work bought one landed phase (P0) plus a blocked, retracted P1. 97 commits and 106,258 lines added overstate progress: the top churn is derived artifacts (docs/audit/audit-data.js 70 touches, docs/docs-index.js 62, audit-log.jsonl 31), not phase output. Most of the spend went into the P1 validation fight and the fabrication cleanup, not phase throughput. Per-later-phase performance is 'not recorded' because none was demonstrated. The extractor could not run --verify-build ('no .sln found'); the grader built the projects directly instead - that gap is a run artifact (no solution file committed), recorded, not estimated."
+        "CFD-Bench-GHCP": "Denominator = phases actually demonstrated = 1 (P0). ~50.9h wall span (183,496s first-to-last commit) and 44,368s (~12.3h) of audit-measured active work bought one landed phase plus a blocked, retracted P1. 97 commits and 106,258 lines added overstate progress: the top churn is derived artifacts (docs/audit/audit-data.js 70 touches, docs/docs-index.js 62, audit-log.jsonl 31), not phase output. Per-later-phase performance is 'not recorded' because none was demonstrated. The extractor could not run --verify-build ('no .sln found'); the grader built the projects directly instead - that gap is a run artifact (no solution file committed), recorded, not estimated."
       },
       "parallelism": {
-        "CFD-Bench-GHCP": "Did it barely pay. Plan named 8 tracks and STRUCK 6 (plan_struck_tracks=6) - that is the Simplifier working and is scored up. Of the ~2 tracks actually run, speedup=1.12 at peak_concurrency=2 (agent_seconds 12,505 vs span 11,124), so parallel execution returned ~12% against the ~15x cost multiplier delegation carries (GO6): the struck tracks were the real win, the run tracks nearly broke even. Against it: 34 worktrees still open at grade time (worktrees_now=34) - coord worktree cleanup was not run at close (WT6/WT10); 1 delegation carried no budget (unbounded fan-out that reads identical to a bounded one) and 3 ran over budget - weak budget discipline. Net: the planning restraint was good, the execution hygiene was not."
+        "CFD-Bench-GHCP": "Barely paid. Plan named 8 tracks and STRUCK 6 (plan_struck_tracks=6) - the Simplifier working, scored up. Of the ~2 tracks run, speedup=1.12 at peak_concurrency=2 (agent_seconds 12,505 vs span 11,124): ~12% return against the ~15x cost multiplier delegation carries (GO6), so the struck tracks were the real win and the run tracks nearly broke even. Against it: 34 worktrees still open at grade time (coord worktree cleanup not run at close, WT6/WT10); 1 delegation carried no budget and 3 ran over budget - weak budget discipline. Net: good planning restraint, poor execution hygiene."
       },
       "drift": {
-        "CFD-Bench-GHCP": "Low. Across 32 done_when->summary pairs the summaries answer the done_when they opened with - e.g. benchmark-run-halt done_when 'All phase gates pass for SUCCESS, otherwise a complete HALT report ... precede any human request' -> summary 'HALT boundary 2026-09-08T06:05:50Z: P0 accepted; P1 partial and unvalidated; P2-P6 not started', which matches the report body exactly. The run stayed on the phase spine and never wandered into P3/P4/P5. One unexpected skill, addpacktorepo (1 entry), is pack-setup housekeeping, not product drift. 11 goal_state_gaps and 2 over-cap turns are the only real focus wobble. The halt line matches where the record actually stops - halt honesty is intact."
+        "CFD-Bench-GHCP": "Low. Across 32 done_when->summary pairs the summaries answer the done_when they opened with - e.g. benchmark-run-halt done_when 'All phase gates pass for SUCCESS, otherwise a complete HALT report ... precede any human request' -> summary 'HALT boundary 2026-09-08T06:05:50Z: P0 accepted; P1 partial and unvalidated; P2-P6 not started', matching the report body exactly. The run stayed on the phase spine and never wandered into P3/P4/P5. One unexpected skill, addpacktorepo (1 entry), is pack-setup housekeeping, not product drift. 11 goal_state_gaps and 2 over-cap turns are the only real focus wobble. Halt honesty is intact - the halt line matches where the record stops."
       }
     },
     "downgrades": [
       {
         "run": "CFD-Bench-GHCP",
         "phase": "P1",
-        "missing": "The verb (L/D, Cl/Cd, required alpha, cavitation margin, VALIDATED against DTIC ADA032272) has no executed, admitted evidence. estimate-wing runs but fails closed (P1-INVALID-OPERATING-POINT) on defaults; the validation corpus was fabricated by a delegate, caught by the owner, and retracted, leaving zero admitted experimental cases. The run's own report states 'P1 implemented but not admitted' - the downgrade agrees with the run, against the extractor's parsed phases_claimed_complete."
-      },
-      {
-        "run": "CFD-Bench-GHCP",
-        "phase": "P2",
-        "missing": "Never started. No audit entry demonstrates the shell/chart-set verb. The extractor's report parser listed P2 as 'claimed complete' and then flagged it high-severity 'no audit entry' - both are a FALSE POSITIVE from matching the bare 'P2' token in the report's phase-status table; the report body says 'P2-P6 were not started'."
-      },
-      {
-        "run": "CFD-Bench-GHCP",
-        "phase": "P6",
-        "missing": "Never started. phases_in_audit/phases_verification_executed listed P6, but that is the extractor matching the 'p0-p6' range token in filenames and the prompt text, not a real P6 numeral-check entry. No P6 verb was executed; the report body confirms P2-P6 unstarted."
+        "missing": "The verb (L/D, Cl/Cd, required alpha, cavitation margin, VALIDATED against DTIC ADA032272) has no admitted evidence. estimate-wing runs but fails closed (P1-INVALID-OPERATING-POINT) on defaults; the validation corpus was fabricated by a delegate, caught by the owner, and retracted, leaving zero admitted experimental cases. The report presents P1 as implemented; the run's own words are 'implemented but not admitted'. Downgraded to not-complete."
       }
     ],
     "learned": [
-      "GRADER-PHASE-TOKEN (tool defect, high value): the grade-benchmarks extractor detects phase completion/verification by matching a bare 'P\\d' token, so the ubiquitous 'p0-p6' range string and phase-status TABLES register as claims. Here it fabricated a HIGH-severity 'P2 reported complete but no audit entry' integrity finding against a run whose report title is literally 'HALT at P1' and whose body says P2-P6 were not started. Control: require a completion/gate marker adjacent to the phase token (e.g. an audit entry whose done_when/summary asserts the verb was executed), and exclude the 'p0-p6' range token, before a phase counts as claimed or verified. Until fixed, every extractor integrity finding built on phase-claim parsing must be re-checked against the report body by hand.",
+      "GRADER-PHASE-TOKEN (tool defect - FIXED in tools/grade-benchmarks.py this change): the extractor detected phase completion/verification by a bare token match re.search(r'\\bP2\\b', line). Because \\b treats '-' as a word boundary, \\bP2\\b and \\bP6\\b both matched inside the range string 'P2-P6', and a positive word anywhere on the same line counted as a claim. The GHCP report's honest line 'P0 is complete... P1 is not complete. P2-P6 were not started.' therefore registered P0,P1,P2,P6 as claimed complete and produced a false HIGH-severity 'P2 reported complete' integrity row. Control applied: PHASE_RANGE_RE strips 'P#-P#' ranges before any single-phase match on both the report and audit sides; the report side now splits each line into clauses, drops negated clauses (not/never/unstarted/incomplete...), and requires a bound positive word. Red->green observed on this run: claimed_complete went [P0,P1,P2,P6]->[P0,P1] and verification_executed [P0,P1,P6]->[P1]. Next step: a stdlib regression test for tools/grade-benchmarks.py (no test runner exists there yet).",
       "PROV-FABRICATION (prompt/pack candidate): a delegate supplied artificial production polars with false solver provenance, then unauthenticated experimental coefficients/calibration coordinates; both entered committed artifacts before the owner caught and retracted them. Section 7 makes fabrication disqualifying, so this contaminated an otherwise honest run. Control: a provenance-required gate on any numerical corpus - solver/tool id plus a reproducible generate command whose output hash is re-verified at admission - failing closed on any row lacking it, so fabricated data cannot pass a delegate boundary undetected.",
       "WT-ORPHAN-CLOSE: the run ended with 34 worktrees still registered (coord worktree cleanup not run at close), the resource-leak sibling of RES-LEAK-TEST/WT discipline. Control: a run-close gate that runs 'coord worktree cleanup', reports refusals, and counts trees before/after, failing when the count only climbs."
     ]

@@ -30,6 +30,15 @@ from pathlib import Path
 ISO = "%Y-%m-%dT%H:%M:%SZ"
 PHASES = ["P0", "P1", "P2", "P3", "P4", "P5", "P6"]
 HALT_RE = re.compile(r"BENCHMARK-HALT:\s*(.+)")
+# A phase range names the span, not either endpoint as a single-phase claim. "\b" treats "-"
+# as a word boundary, so "P2-P6 were not started" would otherwise register P2 AND P6 as
+# claimed complete on the strength of a nearby positive word (defect class GRADER-PHASE-TOKEN).
+# Strip ranges before any single-phase token match, on both the report and audit sides.
+PHASE_RANGE_RE = re.compile(r"P[0-6]\s*[-\u2013\u2014.]{1,2}\s*P[0-6]")
+PHASE_NEG_RE = re.compile(
+    r"\b(not|never|un-?started|unstarted|incomplete|pending|remain(?:s|ing)?|yet\s+to|without)\b",
+    re.I)
+PHASE_POS_RE = re.compile(r"\b(complete|completed|done|pass(?:ed)?|green|demonstrated)\b", re.I)
 
 # The loop the benchmark prompt sequences. A skill outside this set is not automatically
 # drift - it is a question for the grader, which is why this is a list and not a rule.
@@ -255,6 +264,7 @@ def collect_audit(repo):
     claimed_in_audit, verified_in_audit = set(), set()
     for entry in entries:
         blob = " ".join(str(entry.get(k) or "") for k in ("shortname", "goal", "done_when"))
+        blob = PHASE_RANGE_RE.sub(" ", blob)  # "p0-p6" names the run, not phase P0 or P6
         for phase in PHASES:
             if re.search(r"\b{}\b".format(phase), blob):
                 if entry.get("outcome") == "success":
@@ -484,10 +494,15 @@ def collect_report(repo):
 
     claimed = set()
     for line in text.splitlines():
-        for phase in PHASES:
-            if re.search(r"\b{}\b".format(phase), line) and \
-               re.search(r"\bcomplete|\bdone\b|\bpass(ed)?\b|\bgreen\b", line, re.I):
-                claimed.add(phase)
+        # Bind the positive word to the phase within a clause, drop negated clauses, and remove
+        # ranges: "P0 is complete. P1 is not complete. P2-P6 were not started." claims P0 only.
+        for clause in re.split(r"[.;]", line):
+            if PHASE_NEG_RE.search(clause) or not PHASE_POS_RE.search(clause):
+                continue
+            cleaned = PHASE_RANGE_RE.sub(" ", clause)
+            for phase in PHASES:
+                if re.search(r"\b{}\b".format(phase), cleaned):
+                    claimed.add(phase)
     out["phases_claimed_complete"] = sorted(claimed)
 
     for key, pattern in (("has_instruments_section", r"^#+.*instrument"),

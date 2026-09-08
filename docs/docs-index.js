@@ -290,7 +290,7 @@ window.DOCS_INDEX = {
     },
     {
       "id": "grade-ghcp-p0-p6",
-      "path": "docs/benchmark/comparisons/grade-20260908T124115Z.md",
+      "path": "docs/benchmark/comparisons/grade-20260908T130627Z.md",
       "title": "Benchmark grade: CFD-Bench-GHCP P0-P6 (HALT at P1)",
       "type": "doc",
       "status": "accepted",
@@ -298,7 +298,7 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2027-03-08",
       "reviewSuggested": [],
-      "summary": "Single-run grade of CFD-Bench-GHCP against the P0-P6 autonomous-build contract (docs/benchmarkprompts/cfd-cad-p0-p6-autonomous-build.txt). Post-disconfirm: 1 phase (P0) genuinely demonstrated by executing measure-wing; P1 halted honestly (validation gate uncleared, delegate fabrication caught and retracted); P2-P6 unstarted. The extractor's P2/P6 integrity rows are parser false-positives, corrected in Method and limits.",
+      "summary": "Single-run grade of CFD-Bench-GHCP against the P0-P6 autonomous-build contract (docs/benchmarkprompts/cfd-cad-p0-p6-autonomous-build.txt). Post-disconfirm and after patching the grader's phase-token detector: 1 phase (P0) demonstrated by re-executing measure-wing; P1 implemented but not admitted (validation gate uncleared, delegate fabrication caught and retracted); P2-P6 unstarted.",
       "tags": [
         "benchmark",
         "grading",
@@ -307,7 +307,7 @@ window.DOCS_INDEX = {
       ],
       "links": [],
       "diagrams": [],
-      "sourceSha256": "27729aea979ce1061146d201b57287b5e6053ee9fb48c57c4b10b5a4affc95a1"
+      "sourceSha256": "28a0cb79b7477e220c7b4a1efd2985a3d047b49e070fc07b9ec059f27f452f2d"
     },
     {
       "id": "glossary-cfd-hydrofoil",
@@ -1105,8 +1105,8 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     },
     {
-      "id": "surface-benchmark-comparisons-grade-20260908t124115z",
-      "path": "docs/benchmark/comparisons/grade-20260908T124115Z.html",
+      "id": "surface-benchmark-comparisons-grade-20260908t130627z",
+      "path": "docs/benchmark/comparisons/grade-20260908T130627Z.html",
       "title": "Benchmark comparison",
       "kind": "knowledge-tool",
       "description": "Open an interactive knowledge artifact.",
@@ -1155,5 +1155,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "3b63a170f9427c9b45001024b5dce527d62f27d8155268822dc574658d4df700"
+  "graphSha256": "6404564d17a9f6297cc53ee507a765104ce2db851887001d117d6ca437e93808"
 };
