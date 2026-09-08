@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-08T13:07:31Z",
+  "generated": "2026-09-08T13:21:42Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -636,6 +636,27 @@ window.AUDIT_DATA = {
       "outcome": "success",
       "goal": "Patch the extractor phase-token detection and re-run the grade",
       "done_when": "false P2/P6 rows removed; grade regenerated with verdict; committed",
+      "tier": "T1",
+      "fan_out": 0
+    },
+    {
+      "id": "al-01M20JWZ1SYRASF2EC9BV03Z5G",
+      "shortname": "grade-ghcp-radar-derived",
+      "datetime": "2026-09-08T13:21:42Z",
+      "session": "grade-ghcp-0908",
+      "prompt": "add to the grading: end html with a kiviat/radar of key metrics to stack and compare runs; add deterministic metrics + qualitative narratives",
+      "summary": "Enhanced grade-benchmarks.py: added collect_derived (authored-vs-bookkeeping churn ratio, cost/commits per demonstrated phase, integrity score, verification density, delegation budget discipline, rework ratio) rendered as a Derived metrics table in md+html, and an end-of-HTML comparison radar (Kiviat) over six deterministic 0-1 spokes overlaid per run for stacking future runs. node --check passes; radar data verified. Regenerated GHCP grade.",
+      "kind": "skill",
+      "skill": "grade-benchmarks",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/benchmark/comparisons/grade-20260908T131937Z.md"
+      ],
+      "tags": [],
+      "outcome": "success",
+      "goal": "Add a comparison radar and derived metrics to the grader for cross-run insight",
+      "done_when": "radar renders at end of html, derived metrics in payload+views, regenerated grade committed",
       "tier": "T1",
       "fan_out": 0
     }

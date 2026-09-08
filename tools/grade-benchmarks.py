@@ -768,6 +768,71 @@ def score_axes(run):
     return axes
 
 
+def collect_derived(run):
+    """Deterministic ratios built from facts already collected. These sharpen the two questions
+    the raw axes leave open - 'how much of this volume was real output?' and 'what did a phase
+    actually cost?' - and they feed the comparison radar. A ratio with a zero denominator is
+    'not recorded' (None), never a fabricated zero (IO8)."""
+    audit = run.get("audit") or {}
+    report = run.get("report") or {}
+    git = run.get("git") or {}
+    integ = run.get("integrity") or []
+    axes = run.get("axes") or {}
+
+    demonstrated = len(audit.get("phases_verification_executed") or [])
+    claimed = len(report.get("phases_claimed_complete") or [])
+    measured = audit.get("measured_seconds") or 0
+
+    high = sum(1 for i in integ if i.get("severity") == "high")
+    med = sum(1 for i in integ if i.get("severity") == "medium")
+    integrity_score = max(0.0, round(1.0 - 0.34 * high - 0.10 * med, 3))
+
+    # Derived/register artifacts are bookkeeping, not product. Their churn inflates the
+    # line count without moving the build forward, so the authored share is the honest signal.
+    bookkeeping = ("docs-index.js", "audit-data.js", "audit-log.jsonl", "change-log.jsonl")
+    churn = git.get("top_churn") or []
+    total_touch = sum(n for _, n in churn)
+    book_touch = sum(n for f, n in churn if any(f.endswith(b) for b in bookkeeping))
+    authored_churn_ratio = round((total_touch - book_touch) / total_touch, 3) if total_touch else None
+
+    dele = audit.get("delegations") or 0
+    budget_issues = (audit.get("delegations_without_budget") or 0) + \
+                    (audit.get("delegations_over_budget") or 0)
+    delegation_discipline = round(max(0.0, 1.0 - budget_issues / dele), 3) if dele else None
+
+    added = git.get("lines_added") or 0
+    deleted = git.get("lines_deleted") or 0
+
+    def sc(key):
+        return (axes.get(key) or {}).get("score")
+
+    return {
+        "demonstrated_phases": demonstrated,
+        "claimed_phases": claimed,
+        "demonstration_ratio": round(demonstrated / len(PHASES), 3),
+        "verification_density": round(demonstrated / claimed, 3) if claimed else None,
+        "integrity_score": integrity_score,
+        "high_findings": high,
+        "medium_findings": med,
+        "cost_per_demonstrated_phase_seconds": round(measured / demonstrated, 1) if demonstrated else None,
+        "commits_per_demonstrated_phase": round((git.get("commits") or 0) / demonstrated, 1) if demonstrated else None,
+        "authored_churn_ratio": authored_churn_ratio,
+        "rework_ratio": round(deleted / added, 3) if added else None,
+        "delegation_discipline": delegation_discipline,
+        "parallel_speedup": audit.get("speedup"),
+        "worktrees_now": git.get("worktrees_now"),
+        # The radar spokes: six deterministic 0..1 dimensions, missing scores drawn at centre.
+        "radar": {
+            "Coordination": sc("coordination"),
+            "Contention": sc("contention"),
+            "Task focus": sc("task_focus"),
+            "Functionality": sc("functionality"),
+            "Phase demo": round(demonstrated / len(PHASES), 3),
+            "Integrity": integrity_score,
+        },
+    }
+
+
 def grade_run(repo, name, do_build, build_timeout):
     run = {"identity": collect_identity(repo, name)}
     if not run["identity"]["exists"]:
@@ -787,6 +852,7 @@ def grade_run(repo, name, do_build, build_timeout):
                       else "not recorded")
     run["axes"] = score_axes(run)
     run["integrity"] = integrity(run)
+    run["derived"] = collect_derived(run)
     scored = [a["score"] for a in run["axes"].values() if a["score"] is not None]
     run["deterministic_floor"] = round(sum(scored) / len(scored), 3) if scored else None
     run["axes_not_scored"] = sorted(k for k, a in run["axes"].items() if a["score"] is None)
@@ -915,6 +981,32 @@ def render_markdown(runs, generated, verdict=None):
     row("coordination skills installed", [r["identity"].get("has_coordination_skills") for r in runs])
     row("integrity findings", [len(r.get("integrity") or []) for r in runs])
     row("deterministic floor", [r.get("deterministic_floor") for r in runs])
+    out.append("")
+
+    out += ["## Derived metrics", "",
+            "*Deterministic ratios. 'Demonstration' and 'integrity' are the radar's two non-axis "
+            "spokes; a zero-denominator ratio reads 'not recorded', never a fabricated zero.*", "",
+            head, rule]
+    derived_rows = [
+        ("demonstrated / claimed phases",
+         lambda d: "{} / {}".format(d.get("demonstrated_phases"), d.get("claimed_phases"))),
+        ("demonstration ratio (of 7)", lambda d: d.get("demonstration_ratio")),
+        ("verification density (demo/claimed)", lambda d: d.get("verification_density")),
+        ("integrity score", lambda d: d.get("integrity_score")),
+        ("high / medium findings",
+         lambda d: "{} / {}".format(d.get("high_findings"), d.get("medium_findings"))),
+        ("cost per demonstrated phase", lambda d: d.get("cost_per_demonstrated_phase_seconds")),
+        ("commits per demonstrated phase", lambda d: d.get("commits_per_demonstrated_phase")),
+        ("authored churn ratio (vs bookkeeping)", lambda d: d.get("authored_churn_ratio")),
+        ("rework ratio (deleted/added)", lambda d: d.get("rework_ratio")),
+        ("delegation budget discipline", lambda d: d.get("delegation_discipline")),
+        ("parallel speedup", lambda d: d.get("parallel_speedup")),
+        ("worktrees open at grade time", lambda d: d.get("worktrees_now")),
+    ]
+    for label, get in derived_rows:
+        unit = "_seconds" if "cost per demonstrated phase" in label else label
+        out.append("| {} | ".format(label) + " | ".join(
+            fmt(get(r.get("derived") or {}), unit) for r in runs) + " |")
     out.append("")
 
     for key, title in AXIS_TITLES:
@@ -1144,6 +1236,106 @@ function el(tag, cls, text){
   if(cls) e.className = cls;
   if(text !== undefined && text !== null) e.textContent = text;
   return e;
+}
+var SVGNS = "http://www.w3.org/2000/svg";
+function svg(tag, attrs){
+  var e = document.createElementNS(SVGNS, tag);
+  if(attrs) for(var k in attrs){ if(attrs.hasOwnProperty(k)) e.setAttribute(k, attrs[k]); }
+  return e;
+}
+var PALETTE = ["#8a4b2a","#2c6a45","#4f6377","#8a6410","#7a3550","#3a5f8a","#6a5acd","#a3301c"];
+
+/* ---- derived metrics as table rows (label x run) ---- */
+function derivedRows(){
+  var defs = [
+    ["demonstrated / claimed phases", function(d){ return d.demonstrated_phases+" / "+d.claimed_phases; }],
+    ["demonstration ratio (of 7)", function(d){ return d.demonstration_ratio; }],
+    ["verification density (demo/claimed)", function(d){ return d.verification_density; }],
+    ["integrity score", function(d){ return d.integrity_score; }],
+    ["high / medium findings", function(d){ return d.high_findings+" / "+d.medium_findings; }],
+    ["cost / demonstrated phase", function(d){ return d.cost_per_demonstrated_phase_seconds==null
+        ? null : humanize(d.cost_per_demonstrated_phase_seconds); }],
+    ["commits / demonstrated phase", function(d){ return d.commits_per_demonstrated_phase; }],
+    ["authored churn ratio (vs bookkeeping)", function(d){ return d.authored_churn_ratio; }],
+    ["rework ratio (deleted/added)", function(d){ return d.rework_ratio; }],
+    ["delegation budget discipline", function(d){ return d.delegation_discipline; }],
+    ["parallel speedup", function(d){ return d.parallel_speedup; }],
+    ["worktrees open at grade time", function(d){ return d.worktrees_now; }]
+  ];
+  return defs.map(function(def){
+    return [def[0], RUNS.map(function(r){ return def[1](r.derived||{}); })];
+  });
+}
+
+/* ---- the comparison radar (Kiviat): six deterministic 0-1 spokes, runs overlaid ---- */
+function radarSpokes(runs){
+  for(var i=0;i<runs.length;i++){
+    var rd = (runs[i].derived||{}).radar;
+    if(rd) return Object.keys(rd);
+  }
+  return [];
+}
+function kiviat(runs){
+  var sec = el("section"); sec.id = "kiviat";
+  sec.appendChild(el("h2",null,"Comparison radar"));
+  sec.appendChild(el("p","note","Six deterministic 0-1 spokes per run, overlaid so runs stack for "
+    + "comparison. A missing score sits at the centre. The judgment axes (performance, parallelism, "
+    + "drift) are not plotted - they carry no defensible ratio, by design."));
+  var spokes = radarSpokes(runs);
+  if(spokes.length < 3){
+    sec.appendChild(el("p","empty","Not enough scored spokes to plot a radar."));
+    return sec;
+  }
+  var W=560, H=440, cx=W/2, cy=H/2+4, R=150, N=spokes.length;
+  var s = svg("svg",{viewBox:"0 0 "+W+" "+H, width:"100%", height:"auto",
+                     role:"img", "aria-label":"Comparison radar of deterministic scores"});
+  function pt(ai, frac){
+    var ang = -Math.PI/2 + ai*2*Math.PI/N;
+    return [cx+Math.cos(ang)*R*frac, cy+Math.sin(ang)*R*frac];
+  }
+  [0.25,0.5,0.75,1].forEach(function(fr){
+    var pts=[]; for(var a=0;a<N;a++){ var p=pt(a,fr); pts.push(p[0].toFixed(1)+","+p[1].toFixed(1)); }
+    s.appendChild(svg("polygon",{points:pts.join(" "), fill:"none",
+                                 stroke:"#cfc9bf", "stroke-width":"1"}));
+  });
+  for(var a=0;a<N;a++){
+    var o=pt(a,1);
+    s.appendChild(svg("line",{x1:cx, y1:cy, x2:o[0].toFixed(1), y2:o[1].toFixed(1),
+                              stroke:"#e3dfd8", "stroke-width":"1"}));
+    var lp=pt(a,1.16);
+    var tx=svg("text",{x:lp[0].toFixed(1), y:lp[1].toFixed(1), fill:"#6d6a65",
+      "font-size":"11", "font-family":"ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif",
+      "text-anchor": lp[0]<cx-6?"end":(lp[0]>cx+6?"start":"middle"),
+      "dominant-baseline": lp[1]<cy-4?"auto":(lp[1]>cy+4?"hanging":"middle")});
+    tx.textContent = spokes[a];
+    s.appendChild(tx);
+  }
+  runs.forEach(function(r, ri){
+    var rd=(r.derived||{}).radar||{}, pts=[], col=PALETTE[ri%PALETTE.length];
+    for(var a=0;a<N;a++){
+      var v=rd[spokes[a]]; if(v===null||v===undefined) v=0;
+      var p=pt(a, Math.max(0,Math.min(1,v))); pts.push(p[0].toFixed(1)+","+p[1].toFixed(1));
+    }
+    s.appendChild(svg("polygon",{points:pts.join(" "), fill:col, "fill-opacity":"0.12",
+                                 stroke:col, "stroke-width":"2"}));
+    for(var b=0;b<N;b++){
+      var vv=rd[spokes[b]]; if(vv===null||vv===undefined) vv=0;
+      var q=pt(b, Math.max(0,Math.min(1,vv)));
+      s.appendChild(svg("circle",{cx:q[0].toFixed(1), cy:q[1].toFixed(1), r:"2.6", fill:col}));
+    }
+  });
+  sec.appendChild(s);
+  var lg=el("div"); lg.style.cssText="margin-top:8px;display:flex;flex-wrap:wrap;gap:14px";
+  runs.forEach(function(r,ri){
+    var it=el("span"); it.style.cssText="display:inline-flex;align-items:center;gap:6px;font-size:13px";
+    var sw=el("span"); sw.style.cssText="display:inline-block;width:11px;height:11px;border-radius:2px;"
+      + "background:"+PALETTE[ri%PALETTE.length];
+    it.appendChild(sw);
+    it.appendChild(document.createTextNode(r.identity.name+" (floor "+fmt(r.deterministic_floor)+")"));
+    lg.appendChild(it);
+  });
+  sec.appendChild(lg);
+  return sec;
 }
 function visible(){ return RUNS.filter(function(r){ return !S.hidden[r.identity.name]; }); }
 function matches(label, values){
@@ -1484,6 +1676,14 @@ function render(keepFocus){
   ], "metric"));
   app.appendChild(sum);
 
+  var dv = el("section"); dv.id = "derived";
+  dv.appendChild(el("h2",null,"Derived metrics"));
+  dv.appendChild(el("p","note","Deterministic ratios that sharpen the raw axes: how much of the "
+    + "line-count was real output vs bookkeeping, and what a demonstrated phase actually cost. "
+    + "A zero-denominator ratio reads 'not recorded', never a fabricated zero."));
+  dv.appendChild(table(derivedRows(), "metric"));
+  app.appendChild(dv);
+
   AXES.forEach(function(pair){
     var key = pair[0], title = pair[1];
     var s = el("section"); s.id = key;
@@ -1549,6 +1749,8 @@ function render(keepFocus){
   runs.forEach(function(r){ det.appendChild(detail(r)); });
   app.appendChild(det);
 
+  app.appendChild(kiviat(runs));
+
   syncControls();
 
   if(active && active.className === "search"){
@@ -1560,8 +1762,8 @@ function render(keepFocus){
 function buildNav(){
   var nav = document.getElementById("nav");
   nav.textContent = "";
-  var items = (V ? [["verdict","Ranking"]] : []).concat([["summary","Summary"]])
-      .concat(AXES).concat([["integrity","Integrity"],["detail","Per-run detail"]]);
+  var items = (V ? [["verdict","Ranking"]] : []).concat([["summary","Summary"],["derived","Derived metrics"]])
+      .concat(AXES).concat([["integrity","Integrity"],["detail","Per-run detail"],["kiviat","Comparison radar"]]);
   items.forEach(function(p){
     var a = el("a",null,p[1]); a.href = "#"+p[0]; nav.appendChild(a);
   });
