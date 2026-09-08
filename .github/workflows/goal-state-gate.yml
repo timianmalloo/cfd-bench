@@ -3,10 +3,16 @@
 # exceeded its declared fan-out cap fails the merge. Forward ratchet: historical entries on
 # origin/main are grandfathered. Reuses the vendored selfcheck --json (no pack file modified).
 # Standalone (not folded into docs-health) so it is independent of unrelated graph-health state.
+#
+# Was scripts/goal-state-gate.py, a repo-local implementation written before the pack carried
+# one. Its own docstring named its successor: "The reusable `--gate`/`--since` form lives in
+# AI-Forward (rev 63); this repo can drop this script and call that once it updatepacks."
+# That update landed, so the script is gone and this calls the vendored form directly - one
+# definition of what counts as a gap instead of two that can drift apart.
 name: goal-state-gate
 on:
   pull_request:
-    paths: ["docs/audit/**", "scripts/goal-state-gate.py", ".github/workflows/goal-state-gate.yml"]
+    paths: ["docs/audit/**", "docs/ai-forward-pack/scripts/audit-log.py", ".github/workflows/goal-state-gate.yml"]
   workflow_dispatch:
 
 jobs:
@@ -19,4 +25,4 @@ jobs:
       - name: Goal-state gate (AI-Forward 3.b)
         run: |
           git fetch --no-tags --depth=1 origin main
-          python3 scripts/goal-state-gate.py
+          python3 docs/ai-forward-pack/scripts/audit-log.py selfcheck --gate --since origin/main
