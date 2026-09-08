@@ -105,7 +105,12 @@ demonstrated phases, floor, commits - versus the most recent prior grade of the 
 **delegate models & veto ledger** section (model mix per delegate read from agent names, plus every
 VETO/CLEAR verdict with its reviewer model and phase), and a **phase velocity** section (first commit
 per phase, seen order, and inversions vs P0..P6). `--as-of <sha>` records a pin and flags a HEAD
-mismatch rather than checking out.
+mismatch rather than checking out. The HTML opens with an **exec-summary tile row** - runs graded,
+**winner** (verdict top-rank when N>1, else highest composite), integrity status, best phases
+demonstrated, active count - and a per-run **letter-grade chip** (a composite = mean of the eight
+radar spokes, mapped A-F). Two **repair-item** sections list improvements the run's signals imply -
+one for the **benchmark/prompt**, one for the **AI-Forward pack** - each row deterministic (target +
+severity + item + evidence) or authored in the verdict's `repairs` block.
 
 **It scores only what has a defensible ratio.** Coordination, contention, task focus and
 functionality carry numbers. **Performance, parallelism and drift are marked `judgment`** and
@@ -180,9 +185,14 @@ docs/benchmark/comparisons/<comparison-id>.verdict.json
                   "parallelism": {"<run>": "<did it pay, against which justification>"},
                   "drift":       {"<run>": "<the verdict, quoting the pair or path>"} },
   "downgrades": [ {"run": "<name>", "phase": "P4", "missing": "<the evidence that is absent>"} ],
-  "learned":    [ "<a failure mode seen in more than one run, as a class with a control>" ]
+  "learned":    [ "<a failure mode seen in more than one run, as a class with a control>" ],
+  "repairs":    { "benchmark": [ "<an improvement to the benchmark/prompt that needs judgment>" ],
+                  "pack":      [ "<an improvement to the AI-Forward pack that needs judgment>" ] }
 }
 ```
+
+The `repairs` block is optional and is merged with the deterministic repair items the grader
+derives from each run's signals; both render in the report's two Repair-items sections.
 
 ```
 python tools/grade-benchmarks.py <repos...> --out docs/benchmark/comparisons \

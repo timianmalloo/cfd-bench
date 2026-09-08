@@ -1059,6 +1059,84 @@ def collect_quality(repo, run):
     }
 
 
+def letter_grade(x):
+    """Map a 0-1 composite to a letter grade for the exec-summary tiles."""
+    if not isinstance(x, (int, float)):
+        return "n/a"
+    for thr, g in ((0.90, "A"), (0.85, "A-"), (0.80, "B+"), (0.75, "B"), (0.70, "B-"),
+                   (0.65, "C+"), (0.60, "C"), (0.55, "C-"), (0.50, "D"), (0.0, "F")):
+        if x >= thr:
+            return g
+    return "F"
+
+
+def collect_repairs(run):
+    """Deterministic 'repair items' derived from the run's own signals - improvements to the
+    BENCHMARK/PROMPT (the instrument) and to the AI-FORWARD PACK. Each is a candidate the grader
+    surfaces from evidence; the verdict may add author-written items alongside. target is one of
+    'prompt', 'benchmark', 'pack'."""
+    items = []
+    audit = run.get("audit") or {}
+    git_facts = run.get("git") or {}
+    tree = run.get("tree") or {}
+    report = run.get("report") or {}
+    quality = run.get("quality") or {}
+    derived = run.get("derived") or {}
+
+    def add(target, severity, item, evidence):
+        items.append({"target": target, "severity": severity, "item": item, "evidence": evidence})
+
+    if (derived.get("fabrication_events") or 0) > 0:
+        add("prompt", "high",
+            "Add a provenance-required admission gate for any numerical corpus (solver/tool id + a "
+            "reproducible generate command whose output hash is re-verified), fail-closed.",
+            "{} fabrication/retraction markers in the record".format(derived["fabrication_events"]))
+    if tree.get("projects", 0) > 0 and not tree.get("solutions"):
+        add("benchmark", "medium",
+            "Require a committed .sln so --verify-build can observe final functionality instead of "
+            "the grader reconstructing the build by hand.",
+            "{} .csproj but no .sln".format(tree.get("projects")))
+    if report.get("halt_declared") and not report.get("halt_line"):
+        add("benchmark", "low",
+            "Reconcile the HALT signal: the report body declared a halt but carried no "
+            "BENCHMARK-HALT marker line - the marker convention and the report disagree.",
+            "halt_declared=true, halt_line=none")
+    if (git_facts.get("worktrees_now") or 0) > 10:
+        add("prompt", "medium",
+            "Mandate `coord worktree cleanup` at run close and count trees before/after; orphaned "
+            "worktrees accumulate silently.",
+            "{} worktrees open at grade time".format(git_facts.get("worktrees_now")))
+    if (audit.get("delegations_without_budget") or 0) > 0:
+        add("prompt", "medium",
+            "Require a budget AND a convergence condition on every delegation - an unbounded "
+            "fan-out is indistinguishable from a bounded one.",
+            "{} delegation(s) without a budget".format(audit["delegations_without_budget"]))
+    if (quality.get("model_allocation") or {}).get("distinct_models", 0) == 0 \
+            and (audit.get("delegations") or 0) > 0:
+        add("pack", "medium",
+            "Record the delegate model on each agent_run in audit-log.py (a `model` field): the "
+            "model is only inferrable from the agent name today, so tier-allocation (GO19) is "
+            "not reliably measurable.",
+            "delegations present but no model resolvable from agent names")
+    if (audit.get("selfcheck") or {}).get("goal_state_gaps"):
+        add("pack", "low",
+            "Goal-state coverage gaps remain - reinforce the CT19 two-step front matter and the "
+            "audit selfcheck that flags a substantive turn with no goal state.",
+            "{} goal-state gaps".format((audit["selfcheck"]).get("goal_state_gaps")))
+    if derived.get("defect_class_conversion") is not None and derived["defect_class_conversion"] < 0.5:
+        add("pack", "low",
+            "Many defect classes are registered without a control (low conversion) - enforce the "
+            "control ladder so a lesson becomes a test/gate, not a memoir.",
+            "control conversion {}".format(derived["defect_class_conversion"]))
+    if (run.get("coord") or {}).get("seam_mean_latency_seconds") is None \
+            and (run.get("coord") or {}).get("seams_total"):
+        add("pack", "low",
+            "The coordination request store exposes no timestamps - add created_at/resolved_at so "
+            "seam-resolution latency is measurable, not just the ratio.",
+            "seams present, latency not recorded")
+    return items
+
+
 def grade_run(repo, name, do_build, build_timeout):
     run = {"identity": collect_identity(repo, name)}
     if not run["identity"]["exists"]:
@@ -1102,6 +1180,12 @@ def grade_run(repo, name, do_build, build_timeout):
     }
 
     run["derived"] = collect_derived(run)
+    radar = (run["derived"] or {}).get("radar") or {}
+    vals = [v if isinstance(v, (int, float)) else 0.0 for v in radar.values()]
+    comp = round(sum(vals) / len(vals), 3) if vals else None
+    run["derived"]["composite_score"] = comp
+    run["derived"]["grade"] = letter_grade(comp)
+    run["repairs"] = collect_repairs(run)
     (run.get("audit") or {}).pop("entries_slim", None)   # scratch data, kept out of the payload
     (run.get("git") or {}).pop("commit_log", None)
     scored = [a["score"] for a in run["axes"].values() if a["score"] is not None]
@@ -1215,6 +1299,47 @@ def render_verdict_markdown(verdict):
     return out
 
 
+def exec_summary_md(runs, verdict):
+    lines = ["## Exec summary", ""]
+    win = None
+    if verdict and (verdict.get("ranking") or []):
+        win = verdict["ranking"][0].get("run")
+    elif len(runs) > 1:
+        win = max(runs, key=lambda r: (r.get("derived") or {}).get("composite_score") or -1)["identity"]["name"]
+    if win:
+        lines += ["- **{}:** {}".format("Winner" if len(runs) > 1 else "Run", win), ""]
+    lines += ["| run | grade | composite | phases | integrity |", "|---|---|---|---|---|"]
+    for r in runs:
+        d = r.get("derived") or {}
+        hi = len([f for f in (r.get("integrity") or []) if f["severity"] == "high"])
+        lines.append("| {} | {} | {} | {}/7 | {} |".format(
+            r["identity"]["name"], d.get("grade"), d.get("composite_score"),
+            d.get("demonstrated_phases"), "{} high".format(hi) if hi else "clean"))
+    return lines + [""]
+
+
+def repairs_md(runs, verdict):
+    out = []
+    vr = (verdict or {}).get("repairs") or {}
+    for title, targets, vkey in (
+            ("Repair items - benchmark & prompt", ("prompt", "benchmark"), "benchmark"),
+            ("Repair items - AI-Forward pack", ("pack",), "pack")):
+        rows = [(r["identity"]["name"], it) for r in runs for it in (r.get("repairs") or [])
+                if it.get("target") in targets]
+        vitems = vr.get(vkey) or []
+        if not rows and not vitems:
+            continue
+        out += ["## {}".format(title), "", "| source | severity | item | evidence |", "|---|---|---|---|"]
+        for name, it in rows:
+            out.append("| {} | {} | {} | {} |".format(name, it.get("severity"),
+                       str(it.get("item")).replace("|", "\\|"),
+                       str(it.get("evidence") or "").replace("|", "\\|")))
+        for s in vitems:
+            out.append("| verdict | - | {} | |".format(str(s).replace("|", "\\|")))
+        out.append("")
+    return out
+
+
 def render_markdown(runs, generated, verdict=None):
     names = [r["identity"]["name"] for r in runs]
     head = "| metric | " + " | ".join(names) + " |"
@@ -1222,7 +1347,7 @@ def render_markdown(runs, generated, verdict=None):
     out = ["# Benchmark comparison", "",
            "Generated {}. Extraction is deterministic; the axes marked **judgment** carry no".format(generated),
            "score because no defensible ratio exists for them - they are for the grader to rule on.",
-           ""] + render_verdict_markdown(verdict) + ["## Summary", "", head, rule]
+           ""] + exec_summary_md(runs, verdict) + render_verdict_markdown(verdict) + ["## Summary", "", head, rule]
 
     def row(label, values):
         out.append("| {} | ".format(label) + " | ".join(fmt(v, label) for v in values) + " |")
@@ -1374,6 +1499,8 @@ def render_markdown(runs, generated, verdict=None):
             if p in pv:
                 out.append("| {} | {} |".format(p, pv[p]))
         out.append("")
+
+    out += repairs_md(runs, verdict)
 
     for key, title in AXIS_TITLES:
         out += ["## {}".format(title), ""]
@@ -2104,6 +2231,104 @@ function applyTheme(mode){
   else root.setAttribute("data-theme", mode);
 }
 
+/* ---- exec-summary tiles: winner, per-run letter grades, headline metrics ---- */
+function pickWinner(runs){
+  if(V && V.ranking && V.ranking.length) return V.ranking[0].run;
+  if(runs.length < 2) return null;
+  var best = null;
+  runs.forEach(function(r){
+    var c = (r.derived||{}).composite_score;
+    if(c !== null && c !== undefined && (best === null || c > best.c)) best = {name:r.identity.name, c:c};
+  });
+  return best ? best.name : null;
+}
+function tile(label, big, sub, accent){
+  var d = el("div");
+  d.style.cssText = "flex:1 1 150px;min-width:132px;background:var(--panel);border:1px solid "
+    + "var(--line);border-radius:10px;padding:12px 14px";
+  var l = el("div",null,label);
+  l.style.cssText = "font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)";
+  var b = el("div",null,big);
+  b.style.cssText = "font-size:26px;font-weight:700;margin-top:4px;color:"+(accent||"var(--ink)");
+  d.appendChild(l); d.appendChild(b);
+  if(sub){ var s = el("div",null,sub); s.style.cssText="font-size:12px;color:var(--muted);margin-top:2px"; d.appendChild(s); }
+  return d;
+}
+function execTiles(runs){
+  var sec = el("section"); sec.id = "exec";
+  var row = el("div"); row.style.cssText = "display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 10px";
+  row.appendChild(tile("Runs graded", String(runs.length), null));
+  var win = pickWinner(runs);
+  if(win){
+    var wr = runs.filter(function(r){ return r.identity.name === win; })[0];
+    var wg = wr ? (wr.derived||{}).grade : null;
+    row.appendChild(tile(runs.length > 1 ? "Winner" : "Run", win, wg ? ("grade "+wg) : null, "var(--accent)"));
+  }
+  var high=0, med=0, low=0;
+  runs.forEach(function(r){ (r.integrity||[]).forEach(function(f){
+    if(f.severity==="high") high++; else if(f.severity==="medium") med++; else low++; }); });
+  row.appendChild(tile("Integrity", high?"CRITICAL":(med?"CONCERNS":"CLEAN"),
+    (high+med+low)+" finding(s)", high?"var(--hi)":(med?"var(--med)":"var(--ok)")));
+  var bc=0; runs.forEach(function(r){ var c=(r.derived||{}).demonstrated_phases||0; if(c>bc) bc=c; });
+  row.appendChild(tile("Phases demonstrated", bc+" / 7", runs.length>1?"best of set":null));
+  var act = runs.filter(function(r){ return (r.snapshot||{}).run_active; }).length;
+  if(act) row.appendChild(tile("Active", String(act), "provisional grade", "var(--med)"));
+  sec.appendChild(row);
+  var chips = el("div"); chips.style.cssText = "display:flex;flex-wrap:wrap;gap:10px";
+  runs.forEach(function(r,i){
+    var g=(r.derived||{}).grade||"n/a", c=(r.derived||{}).composite_score;
+    var chip=el("div");
+    chip.style.cssText="display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px "
+      + "solid var(--line);border-radius:8px;padding:6px 10px";
+    var gg=el("span",null,g); gg.style.cssText="font-size:20px;font-weight:700;color:"+PALETTE[i%PALETTE.length];
+    chip.appendChild(gg);
+    chip.appendChild(el("span",null,r.identity.name+(c!==null&&c!==undefined?(" \u00b7 "+c):"")));
+    chips.appendChild(chip);
+  });
+  sec.appendChild(chips);
+  return sec;
+}
+
+/* ---- repair items: improve the benchmark/prompt, and the AI-Forward pack ---- */
+function repairsSection(runs){
+  var sec=el("section"); sec.id="repairs";
+  sec.appendChild(el("h2",null,"Repair items"));
+  sec.appendChild(el("p","note","Deterministic candidates derived from each run's signals, plus any "
+    + "the grader authored in the verdict. Target: the benchmark/prompt (the instrument) or the "
+    + "AI-Forward pack."));
+  var vr = (V && V.repairs) || {};
+  [["Benchmark & prompt", ["prompt","benchmark"], "benchmark"],
+   ["AI-Forward pack", ["pack"], "pack"]].forEach(function(gp){
+    var rows=[];
+    runs.forEach(function(r){ (r.repairs||[]).forEach(function(it){
+      if(gp[1].indexOf(it.target)>=0) rows.push([r.identity.name,it]); }); });
+    var vitems = vr[gp[2]] || [];
+    if(!rows.length && !vitems.length) return;
+    sec.appendChild(el("h3",null,gp[0]));
+    var wrap=el("div","wrap"), t=el("table"), th=el("thead"), hr=el("tr");
+    ["source","severity","item","evidence"].forEach(function(x,i){ hr.appendChild(el("th", i===2?"metric":null, x)); });
+    th.appendChild(hr); t.appendChild(th); var tb=el("tbody");
+    rows.forEach(function(p){
+      var tr=el("tr");
+      tr.appendChild(el("td",null,p[0]));
+      tr.appendChild(el("td",null,p[1].severity));
+      tr.appendChild(el("td","metric",p[1].item));
+      tr.appendChild(el("td",null,p[1].evidence||""));
+      tb.appendChild(tr);
+    });
+    vitems.forEach(function(s){
+      var tr=el("tr");
+      tr.appendChild(el("td",null,"verdict"));
+      tr.appendChild(el("td",null,"\u2014"));
+      tr.appendChild(el("td","metric",s));
+      tr.appendChild(el("td",null,""));
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb); wrap.appendChild(t); sec.appendChild(wrap);
+  });
+  return sec;
+}
+
 function render(keepFocus){
   var active = keepFocus ? document.activeElement : null;
   var caret = active && active.selectionStart;
@@ -2121,6 +2346,7 @@ function render(keepFocus){
   }
 
   var halted = runs.filter(function(r){ return r.outcome === "HALT"; });
+  app.appendChild(execTiles(runs));
   if(halted.length){
     var s = el("section"); s.id = "halts";
     s.appendChild(el("h2",null,"Halts"));
@@ -2203,6 +2429,7 @@ function render(keepFocus){
   app.appendChild(snapshotSection(runs));
   app.appendChild(modelsVeto(runs));
   app.appendChild(phaseVelocity(runs));
+  app.appendChild(repairsSection(runs));
 
   AXES.forEach(function(pair){
     var key = pair[0], title = pair[1];
@@ -2282,7 +2509,7 @@ function render(keepFocus){
 function buildNav(){
   var nav = document.getElementById("nav");
   nav.textContent = "";
-  var items = (V ? [["verdict","Ranking"]] : []).concat([["summary","Summary"],["derived","Derived metrics"],["fabrication","Fabrication"],["perphase","Per-phase evidence"],["snapshot","Snapshot & delta"],["models","Models & vetoes"],["velocity","Phase velocity"]])
+  var items = (V ? [["verdict","Ranking"]] : []).concat([["exec","Summary"],["summary","Facts"],["derived","Derived metrics"],["fabrication","Fabrication"],["perphase","Per-phase evidence"],["snapshot","Snapshot & delta"],["models","Models & vetoes"],["velocity","Phase velocity"],["repairs","Repair items"]])
       .concat(AXES).concat([["integrity","Integrity"],["detail","Per-run detail"],["kiviat","Comparison radar"]]);
   items.forEach(function(p){
     var a = el("a",null,p[1]); a.href = "#"+p[0]; nav.appendChild(a);

@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-08T16:59:36Z",
+  "generated": "2026-09-08T17:22:50Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -699,6 +699,27 @@ window.AUDIT_DATA = {
       "outcome": "success",
       "goal": "Implement all 12 profiling/grading proposals in the grader",
       "done_when": "12 surfaces render in md+html, radar 8 spokes, node-check clean, regenerated grade committed",
+      "tier": "T1",
+      "fan_out": 0
+    },
+    {
+      "id": "al-01M210PG5BMHS1VMX72PSGCXDG",
+      "shortname": "grade-exec-tiles-repairs",
+      "datetime": "2026-09-08T17:22:50Z",
+      "session": "grade-ghcp-0908",
+      "prompt": "add exec-summary tiles (winner, grades) at top of html; add repair-items sections for the benchmark/prompt and for ai-forward contents",
+      "summary": "Added exec-summary tile row (runs, winner=verdict-top-rank-or-highest-composite, integrity status, best phases, active count) + per-run letter-grade chips (composite=mean of 8 radar spokes -> A-F). Added two Repair-items sections (benchmark/prompt, AI-Forward pack): deterministic items from run signals (fabrication->provenance gate, no .sln, orphan worktrees, missing budgets, model-not-in-agent_run, low defect-class conversion, seam latency) + optional verdict.repairs authored items. Rendered in md+html; nav updated; SKILL+prompt+verdict schema updated. Verified 2-run: GHCP C 0.636 vs Claude C- 0.554.",
+      "kind": "skill",
+      "skill": "grade-benchmarks",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/benchmark/comparisons/grade-20260908T172048Z.md"
+      ],
+      "tags": [],
+      "outcome": "success",
+      "goal": "Add exec tiles/grades and benchmark+pack repair-item sections to the grader",
+      "done_when": "tiles+grades+repairs render in html+md, node-check clean, committed+pushed",
       "tier": "T1",
       "fan_out": 0
     }

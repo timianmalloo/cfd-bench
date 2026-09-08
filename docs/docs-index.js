@@ -290,7 +290,7 @@ window.DOCS_INDEX = {
     },
     {
       "id": "grade-ghcp-p0-p6",
-      "path": "docs/benchmark/comparisons/grade-20260908T165738Z.md",
+      "path": "docs/benchmark/comparisons/grade-20260908T172048Z.md",
       "title": "Benchmark grade: CFD-Bench-GHCP P0-P6 (snapshot; run now active past P1)",
       "type": "doc",
       "status": "accepted",
@@ -298,7 +298,7 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2027-03-08",
       "reviewSuggested": [],
-      "summary": "Snapshot grade of CFD-Bench-GHCP at SHA 834705e (run still active). Verdict pertains to the earlier halted P1 state (SHA 702d170); the snapshot/delta and phase-velocity sections show the run has since advanced (+29 commits, into P2). Adds twelve deterministic surfaces incl. fabrication detector, delegate model/veto ledger, halt-honesty, per-phase timeline+evidence, seam health, snapshot pin + delta grading, phase velocity, and an eight-spoke comparison radar.",
+      "summary": "Snapshot grade of CFD-Bench-GHCP at SHA 834705e (run still active; grade C, composite 0.636). Adds an exec-summary tile row (winner/grades/headline metrics) and two repair-item sections (benchmark & prompt, AI-Forward pack) on top of the twelve deterministic surfaces and the eight-spoke comparison radar.",
       "tags": [
         "benchmark",
         "grading",
@@ -308,7 +308,7 @@ window.DOCS_INDEX = {
       ],
       "links": [],
       "diagrams": [],
-      "sourceSha256": "4feef7d6712fd146f1382c2eff85c13e2031bdbfe791e896b59e827d536ee7d9"
+      "sourceSha256": "eb69b4181da408eff3f8f84d2ce1179060f8f914bf90edf810b59672309b2369"
     },
     {
       "id": "glossary-cfd-hydrofoil",
@@ -1106,8 +1106,8 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     },
     {
-      "id": "surface-benchmark-comparisons-grade-20260908t165738z",
-      "path": "docs/benchmark/comparisons/grade-20260908T165738Z.html",
+      "id": "surface-benchmark-comparisons-grade-20260908t172048z",
+      "path": "docs/benchmark/comparisons/grade-20260908T172048Z.html",
       "title": "Benchmark comparison",
       "kind": "knowledge-tool",
       "description": "Open an interactive knowledge artifact.",
@@ -1156,5 +1156,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "3769adf8d6103b7e09903ee36850f4ac827019bd64f099251d8ac197e5c6670b"
+  "graphSha256": "27606570962de029dc408d3bbf63a7ced92d711799e1155f28a58012d8476454"
 };
