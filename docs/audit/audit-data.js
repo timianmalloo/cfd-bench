@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-07T23:50:26Z",
+  "generated": "2026-09-08T00:01:43Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -553,6 +553,44 @@ window.AUDIT_DATA = {
       "git": {
         "sha": "9627f08bbf0211b89105b638a0825a4a546e0bcd",
         "short": "9627f08bb",
+        "branch": "main",
+        "pushed": true
+      }
+    },
+    {
+      "id": "al-01M1Z5454XTVGSFVZF0FRFPSYM",
+      "shortname": "reconcile-pr1-and-clear-graph",
+      "datetime": "2026-09-08T00:01:43Z",
+      "session": "session_016CSSiS2bM8V2kRAgpXj6EW",
+      "prompt": "commit and push these changes with your proposed message, then ensure the cfd-bench graph is clean, ensure main is up to date",
+      "summary": "Reconciled a real collision on origin/main, then cleared the graph. THE COLLISION: while this session was updating the pack, PR #1 (a420e11) landed on origin/main touching the same two files coord install had just created - .agents/artifacts.yml and .gitattributes - plus a repo-local goal-state CI gate. The push was rejected; rebased onto origin/main and resolved two add/add conflicts by MERGE, not by discarding either side. Read both versions first. Theirs was a hand-written pre-emptive implementation whose own comments said the regenerate driver needs the rev-62 pack and to run it at the next /updatepack - which is exactly what this session did. TWO THINGS IN THEIRS WERE BETTER THAN MINE: portable plain `python` in the derived commands (the very portability defect the updatepack entry reported), and git's BUILT-IN union driver for the register files, which needs no per-clone install. I could not keep the union lines, and the reason is grounded rather than preference: driver_status() in coord-core.py collects every merge driver name declared in .gitattributes and requires each to be REGISTERED via `git config merge.<name>.driver`. `union` is a git built-in and is never registered there, so declaring it would make `coord doctor` report NOT EFFECTIVE permanently - a false alarm about a driver that genuinely works. That is a FINDING against the pack: coord doctor cannot distinguish git's built-in drivers from an unregistered custom one. Resolution taken: coord's generated .gitattributes wins because coord install now owns that file, and their one genuine addition was carried over - docs/health-history.jsonl: register, placed BELOW the managed-block end marker so `classify init --force` will not clobber it, with a comment recording where it came from and why classify init skipped it (the file does not exist yet). Re-ran coord install: 6 patterns, driver effective. Verified their CI gate now works - it calls audit-log.py selfcheck --json, and its docstring says it can be dropped for the pack's reusable --gate/--since form once the repo updatepacks, which has now happened; both gates pass (exit 0) and that replacement is left as a FINDING, not done, because it was not asked for. THE GRAPH: validate reported exactly one defect - `audit-log` was an orphan carrying links: [], so unlike backlog and domain-experts (no inbound but outbound present) it had no edge in either direction. Added one edge, verified rather than assumed: documents -> decision-0001-geometry-kernel, after confirming change-log.jsonl actually carries that decision (the OCCT deferral under LGPL-2.1 section 6). A padding edge would have cleared the check without making the graph truer. Graph now 25 artifacts, 0 problems / stale / flagged / orphans / index-drift, 0 defects; pack-doctor's knowledge graph check moved WARN -> PASS, taking the run to 0 FAIL, 2 WARN, 11 PASS. main is level with origin/main; audit log verifies 17 audit + 5 change entries, 0 unreadable. THIRD FINDING, unchanged from the updatepack entry: .agents/artifacts.yml still carries the absolute interpreter path inside the coord-generated managed block, so the derived regenerate commands remain non-portable to another machine or account - PR #1 had already solved this by hand and coord classify init overwrote the solution.",
+      "kind": "manual",
+      "skill": "updatepack",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        ".agents/artifacts.yml",
+        ".gitattributes",
+        "docs/audit/audit-log.md"
+      ],
+      "tags": [
+        "coordination",
+        "graph",
+        "reconciliation"
+      ],
+      "outcome": "success",
+      "goal": "Commit and push the pack update, reconcile with origin/main, and leave the docs graph with zero defects",
+      "done_when": "main level with origin/main; docs-graph validate reports 0 defects; pack-doctor knowledge-graph check PASS",
+      "tier": "T1",
+      "fan_out": 0,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true,
+        "acceptance_met": true
+      },
+      "git": {
+        "sha": "d1fbf2cc1955e879f210c937fb8fc6daf1bd59f2",
+        "short": "d1fbf2cc1",
         "branch": "main",
         "pushed": true
       }
