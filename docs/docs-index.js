@@ -289,6 +289,27 @@ window.DOCS_INDEX = {
       "sourceSha256": "53f1aa87cda645497ad9d834f9888fa0f7099ff5a61f040f764e43d4974adb67"
     },
     {
+      "id": "grade-ghcp-p0-p6",
+      "path": "docs/benchmark/comparisons/grade-20260908T124115Z.md",
+      "title": "Benchmark grade: CFD-Bench-GHCP P0-P6 (HALT at P1)",
+      "type": "doc",
+      "status": "accepted",
+      "owner": "@timianmalloo",
+      "phase": "",
+      "reviewBy": "2027-03-08",
+      "reviewSuggested": [],
+      "summary": "Single-run grade of CFD-Bench-GHCP against the P0-P6 autonomous-build contract (docs/benchmarkprompts/cfd-cad-p0-p6-autonomous-build.txt). Post-disconfirm: 1 phase (P0) genuinely demonstrated by executing measure-wing; P1 halted honestly (validation gate uncleared, delegate fabrication caught and retracted); P2-P6 unstarted. The extractor's P2/P6 integrity rows are parser false-positives, corrected in Method and limits.",
+      "tags": [
+        "benchmark",
+        "grading",
+        "evidence",
+        "halt"
+      ],
+      "links": [],
+      "diagrams": [],
+      "sourceSha256": "27729aea979ce1061146d201b57287b5e6053ee9fb48c57c4b10b5a4affc95a1"
+    },
+    {
       "id": "glossary-cfd-hydrofoil",
       "path": "docs/knowledge/cfd-hydrofoil-simulation/glossary.md",
       "title": "Glossary — Hydrofoil and CFD Ubiquitous Language",
@@ -1084,6 +1105,14 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     },
     {
+      "id": "surface-benchmark-comparisons-grade-20260908t124115z",
+      "path": "docs/benchmark/comparisons/grade-20260908T124115Z.html",
+      "title": "Benchmark comparison",
+      "kind": "knowledge-tool",
+      "description": "Open an interactive knowledge artifact.",
+      "artifactId": "grade-ghcp-p0-p6"
+    },
+    {
       "id": "surface-proposals-build-phasing-plan",
       "path": "docs/proposals/build-phasing-plan.html",
       "title": "Build Phasing Plan",
@@ -1126,5 +1155,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "5477201d34ba612b0abfb40be7e2dcb0628f5bba13fd7b1481fea72374441375"
+  "graphSha256": "3b63a170f9427c9b45001024b5dce527d62f27d8155268822dc574658d4df700"
 };

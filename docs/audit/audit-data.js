@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-08T00:01:43Z",
+  "generated": "2026-09-08T12:43:32Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -594,6 +594,29 @@ window.AUDIT_DATA = {
         "branch": "main",
         "pushed": true
       }
+    },
+    {
+      "id": "al-01M20GQ2M9Q4KVV8CHD4PPTPME",
+      "shortname": "grade-ghcp-p0-p6",
+      "datetime": "2026-09-08T12:43:32Z",
+      "session": "grade-ghcp-0908",
+      "prompt": "/grade-benchmarks CFD-Bench-GHCP",
+      "summary": "Graded single run CFD-Bench-GHCP vs P0-P6 contract. Post-disconfirm: 1 phase (P0) demonstrated - grader re-executed measure-wing (span/area/AR/mean chord), build clean, 85 tests pass. P1 HALTED honestly (DTIC validation gate uncleared; delegate fabrication caught+retracted); P2-P6 unstarted. Downgraded P1/P2/P6. Extractor P2/P6 integrity rows are p0-p6 token false-positives - raised GRADER-PHASE-TOKEN tool defect; also PROV-FABRICATION and WT-ORPHAN-CLOSE candidate classes.",
+      "kind": "skill",
+      "skill": "grade-benchmarks",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/benchmark/comparisons/grade-20260908T124115Z.md"
+      ],
+      "tags": [],
+      "outcome": "success",
+      "goal": "Grade CFD-Bench-GHCP against the P0-P6 autonomous build contract and rule the three judgment axes",
+      "done_when": "Verdict committed with md/html; phases checked for executed verbs; method+limits present",
+      "tier": "T1",
+      "fan_out": 0,
+      "started_at": "2026-09-08T12:35:01Z",
+      "duration_seconds": 511.0
     }
   ],
   "changes": [
