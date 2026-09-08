@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-08T13:21:42Z",
+  "generated": "2026-09-08T13:40:20Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -657,6 +657,27 @@ window.AUDIT_DATA = {
       "outcome": "success",
       "goal": "Add a comparison radar and derived metrics to the grader for cross-run insight",
       "done_when": "radar renders at end of html, derived metrics in payload+views, regenerated grade committed",
+      "tier": "T1",
+      "fan_out": 0
+    },
+    {
+      "id": "al-01M20KZ35R29FT5WTEN0W3HW1W",
+      "shortname": "grade-ghcp-six-additions",
+      "datetime": "2026-09-08T13:40:20Z",
+      "session": "grade-ghcp-0908",
+      "prompt": "update the grading skill/script/html to include all 6 suggestions (and rethink the kiviat). re-run against the completed/halted GHCP session, ignore the running one.",
+      "summary": "Added 6 deterministic grading surfaces to grade-benchmarks.py: (1) fabrication/retraction detector scanning audit+commits -> HIGH integrity finding (auto-flagged 14 markers on GHCP), (2) per-phase owner-review detection, (3) halt-honesty score, (4) per-phase audit timeline, (5) seam-request health (resolution ratio/latency), (6) auto-drafted per-phase evidence table. Rethought the Kiviat: replaced redundant Functionality/Phase-demo with 7 orthogonal spokes (Completeness/Verification/Integrity/Coordination/Task focus/Efficiency/Honesty). Fixed outcome detection to see body-declared HALT. Updated SKILL.md + Copilot prompt. Re-graded completed/halted GHCP run (outcome now HALT).",
+      "kind": "skill",
+      "skill": "grade-benchmarks",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/benchmark/comparisons/grade-20260908T133823Z.md"
+      ],
+      "tags": [],
+      "outcome": "success",
+      "goal": "Implement all 6 grading additions + radar rethink and re-grade the halted GHCP run",
+      "done_when": "6 surfaces render in md+html, radar rethought, node-check clean, regenerated grade committed",
       "tier": "T1",
       "fan_out": 0
     }

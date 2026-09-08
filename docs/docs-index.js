@@ -290,7 +290,7 @@ window.DOCS_INDEX = {
     },
     {
       "id": "grade-ghcp-p0-p6",
-      "path": "docs/benchmark/comparisons/grade-20260908T131937Z.md",
+      "path": "docs/benchmark/comparisons/grade-20260908T133823Z.md",
       "title": "Benchmark grade: CFD-Bench-GHCP P0-P6 (HALT at P1)",
       "type": "doc",
       "status": "accepted",
@@ -298,7 +298,7 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2027-03-08",
       "reviewSuggested": [],
-      "summary": "Single-run grade of CFD-Bench-GHCP against the P0-P6 autonomous-build contract (docs/benchmarkprompts/cfd-cad-p0-p6-autonomous-build.txt). Post-disconfirm and after patching the grader's phase-token detector: 1 phase (P0) demonstrated by re-executing measure-wing; P1 implemented but not admitted (validation gate uncleared, delegate fabrication caught and retracted); P2-P6 unstarted. Adds a derived-metrics table and an HTML comparison radar for stacking future runs.",
+      "summary": "Single-run grade of the completed/halted CFD-Bench-GHCP run against the P0-P6 autonomous-build contract (docs/benchmarkprompts/cfd-cad-p0-p6-autonomous-build.txt). P0 demonstrated by re-executing measure-wing; P1 implemented but not admitted (validation gate uncleared, delegate fabrication auto-detected); P2-P6 unstarted. Adds six deterministic surfaces (fabrication detector, per-phase owner-review, halt-honesty, per-phase timeline, seam health, auto-drafted per-phase evidence) and a rethought comparison radar.",
       "tags": [
         "benchmark",
         "grading",
@@ -307,7 +307,7 @@ window.DOCS_INDEX = {
       ],
       "links": [],
       "diagrams": [],
-      "sourceSha256": "28e459e64d6a2c909a6e9eb487883883349abc463b40698ef43ed63acb865685"
+      "sourceSha256": "d255047d2078bc127ea242805e49ae30d58ea2636a1cbcd24692953f68c78a28"
     },
     {
       "id": "glossary-cfd-hydrofoil",
@@ -1105,8 +1105,8 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     },
     {
-      "id": "surface-benchmark-comparisons-grade-20260908t131937z",
-      "path": "docs/benchmark/comparisons/grade-20260908T131937Z.html",
+      "id": "surface-benchmark-comparisons-grade-20260908t133823z",
+      "path": "docs/benchmark/comparisons/grade-20260908T133823Z.html",
       "title": "Benchmark comparison",
       "kind": "knowledge-tool",
       "description": "Open an interactive knowledge artifact.",
@@ -1155,5 +1155,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "b50b020f97c02262a7902bc16e147204593ee646c90ec322723b2f39669cd333"
+  "graphSha256": "e09ea8e7ca609ef62ea77b253cb75226b53a0cca2c6660be6be2b2dcd5c5486c"
 };

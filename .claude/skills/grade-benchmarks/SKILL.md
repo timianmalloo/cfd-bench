@@ -88,6 +88,20 @@ the exhibits (churn and contention with each file's class, the `done_when -> sum
 the delegation ledger, `coord doctor` verbatim). The **`.md` is canonical** and carries the
 same content statically; the `.json` is the raw payload.
 
+Beyond the seven axes it also emits, per run, a set of **deterministic derived surfaces** the
+grader should read and quote: a **derived-metrics** table (authored-vs-bookkeeping churn ratio,
+cost/commits per demonstrated phase, integrity score, verification density, delegation budget
+discipline, rework ratio, **halt-honesty**, **fabrication/retraction event count**, **phases with
+owner review**, **seam resolution ratio**); a **fabrication & retraction** section that scans the
+audit and commit record for fabrication/false-provenance markers and raises a **HIGH integrity
+finding** on any hit (so an invented-data run is caught by the grader, not only by reading the
+report); an **auto-drafted per-phase evidence** table (per phase: executed-verification signal,
+owner-review acceptance, audit time-span, and the `done_when -> summary` to quote); and, at the end
+of the HTML, a **comparison radar (Kiviat)** over seven orthogonal deterministic 0-1 spokes -
+Completeness, Verification, Integrity, Coordination, Task focus, Efficiency, Honesty - drawn one
+overlaid polygon per run so multiple graded runs **stack on one figure**. The radar plots only
+spokes with a defensible ratio; the judgment axes are excluded by design.
+
 **It scores only what has a defensible ratio.** Coordination, contention, task focus and
 functionality carry numbers. **Performance, parallelism and drift are marked `judgment`** and
 carry none, on purpose — there is no absolute scale for speed, more parallelism is not better,
