@@ -243,9 +243,14 @@ window.DOCS_INDEX = {
         "change-log",
         "project-memory"
       ],
-      "links": [],
+      "links": [
+        {
+          "to": "decision-0001-geometry-kernel",
+          "rel": "documents"
+        }
+      ],
       "diagrams": [],
-      "sourceSha256": "f0b6d9b5fd78da97bbc40a9dedcc884f48ee2d79f68a66beaa182a9948d8f534"
+      "sourceSha256": "158ab1ce68c88d111f2467f79395044a5a6f93f8568f5bef07e9c3153ee134b3"
     },
     {
       "id": "backlog",
@@ -1121,5 +1126,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "ce9886016093c0b400d8b464f160dc472adaed75832100754b798ed4be92355e"
+  "graphSha256": "5477201d34ba612b0abfb40be7e2dcb0628f5bba13fd7b1481fea72374441375"
 };

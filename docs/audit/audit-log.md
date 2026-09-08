@@ -5,7 +5,8 @@ type: doc
 status: accepted
 owner: "@maintainers"
 tags: [audit, history, change-log, project-memory]
-links: []
+links:
+  - { to: decision-0001-geometry-kernel, rel: documents }
 review-by: 2027-09-06
 review-suggested: []
 summary: >-
