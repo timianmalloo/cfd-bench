@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-08T13:40:20Z",
+  "generated": "2026-09-08T16:59:36Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -678,6 +678,27 @@ window.AUDIT_DATA = {
       "outcome": "success",
       "goal": "Implement all 6 grading additions + radar rethink and re-grade the halted GHCP run",
       "done_when": "6 surfaces render in md+html, radar rethought, node-check clean, regenerated grade committed",
+      "tier": "T1",
+      "fan_out": 0
+    },
+    {
+      "id": "al-01M20ZBYVKPX27WDEZ22S32C29",
+      "shortname": "grade-twelve-proposals",
+      "datetime": "2026-09-08T16:59:36Z",
+      "session": "grade-ghcp-0908",
+      "prompt": "work on all of these proposals (the 12 profiling/grading capability proposals)",
+      "summary": "Implemented all 12 grader proposals: (1) snapshot pin + delta grading (--as-of, delta vs prior grade), (2) live-run/provisional flag, (3) delegate model allocation from agent names, (4) veto ledger (verdict/reviewer-model/phase), (5) oracle/mutation signals, (6) red-first signals, (7) defect-class control conversion, (8) coordinator independent-verification, (9) in-flight self-correction, (10) phase-ordering/inversions, (11) cross-harness cost proxies + reasoning-visibility, (12) phase velocity. Radar now 8 spokes (added Review rigor). Verified on GHCP+Claude 2-run pass: Claude opus/fable/sonnet mix, 4 vetoes, 10 red-first; delta detected GHCP +29 commits 702d170->834705e, run active. Updated SKILL.md + Copilot prompt.",
+      "kind": "skill",
+      "skill": "grade-benchmarks",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs/benchmark/comparisons/grade-20260908T165738Z.md"
+      ],
+      "tags": [],
+      "outcome": "success",
+      "goal": "Implement all 12 profiling/grading proposals in the grader",
+      "done_when": "12 surfaces render in md+html, radar 8 spokes, node-check clean, regenerated grade committed",
       "tier": "T1",
       "fan_out": 0
     }

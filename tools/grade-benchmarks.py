@@ -39,6 +39,18 @@ PHASE_NEG_RE = re.compile(
     r"\b(not|never|un-?started|unstarted|incomplete|pending|remain(?:s|ing)?|yet\s+to|without)\b",
     re.I)
 PHASE_POS_RE = re.compile(r"\b(complete|completed|done|pass(?:ed)?|green|demonstrated)\b", re.I)
+# Quality-signal vocabulary (proposals #3-#10). Deterministic scans over the audit + commit corpus.
+MODEL_RE = re.compile(r"\b(opus|sonnet|fable|haiku|gpt-[0-9][0-9.a-z-]*|claude-[a-z0-9.\-]+|"
+                      r"o[0-9]-[a-z]+|grok-[0-9.]+|gemini-[0-9.a-z\-]+)\b", re.I)
+VETO_RE = re.compile(r"\b(VETO|BLOCKER|BLOCK|CLEAR|CONCERNS?|APPROVED|APPROVE|PASS)\b")
+RED_FIRST_RE = re.compile(r"mutant\s+red|red[-\s]first|failing\s+test\s+first|red\s*(?:->|\u2192|then)\s*green"
+                          r"|red\s+before\s+green", re.I)
+COORD_VERIFY_RE = re.compile(r"coordinator(?:\s+\w+){0,3}\s+(?:verif|re-?verif|re-?ran|probe|check)"
+                             r"|verified by the coordinator|gate'?s own probe|coordinator probe", re.I)
+SELF_CORRECT_RE = re.compile(r"overstat|\bamend|re-?point|corrected|correction|REC-A|"
+                             r"walk(?:ed)? back|retract", re.I)
+ORACLE_RE = re.compile(r"per-case oracle|\boracle\b|\bmutant\b|mutation|adversarial row|executable theory"
+                       r"|kills? the mutant", re.I)
 
 # The loop the benchmark prompt sequences. A skill outside this set is not automatically
 # drift - it is a question for the grader, which is why this is a list and not a rule.
@@ -225,6 +237,19 @@ def collect_git(repo):
             if re.search(r"fabricat|retract|false provenance|unauthenticated|invented", line, re.I):
                 marks.append(line.strip()[:140])
     out["fabrication_commits"] = marks[:8]
+
+    # Retain subjects for the quality scans (#4/#6/#8/#9) and compute phase velocity (#12):
+    # the earliest commit whose SUBJECT tags each phase, in author-date order.
+    subjects = [r[3] for r in rows if len(r) > 3]
+    out["commit_log"] = subjects[:500]
+    pv = {}
+    for r in reversed(rows):                       # reversed => oldest first
+        if len(r) < 4:
+            continue
+        for phase in PHASES:
+            if phase not in pv and re.search(r"\b{}\b".format(phase), r[3], re.I):
+                pv[phase] = r[1]
+    out["phase_velocity"] = pv
     return out
 
 
@@ -342,6 +367,12 @@ def collect_audit(repo):
     out["owner_reviews"] = sorted(owner_reviews.keys())
     out["phase_narrative"] = narr
     out["fabrication_audit"] = fab_audit[:8]
+    out["entries_slim"] = [{
+        "shortname": e.get("shortname"), "summary": str(e.get("summary") or "")[:700],
+        "done_when": str(e.get("done_when") or "")[:300], "datetime": e.get("datetime"),
+        "outcome": e.get("outcome"), "tier": e.get("tier"), "signals": e.get("signals") or {},
+        "agents": [str((ar or {}).get("agent") or "") for ar in (e.get("agent_runs") or [])],
+    } for e in entries]
     return out
 
 
@@ -863,6 +894,7 @@ def collect_derived(run):
     git = run.get("git") or {}
     integ = run.get("integrity") or []
     axes = run.get("axes") or {}
+    quality = run.get("quality") or {}
 
     demonstrated = len(audit.get("phases_verification_executed") or [])
     claimed = len(report.get("phases_claimed_complete") or [])
@@ -928,6 +960,15 @@ def collect_derived(run):
         "halt_honesty": halt_honesty,
         "owner_reviews_present": len(audit.get("owner_reviews") or []),
         "seam_resolution_ratio": (run.get("coord") or {}).get("seam_resolution_ratio"),
+        "review_rigor": quality.get("review_rigor_score"),
+        "distinct_delegate_models": (quality.get("model_allocation") or {}).get("distinct_models"),
+        "vetoes_raised": (quality.get("veto_ledger") or {}).get("vetoes"),
+        "red_first_hits": quality.get("red_first_hits"),
+        "coordinator_verifications": quality.get("coordinator_verification_hits"),
+        "self_corrections": quality.get("self_correction_hits"),
+        "oracle_mutation_hits": quality.get("oracle_mutation_hits"),
+        "defect_class_conversion": quality.get("defect_class_conversion"),
+        "phase_order_inversions": quality.get("phase_order_inversions"),
         # The rethought radar: seven deterministic 0..1 spokes, each higher-is-better and as
         # orthogonal as the data allows. The old radar plotted Functionality and Phase-demo, which
         # were the SAME number (both demonstrated/7) - a wasted spoke. It is replaced by
@@ -942,7 +983,79 @@ def collect_derived(run):
             "Task focus": sc("task_focus"),
             "Efficiency": authored_churn_ratio,
             "Honesty": halt_honesty,
+            "Review rigor": quality.get("review_rigor_score"),
         },
+    }
+
+
+def collect_quality(repo, run):
+    """Deterministic quality signals scanned from the audit + commit corpus and the tree
+    (proposals #3-#10). Corpus scans are heuristic but reproducible; every count degrades to
+    zero, never to a fabricated value. The model behind a delegate is read from the agent name
+    (e.g. 'plan-review-sonnet'), which is the only place the audit records it."""
+    audit = run.get("audit") or {}
+    git_facts = run.get("git") or {}
+    entries = audit.get("entries_slim") or []
+    corpus = [" ".join(str(e.get(k) or "") for k in ("shortname", "summary", "done_when"))
+              for e in entries] + (git_facts.get("commit_log") or [])
+
+    # #3 delegate model allocation.
+    model_counts, named = {}, 0
+    for e in entries:
+        for name in e.get("agents") or []:
+            named += 1
+            m = MODEL_RE.search(name)
+            key = m.group(0).lower() if m else "unspecified"
+            model_counts[key] = model_counts.get(key, 0) + 1
+    distinct_models = len([k for k in model_counts if k != "unspecified"])
+
+    # #4 adversarial-review / veto ledger.
+    veto_events = []
+    for text in corpus:
+        for vm in VETO_RE.finditer(text):
+            win = text[max(0, vm.start() - 48): vm.end() + 48]
+            mm, pm = MODEL_RE.search(win), re.search(r"\b[Pp][0-6]\b|\bS[0-9]\b", win)
+            veto_events.append({"verdict": vm.group(0).upper(),
+                                "model": mm.group(0).lower() if mm else None,
+                                "where": pm.group(0).upper() if pm else None})
+    vetoes = [v for v in veto_events if v["verdict"] in ("VETO", "BLOCK", "BLOCKER")]
+    clears = [v for v in veto_events if v["verdict"] in ("CLEAR", "PASS", "APPROVE", "APPROVED")]
+    reviewer_models = sorted(set(v["model"] for v in veto_events if v["model"]))
+
+    # #5 oracle/mutation, #6 red-first, #8 coordinator verification, #9 self-correction.
+    oracle_hits = sum(1 for t in corpus if ORACLE_RE.search(t))
+    red_first_hits = sum(1 for t in corpus if RED_FIRST_RE.search(t))
+    coord_verify_hits = sum(1 for t in corpus if COORD_VERIFY_RE.search(t))
+    self_correct_hits = sum(1 for t in corpus if SELF_CORRECT_RE.search(t))
+
+    # #7 defect-class control conversion.
+    dc = read_text(Path(repo) / "docs" / "lessons" / "defect-classes.md") or ""
+    dc_classes = len(re.findall(r"(?m)^###\s+\S", dc))
+    dc_uncontrolled = len(re.findall(r"NONE YET|uncontrolled", dc, re.I))
+    dc_conversion = round(max(0, dc_classes - dc_uncontrolled) / dc_classes, 3) if dc_classes else None
+
+    # #10 phase ordering: earliest-seen order vs canonical, and inversions.
+    pv = git_facts.get("phase_velocity") or {}
+    by_time = sorted([p for p in PHASES if p in pv], key=lambda p: pv[p])
+    inversions = sum(1 for i in range(len(by_time)) for j in range(i + 1, len(by_time))
+                     if PHASES.index(by_time[i]) > PHASES.index(by_time[j]))
+
+    review_rigor = round(min(1.0, (len(veto_events) / 8.0)
+                             * (1.0 if len(reviewer_models) >= 2 else 0.7)), 3) if veto_events else 0.0
+    return {
+        "model_allocation": {"counts": model_counts, "distinct_models": distinct_models,
+                             "delegations_named": named},
+        "veto_ledger": {"events": veto_events[:40], "vetoes": len(vetoes), "clears": len(clears),
+                        "reviewer_models": reviewer_models},
+        "review_rigor_score": review_rigor,
+        "oracle_mutation_hits": oracle_hits,
+        "red_first_hits": red_first_hits,
+        "coordinator_verification_hits": coord_verify_hits,
+        "self_correction_hits": self_correct_hits,
+        "defect_classes": dc_classes,
+        "defect_class_conversion": dc_conversion,
+        "phase_order_seen": by_time,
+        "phase_order_inversions": inversions,
     }
 
 
@@ -965,7 +1078,32 @@ def grade_run(repo, name, do_build, build_timeout):
                       else "not recorded")
     run["axes"] = score_axes(run)
     run["integrity"] = integrity(run)
+    run["quality"] = collect_quality(repo, run)
+
+    # #2 snapshot pin + live-run detector, #11 cross-harness cost proxies.
+    last = parse_iso((run["git"] or {}).get("last_commit"))
+    age_h = round((datetime.now(timezone.utc) - last).total_seconds() / 3600, 1) if last else None
+    status = git(repo, "status", "--porcelain")
+    dirty = bool(status["ok"] and status["out"].strip())
+    run["snapshot"] = {
+        "graded_sha": (run["identity"] or {}).get("head"),
+        "last_commit": (run["git"] or {}).get("last_commit"),
+        "last_commit_age_hours": age_h,
+        "working_tree_dirty": dirty,
+        "run_active": bool(dirty or (age_h is not None and age_h < 12)),
+    }
+    run["cost"] = {
+        "native_unit": "not recorded (harness token/AIU store not read by the grader)",
+        "wall_seconds": (run["git"] or {}).get("wall_seconds"),
+        "measured_seconds": (run["audit"] or {}).get("measured_seconds"),
+        "commits": (run["git"] or {}).get("commits"),
+        "lines_added": (run["git"] or {}).get("lines_added"),
+        "reasoning_visibility": "not recorded",
+    }
+
     run["derived"] = collect_derived(run)
+    (run.get("audit") or {}).pop("entries_slim", None)   # scratch data, kept out of the payload
+    (run.get("git") or {}).pop("commit_log", None)
     scored = [a["score"] for a in run["axes"].values() if a["score"] is not None]
     run["deterministic_floor"] = round(sum(scored) / len(scored), 3) if scored else None
     run["axes_not_scored"] = sorted(k for k, a in run["axes"].items() if a["score"] is None)
@@ -1119,6 +1257,15 @@ def render_markdown(runs, generated, verdict=None):
         ("fabrication/retraction events", lambda d: d.get("fabrication_events")),
         ("phases with owner review", lambda d: d.get("owner_reviews_present")),
         ("seam resolution ratio", lambda d: d.get("seam_resolution_ratio")),
+        ("review rigor", lambda d: d.get("review_rigor")),
+        ("distinct delegate models", lambda d: d.get("distinct_delegate_models")),
+        ("vetoes raised", lambda d: d.get("vetoes_raised")),
+        ("red-first signals", lambda d: d.get("red_first_hits")),
+        ("coordinator verifications", lambda d: d.get("coordinator_verifications")),
+        ("in-flight self-corrections", lambda d: d.get("self_corrections")),
+        ("oracle/mutation signals", lambda d: d.get("oracle_mutation_hits")),
+        ("defect-class control conversion", lambda d: d.get("defect_class_conversion")),
+        ("phase-order inversions", lambda d: d.get("phase_order_inversions")),
     ]
     for label, get in derived_rows:
         unit = "_seconds" if "cost per demonstrated phase" in label else label
@@ -1169,6 +1316,64 @@ def render_markdown(runs, generated, verdict=None):
         out.append("")
     if not any_fab:
         out += ["No fabrication or retraction markers found in the audit or commit record.", ""]
+
+    # #2 snapshot / activity and #1 delta.
+    out += ["## Snapshot, activity & delta", "", head, rule]
+
+    def qrow(label, fn):
+        out.append("| {} | ".format(label) + " | ".join(fmt(fn(r)) for r in runs) + " |")
+
+    qrow("graded SHA", lambda r: (r.get("snapshot") or {}).get("graded_sha"))
+    qrow("run active (provisional)", lambda r: (r.get("snapshot") or {}).get("run_active"))
+    qrow("last commit age (h)", lambda r: (r.get("snapshot") or {}).get("last_commit_age_hours"))
+    qrow("working tree dirty", lambda r: (r.get("snapshot") or {}).get("working_tree_dirty"))
+
+    def _d(r, key):
+        return ((r.get("delta") or {}).get(key) or {}).get("delta") if r.get("delta") else None
+    qrow("\u0394 demonstrated phases", lambda r: _d(r, "demonstrated_phases"))
+    qrow("\u0394 deterministic floor", lambda r: _d(r, "deterministic_floor"))
+    qrow("\u0394 commits (vs prior grade)", lambda r: _d(r, "commits"))
+    out += ["", "*A grade is a snapshot at the graded SHA. 'run active' means the working tree is "
+            "dirty or a commit landed within 12h - the grade is then provisional. \u0394 is versus the "
+            "most recent prior grade of the same run in this folder (blank if none).*", ""]
+
+    # #3 / #4 delegate models & veto ledger.
+    out += ["## Delegate models & veto ledger", ""]
+    for run in runs:
+        q = run.get("quality") or {}
+        ma, vl = (q.get("model_allocation") or {}), (q.get("veto_ledger") or {})
+        out += ["### {}".format(run["identity"]["name"]), "",
+                "- delegate model mix: {}".format(", ".join(
+                    "{} x{}".format(k, v) for k, v in sorted((ma.get("counts") or {}).items()))
+                    or "none recorded"),
+                "- reviewer models in verdicts: {}".format(
+                    ", ".join(vl.get("reviewer_models") or []) or "none"),
+                "- vetoes raised: {} | clears: {}".format(vl.get("vetoes"), vl.get("clears")), ""]
+        events = vl.get("events") or []
+        if events:
+            out += ["| verdict | reviewer model | where |", "|---|---|---|"]
+            for ev in events[:20]:
+                out.append("| {} | {} | {} |".format(
+                    ev.get("verdict"), ev.get("model") or "-", ev.get("where") or "-"))
+            out.append("")
+
+    # #12 phase velocity, with #10 ordering.
+    out += ["## Phase velocity", ""]
+    for run in runs:
+        pv = (run.get("git") or {}).get("phase_velocity") or {}
+        q = run.get("quality") or {}
+        if not pv:
+            out += ["### {} - no phase-tagged commits".format(run["identity"]["name"]), ""]
+            continue
+        out += ["### {}".format(run["identity"]["name"]),
+                "Seen order {} ({} inversions vs P0..P6).".format(
+                    " -> ".join(q.get("phase_order_seen") or []) or "none",
+                    q.get("phase_order_inversions")), "",
+                "| phase | first commit |", "|---|---|"]
+        for p in PHASES:
+            if p in pv:
+                out.append("| {} | {} |".format(p, pv[p]))
+        out.append("")
 
     for key, title in AXIS_TITLES:
         out += ["## {}".format(title), ""]
@@ -1426,7 +1631,16 @@ function derivedRows(){
     ["halt honesty", function(d){ return d.halt_honesty; }],
     ["fabrication/retraction events", function(d){ return d.fabrication_events; }],
     ["phases with owner review", function(d){ return d.owner_reviews_present; }],
-    ["seam resolution ratio", function(d){ return d.seam_resolution_ratio; }]
+    ["seam resolution ratio", function(d){ return d.seam_resolution_ratio; }],
+    ["review rigor", function(d){ return d.review_rigor; }],
+    ["distinct delegate models", function(d){ return d.distinct_delegate_models; }],
+    ["vetoes raised", function(d){ return d.vetoes_raised; }],
+    ["red-first signals", function(d){ return d.red_first_hits; }],
+    ["coordinator verifications", function(d){ return d.coordinator_verifications; }],
+    ["in-flight self-corrections", function(d){ return d.self_corrections; }],
+    ["oracle/mutation signals", function(d){ return d.oracle_mutation_hits; }],
+    ["defect-class control conversion", function(d){ return d.defect_class_conversion; }],
+    ["phase-order inversions", function(d){ return d.phase_order_inversions; }]
   ];
   return defs.map(function(def){
     return [def[0], RUNS.map(function(r){ return def[1](r.derived||{}); })];
@@ -1555,6 +1769,85 @@ function fabrication(runs){
   });
   if(!any) sec.appendChild(el("p","empty",
     "No fabrication or retraction markers found in the audit or commit record."));
+  return sec;
+}
+
+/* ---- #1/#2 snapshot, activity & delta ---- */
+function snapshotRows(){
+  function snap(r,k){ return (r.snapshot||{})[k]; }
+  function dl(r,k){ var d=(r.delta||{})[k]; return d? d.delta : null; }
+  return [
+    ["graded SHA", RUNS.map(function(r){ return snap(r,"graded_sha"); })],
+    ["run active (provisional)", RUNS.map(function(r){ return snap(r,"run_active"); })],
+    ["last commit age (h)", RUNS.map(function(r){ return snap(r,"last_commit_age_hours"); })],
+    ["working tree dirty", RUNS.map(function(r){ return snap(r,"working_tree_dirty"); })],
+    ["\u0394 demonstrated phases", RUNS.map(function(r){ return dl(r,"demonstrated_phases"); })],
+    ["\u0394 deterministic floor", RUNS.map(function(r){ return dl(r,"deterministic_floor"); })],
+    ["\u0394 commits (vs prior grade)", RUNS.map(function(r){ return dl(r,"commits"); })]
+  ];
+}
+function snapshotSection(runs){
+  var sec=el("section"); sec.id="snapshot";
+  sec.appendChild(el("h2",null,"Snapshot, activity & delta"));
+  if(runs.some(function(r){ return (r.snapshot||{}).run_active; })){
+    var b=el("div","note"); b.style.cssText="border-left:3px solid var(--med);padding-left:10px";
+    b.textContent="At least one run is still ACTIVE - its grade is a provisional snapshot at the "
+      + "graded SHA and will move.";
+    sec.appendChild(b);
+  }
+  sec.appendChild(el("p","note","A grade is a snapshot at the graded SHA. Delta is vs the most recent "
+    + "prior grade of the same run in this folder."));
+  sec.appendChild(table(snapshotRows(),"metric"));
+  return sec;
+}
+
+/* ---- #3/#4 delegate models & veto ledger ---- */
+function modelsVeto(runs){
+  var sec=el("section"); sec.id="models";
+  sec.appendChild(el("h2",null,"Delegate models & veto ledger"));
+  runs.forEach(function(r){
+    var q=r.quality||{}, ma=q.model_allocation||{}, vl=q.veto_ledger||{};
+    sec.appendChild(el("h3",null,r.identity.name));
+    var counts=ma.counts||{};
+    var mix=Object.keys(counts).sort().map(function(k){return k+" x"+counts[k];}).join(", ")||"none recorded";
+    sec.appendChild(el("p","note","delegate model mix: "+mix+" \u00b7 reviewer models: "
+      + ((vl.reviewer_models||[]).join(", ")||"none")+" \u00b7 vetoes "+vl.vetoes+" / clears "+vl.clears));
+    var events=vl.events||[];
+    if(events.length){
+      var wrap=el("div","wrap"), t=el("table"), th=el("thead"), hr=el("tr");
+      ["verdict","reviewer model","where"].forEach(function(x){ hr.appendChild(el("th",null,x)); });
+      th.appendChild(hr); t.appendChild(th); var tb=el("tbody");
+      events.slice(0,20).forEach(function(ev){
+        var tr=el("tr");
+        tr.appendChild(el("td",null,ev.verdict));
+        tr.appendChild(el("td",null,ev.model||"-"));
+        tr.appendChild(el("td",null,ev.where||"-"));
+        tb.appendChild(tr);
+      });
+      t.appendChild(tb); wrap.appendChild(t); sec.appendChild(wrap);
+    }
+  });
+  return sec;
+}
+
+/* ---- #10/#12 phase velocity & ordering ---- */
+function phaseVelocity(runs){
+  var sec=el("section"); sec.id="velocity";
+  sec.appendChild(el("h2",null,"Phase velocity"));
+  runs.forEach(function(r){
+    var pv=(r.git||{}).phase_velocity||{}, q=r.quality||{};
+    sec.appendChild(el("h3",null,r.identity.name));
+    if(!Object.keys(pv).length){ sec.appendChild(el("p","empty","No phase-tagged commits.")); return; }
+    sec.appendChild(el("p","note","Seen order "+((q.phase_order_seen||[]).join(" \u2192 ")||"none")
+      +" ("+q.phase_order_inversions+" inversions vs P0..P6)."));
+    var wrap=el("div","wrap"), t=el("table"), th=el("thead"), hr=el("tr");
+    ["phase","first commit"].forEach(function(x){ hr.appendChild(el("th",null,x)); });
+    th.appendChild(hr); t.appendChild(th); var tb=el("tbody");
+    ["P0","P1","P2","P3","P4","P5","P6"].forEach(function(p){
+      if(pv[p]){ var tr=el("tr"); tr.appendChild(el("td",null,p)); tr.appendChild(el("td",null,pv[p])); tb.appendChild(tr); }
+    });
+    t.appendChild(tb); wrap.appendChild(t); sec.appendChild(wrap);
+  });
   return sec;
 }
 function visible(){ return RUNS.filter(function(r){ return !S.hidden[r.identity.name]; }); }
@@ -1907,6 +2200,9 @@ function render(keepFocus){
 
   app.appendChild(fabrication(runs));
   app.appendChild(perPhase(runs));
+  app.appendChild(snapshotSection(runs));
+  app.appendChild(modelsVeto(runs));
+  app.appendChild(phaseVelocity(runs));
 
   AXES.forEach(function(pair){
     var key = pair[0], title = pair[1];
@@ -1986,7 +2282,7 @@ function render(keepFocus){
 function buildNav(){
   var nav = document.getElementById("nav");
   nav.textContent = "";
-  var items = (V ? [["verdict","Ranking"]] : []).concat([["summary","Summary"],["derived","Derived metrics"],["fabrication","Fabrication"],["perphase","Per-phase evidence"]])
+  var items = (V ? [["verdict","Ranking"]] : []).concat([["summary","Summary"],["derived","Derived metrics"],["fabrication","Fabrication"],["perphase","Per-phase evidence"],["snapshot","Snapshot & delta"],["models","Models & vetoes"],["velocity","Phase velocity"]])
       .concat(AXES).concat([["integrity","Integrity"],["detail","Per-run detail"],["kiviat","Comparison radar"]]);
   items.forEach(function(p){
     var a = el("a",null,p[1]); a.href = "#"+p[0]; nav.appendChild(a);
@@ -2019,6 +2315,44 @@ def render_html(runs, generated, verdict=None):
 # --------------------------------------------------------------------------- main
 
 
+def _num_delta(a, b):
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return {"from": a, "to": b, "delta": round(b - a, 3)}
+    return {"from": a, "to": b, "delta": None}
+
+
+def attach_deltas(outdir, runs):
+    """#1 delta grading: compare each run to the most recent PRIOR grade of the same run that
+    still exists in --out. A grade is a snapshot at a SHA; the delta is how far the run moved
+    since the last one. No prior => delta is None (stated, never a fabricated zero)."""
+    prior_runs = {}
+    if outdir.is_dir():
+        for p in sorted(outdir.glob("grade-*.json"), reverse=True):
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            for r in data.get("runs") or []:
+                name = (r.get("identity") or {}).get("name")
+                if name and name not in prior_runs:
+                    prior_runs[name] = (p.name, r)
+    for run in runs:
+        prev = prior_runs.get((run.get("identity") or {}).get("name"))
+        if not prev:
+            run["delta"] = None
+            continue
+        pname, pr = prev
+        pd, cd = (pr.get("derived") or {}), (run.get("derived") or {})
+        run["delta"] = {
+            "against": pname,
+            "prior_sha": (pr.get("snapshot") or {}).get("graded_sha") or (pr.get("identity") or {}).get("head"),
+            "current_sha": (run.get("snapshot") or {}).get("graded_sha"),
+            "demonstrated_phases": _num_delta(pd.get("demonstrated_phases"), cd.get("demonstrated_phases")),
+            "deterministic_floor": _num_delta(pr.get("deterministic_floor"), run.get("deterministic_floor")),
+            "commits": _num_delta((pr.get("git") or {}).get("commits"), (run.get("git") or {}).get("commits")),
+        }
+
+
 def resolve(token, base):
     """A bare name resolves as a sibling of the control repo, so `/grade-benchmarks r1, r2` works."""
     token = token.strip().strip(",").strip('"').strip("'")
@@ -2042,6 +2376,8 @@ def main(argv=None):
     ap.add_argument("--build-timeout", type=int, default=900)
     ap.add_argument("--verdict", help="JSON file carrying the grader's ruling "
                     "{ranking, judgment, downgrades, learned}; merged into both outputs")
+    ap.add_argument("--as-of", help="record a pin SHA for the grade; the working tree is what is "
+                    "read, so a mismatch with HEAD is flagged, not checked out")
     args = ap.parse_args(argv)
 
     if hasattr(sys.stdout, "reconfigure"):
@@ -2067,6 +2403,17 @@ def main(argv=None):
 
     generated = datetime.now(timezone.utc).strftime(ISO)
     runs = [grade_run(p, p.name, args.verify_build, args.build_timeout) for p in repos]
+
+    if args.as_of:
+        for run in runs:
+            snap = run.get("snapshot") or {}
+            head = snap.get("graded_sha") or ""
+            snap["requested_sha"] = args.as_of
+            snap["pin_matches_head"] = bool(head and (head.startswith(args.as_of)
+                                                      or args.as_of.startswith(head)))
+            run["snapshot"] = snap
+    if args.out:
+        attach_deltas(Path(args.out), runs)
 
     payload = {"generated": generated, "control_repo": str(base), "runs": runs,
                "verdict": verdict, "axes_order": [k for k, _ in AXIS_TITLES]}

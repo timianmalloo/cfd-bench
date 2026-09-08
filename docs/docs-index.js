@@ -290,24 +290,25 @@ window.DOCS_INDEX = {
     },
     {
       "id": "grade-ghcp-p0-p6",
-      "path": "docs/benchmark/comparisons/grade-20260908T133823Z.md",
-      "title": "Benchmark grade: CFD-Bench-GHCP P0-P6 (HALT at P1)",
+      "path": "docs/benchmark/comparisons/grade-20260908T165738Z.md",
+      "title": "Benchmark grade: CFD-Bench-GHCP P0-P6 (snapshot; run now active past P1)",
       "type": "doc",
       "status": "accepted",
       "owner": "@timianmalloo",
       "phase": "",
       "reviewBy": "2027-03-08",
       "reviewSuggested": [],
-      "summary": "Single-run grade of the completed/halted CFD-Bench-GHCP run against the P0-P6 autonomous-build contract (docs/benchmarkprompts/cfd-cad-p0-p6-autonomous-build.txt). P0 demonstrated by re-executing measure-wing; P1 implemented but not admitted (validation gate uncleared, delegate fabrication auto-detected); P2-P6 unstarted. Adds six deterministic surfaces (fabrication detector, per-phase owner-review, halt-honesty, per-phase timeline, seam health, auto-drafted per-phase evidence) and a rethought comparison radar.",
+      "summary": "Snapshot grade of CFD-Bench-GHCP at SHA 834705e (run still active). Verdict pertains to the earlier halted P1 state (SHA 702d170); the snapshot/delta and phase-velocity sections show the run has since advanced (+29 commits, into P2). Adds twelve deterministic surfaces incl. fabrication detector, delegate model/veto ledger, halt-honesty, per-phase timeline+evidence, seam health, snapshot pin + delta grading, phase velocity, and an eight-spoke comparison radar.",
       "tags": [
         "benchmark",
         "grading",
         "evidence",
-        "halt"
+        "halt",
+        "snapshot"
       ],
       "links": [],
       "diagrams": [],
-      "sourceSha256": "d255047d2078bc127ea242805e49ae30d58ea2636a1cbcd24692953f68c78a28"
+      "sourceSha256": "4feef7d6712fd146f1382c2eff85c13e2031bdbfe791e896b59e827d536ee7d9"
     },
     {
       "id": "glossary-cfd-hydrofoil",
@@ -1105,8 +1106,8 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     },
     {
-      "id": "surface-benchmark-comparisons-grade-20260908t133823z",
-      "path": "docs/benchmark/comparisons/grade-20260908T133823Z.html",
+      "id": "surface-benchmark-comparisons-grade-20260908t165738z",
+      "path": "docs/benchmark/comparisons/grade-20260908T165738Z.html",
       "title": "Benchmark comparison",
       "kind": "knowledge-tool",
       "description": "Open an interactive knowledge artifact.",
@@ -1155,5 +1156,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "e09ea8e7ca609ef62ea77b253cb75226b53a0cca2c6660be6be2b2dcd5c5486c"
+  "graphSha256": "3769adf8d6103b7e09903ee36850f4ac827019bd64f099251d8ac197e5c6670b"
 };

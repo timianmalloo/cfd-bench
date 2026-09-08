@@ -96,10 +96,16 @@ audit and commit record for fabrication/false-provenance markers and raises a **
 finding** on any hit (so an invented-data run is caught by the grader, not only by reading the
 report); an **auto-drafted per-phase evidence** table (per phase: executed-verification signal,
 owner-review acceptance, audit time-span, and the `done_when -> summary` to quote); and, at the end
-of the HTML, a **comparison radar (Kiviat)** over seven orthogonal deterministic 0-1 spokes -
-Completeness, Verification, Integrity, Coordination, Task focus, Efficiency, Honesty - drawn one
-overlaid polygon per run so multiple graded runs **stack on one figure**. The radar plots only
-spokes with a defensible ratio; the judgment axes are excluded by design.
+of the HTML, a **comparison radar (Kiviat)** over eight orthogonal deterministic 0-1 spokes -
+Completeness, Verification, Integrity, Coordination, Task focus, Efficiency, Honesty, Review rigor -
+drawn one overlaid polygon per run so multiple graded runs **stack on one figure**. The radar plots
+only spokes with a defensible ratio; the judgment axes are excluded by design. It also emits a
+**snapshot, activity & delta** section (graded SHA, a live-run/provisional flag, and the movement -
+demonstrated phases, floor, commits - versus the most recent prior grade of the same run), a
+**delegate models & veto ledger** section (model mix per delegate read from agent names, plus every
+VETO/CLEAR verdict with its reviewer model and phase), and a **phase velocity** section (first commit
+per phase, seen order, and inversions vs P0..P6). `--as-of <sha>` records a pin and flags a HEAD
+mismatch rather than checking out.
 
 **It scores only what has a defensible ratio.** Coordination, contention, task focus and
 functionality carry numbers. **Performance, parallelism and drift are marked `judgment`** and
