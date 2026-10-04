@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-10-04T18:21:18Z",
+  "generated": "2026-10-04T18:31:27Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -760,6 +760,66 @@ window.AUDIT_DATA = {
       "outcome": "success",
       "started_at": "2026-10-04T17:55:19Z",
       "duration_seconds": 1372.0
+    },
+    {
+      "id": "al-01M442TWYGH75B1P5PQKT279W7",
+      "shortname": "manual-only GitHub Actions fleet",
+      "datetime": "2026-10-04T18:29:18Z",
+      "session": "codex-manual-actions-20261004",
+      "prompt": "check cfd-bench for any ci/cd workflows... i am getting notifications of workflow failures but there should be no automated workflows.\nalso check ALL of my repos (timianmalloo)... we should make sure there are NO automated CI workflows configured for any of the repos. CI workflows should be on-demand when we are doing work\nI am seeing errors from github for workflows i dont expect to be running",
+      "summary": "Converted automatic GitHub Actions triggers to manual dispatch in 39 default-branch workflows and 257 non-default branches across the 20 owned repositories; removed TheTerrace's required automated check; fixed invalid workflow YAML on CFD-Workbench and two ai-forward branches. Readback found zero automatic triggers and zero YAML parse errors.",
+      "kind": "manual",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [],
+      "tags": [],
+      "outcome": "success",
+      "goal": "Ensure all timianmalloo GitHub Actions workflows run only on demand and identify the unexpected failure notifications.",
+      "done_when": "All owned repositories and branches audited; every workflow trigger is manual-only; malformed workflow files causing push notifications are repaired; changes are committed and verified remotely.",
+      "tier": "T2",
+      "fan_out": 1,
+      "signals": {
+        "verification_executed": true,
+        "acceptance_met": true
+      },
+      "git": {
+        "sha": "8ba5824bb42142737c0988a2f05847063e2e2435",
+        "short": "8ba5824bb",
+        "branch": "chore/manual-github-actions",
+        "pushed": null
+      }
+    },
+    {
+      "id": "al-01M442YTBF7QA3QV1CZA2CZTYN",
+      "shortname": "manual-only Actions closure",
+      "datetime": "2026-10-04T18:31:27Z",
+      "session": "codex-manual-actions-20261004",
+      "prompt": "Finish fleet workflow audit and verification",
+      "summary": "All 20 owned repositories and their branches now have manual-only GitHub Actions triggers; final fleet YAML parse found zero invalid variants.",
+      "kind": "manual",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [],
+      "tags": [],
+      "outcome": "success",
+      "goal": "Stop unexpected automatic GitHub Actions runs and failure notifications across owned repositories.",
+      "done_when": "Every workflow is manual-only on all branches and malformed YAML causing push failures is repaired and verified.",
+      "tier": "T2",
+      "fan_out": 1,
+      "signals": {
+        "verification_executed": true,
+        "acceptance_met": true
+      },
+      "started_at": "2026-10-04T17:55:19Z",
+      "duration_seconds": 2168.0,
+      "git": {
+        "sha": "8ba5824bb42142737c0988a2f05847063e2e2435",
+        "short": "8ba5824bb",
+        "branch": "chore/manual-github-actions",
+        "pushed": null
+      }
     }
   ],
   "changes": [
