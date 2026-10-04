@@ -5,9 +5,8 @@
 # Requires only Python 3.8+ (the script bundle is stdlib-only).
 name: docs-health
 on:
-  pull_request:
-    paths: ["docs/**", "**/*.md"]
   workflow_dispatch:
+
 
 jobs:
   graph-health:

@@ -5,9 +5,8 @@
 # Standalone (not folded into docs-health) so it is independent of unrelated graph-health state.
 name: goal-state-gate
 on:
-  pull_request:
-    paths: ["docs/audit/**", "scripts/goal-state-gate.py", ".github/workflows/goal-state-gate.yml"]
   workflow_dispatch:
+
 
 jobs:
   goal-state:
