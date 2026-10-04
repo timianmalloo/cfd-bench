@@ -1,5 +1,5 @@
 # AI-Forward proposal 3.b - the goal-state gate as a standalone required check.
-# A substantive audit entry INTRODUCED in a PR that recorded no goal-state (done_when)/tier or
+# A substantive audit entry INTRODUCED since origin/main that recorded no goal-state (done_when)/tier or
 # exceeded its declared fan-out cap fails the merge. Forward ratchet: historical entries on
 # origin/main are grandfathered. Reuses the vendored selfcheck --json (no pack file modified).
 # Standalone (not folded into docs-health) so it is independent of unrelated graph-health state.
@@ -11,8 +11,6 @@
 # definition of what counts as a gap instead of two that can drift apart.
 name: goal-state-gate
 on:
-  pull_request:
-    paths: ["docs/audit/**", "docs/ai-forward-pack/scripts/audit-log.py", ".github/workflows/goal-state-gate.yml"]
   workflow_dispatch:
 
 jobs:

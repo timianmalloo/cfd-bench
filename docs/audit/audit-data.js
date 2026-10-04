@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "cfd-bench",
-  "generated": "2026-09-08T20:42:53Z",
+  "generated": "2026-10-04T18:21:18Z",
   "audit": [
     {
       "id": "al-01M1TD7004M7W7J08YZ74SF5BV",
@@ -743,6 +743,23 @@ window.AUDIT_DATA = {
       "done_when": "10 new surfaces render in md+html, node-check clean, committed+pushed",
       "tier": "T1",
       "fan_out": 0
+    },
+    {
+      "id": "al-01M4426H89F2CH2XP6VNXFCS90",
+      "shortname": "check cfd-bench for any ci/cd workflows... i am getting notifications of…",
+      "datetime": "2026-10-04T18:18:11Z",
+      "session": "codex-manual-actions-20261004",
+      "prompt": "check cfd-bench for any ci/cd workflows... i am getting notifications of workflow failures but there should be no automated workflows.\nalso check ALL of my repos (timianmalloo)... we should make sure there are NO automated CI workflows configured for any of the repos. CI workflows should be on-demand when we are doing work\nI am seeing errors from github for workflows i dont expect to be running",
+      "summary": "prompt logged for reuse",
+      "kind": "prompt",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [],
+      "tags": [],
+      "outcome": "success",
+      "started_at": "2026-10-04T17:55:19Z",
+      "duration_seconds": 1372.0
     }
   ],
   "changes": [
